@@ -1,40 +1,31 @@
-use crate::commands_registry::{Command, register_command};
 use crate::configuration;
 use crate::openrouter;
+use lazy_static::lazy_static;
 use regex::Regex;
-use serde::{Deserialize, Serialize};
 use std::io::{self, Write};
+use std::sync::Mutex;
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Model {
-    id: String,
-    name: String,
+// Use OpenRouter's Model directly
+use crate::openrouter::Model;
+
+lazy_static! {
+    static ref MODELS: Mutex<Vec<Model>> = Mutex::new(Vec::new());
 }
 
-pub fn register_set_model_command() {
-    register_command(Command {
-        name: "set-model".to_string(),
-        pattern: Regex::new(r"@set-model\(\s*(?:(.+))?\s*\)").unwrap(),
-        description: "Set the model to use for chat".to_string(),
-        usage_example: "@set-model([optional_filter])".to_string(),
-        handler: |params| {
-            // We can't use async code directly in the handler, so return instructions
-            println!("Please use the async set-model command for now");
-            println!("Command will be fully integrated in a future update");
-
-            if let Some(filter) = params.get(0) {
-                println!("Filter provided: {}", filter);
-            }
-
-            Ok(None)
-        },
-    });
-}
-
-pub async fn handle_set_model(command: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn initialize_models() -> Result<(), Box<dyn std::error::Error>> {
     let api_key = std::env::var("OPENROUTER_API_KEY")
         .expect("OPENROUTER_API_KEY environment variable not set");
+    
+    let models = openrouter::list_openrouter_models(&api_key).await?;
+    
+    let mut models_store = MODELS.lock().unwrap();
+    *models_store = models;
+    
+    println!("Models initialized: {} models available", models_store.len());
+    Ok(())
+}
 
+pub fn handle_set_model(command: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Extract filter from parentheses format
     let filter_match = Regex::new(r"@set-model\(\s*(?:(.+))?\s*\)")
         .unwrap()
@@ -42,7 +33,11 @@ pub async fn handle_set_model(command: &str) -> Result<(), Box<dyn std::error::E
     let model_filter = filter_match
         .and_then(|caps| caps.get(1))
         .map(|m| m.as_str().trim());
-    let models = openrouter::list_openrouter_models(api_key.as_str()).await?;
+
+    // Get models from the initialized static store
+    let models_guard = MODELS.lock().unwrap();
+    let models = models_guard.clone();
+    drop(models_guard); // Release lock early
 
     let filtered_models: Vec<_> = models
         .iter()

@@ -3,7 +3,6 @@ use std::fs;
 use std::path::Path;
 
 use crate::chat;
-use crate::commands;
 use crate::commands_registry::{Command, register_command};
 use crate::files::files as file_module;
 
@@ -175,7 +174,7 @@ pub fn register_all_commands() {
     // Save file command
     register_command(Command {
         name: "save-all".to_string(),
-        pattern: Regex::new(r"@save-all\(\s*(\S+)\s*)").unwrap(),
+        pattern: Regex::new(r"@save-all\(\s*(\S+)\s*\)").unwrap(),
         description: "Save content to a file".to_string(),
         usage_example: "@save-all([filename])".to_string(),
         handler: |params| {
@@ -208,7 +207,7 @@ pub fn register_all_commands() {
     // set model command
     register_command(Command {
         name: "set-model".to_string(),
-        pattern: Regex::new(r"@set-model\(\s*(\S+)\s*)").unwrap(),
+        pattern: Regex::new(r"@set-model\(\s*(\S+)\s*\)").unwrap(),
         description: "Set LLM model".to_string(),
         usage_example: "@set-model([model-id])".to_string(),
         handler: |params| {
@@ -217,12 +216,19 @@ pub fn register_all_commands() {
                 return Ok(None);
             }
             let model_id = &params[0];
-            commands::set_model::handle_set_model(model_id);
-            Ok(Some("Context reset.".to_string()))
+
+            let command = format!("@set-model({})", model_id);
+            println!("Starting model change process for {}", model_id);
+            match crate::commands::set_model::handle_set_model(&command) {
+                Ok(_) => Ok(Some("Model selection complete.".to_string())),
+                Err(e) => {
+                    println!("Error selecting model: {}", e);
+                    Ok(Some("Failed to set model. See terminal for details.".to_string()))
+                }
+            }
         },
     });
 
     // Register help command and set model command from existing modules
     help::register_help_command();
-    set_model::register_set_model_command();
 }
