@@ -1,7 +1,9 @@
-use std::io::{self, Write};
+use crate::commands_registry::{Command, register_command};
 use crate::configuration;
 use crate::openrouter;
-use serde::{Serialize, Deserialize};
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use std::io::{self, Write};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Model {
@@ -9,19 +11,42 @@ struct Model {
     name: String,
 }
 
+pub fn register_set_model_command() {
+    register_command(Command {
+        name: "set-model".to_string(),
+        pattern: Regex::new(r"@set-model\(\s*(?:(.+))?\s*\)").unwrap(),
+        description: "Set the model to use for chat".to_string(),
+        usage_example: "@set-model([optional_filter])".to_string(),
+        handler: |params| {
+            // We can't use async code directly in the handler, so return instructions
+            println!("Please use the async set-model command for now");
+            println!("Command will be fully integrated in a future update");
+
+            if let Some(filter) = params.get(0) {
+                println!("Filter provided: {}", filter);
+            }
+
+            Ok(None)
+        },
+    });
+}
+
 pub async fn handle_set_model(command: &str) -> Result<(), Box<dyn std::error::Error>> {
     let api_key = std::env::var("OPENROUTER_API_KEY")
         .expect("OPENROUTER_API_KEY environment variable not set");
 
-    let parts: Vec<&str> = command.splitn(2, ' ').collect();
-    let model_filter = parts.get(1).map(|s| s.trim());
+    // Extract filter from parentheses format
+    let filter_match = Regex::new(r"@set-model\(\s*(?:(.+))?\s*\)")
+        .unwrap()
+        .captures(command);
+    let model_filter = filter_match
+        .and_then(|caps| caps.get(1))
+        .map(|m| m.as_str().trim());
     let models = openrouter::list_openrouter_models(api_key.as_str()).await?;
 
     let filtered_models: Vec<_> = models
         .iter()
-        .filter(|model| {
-            model_filter.is_none() || model.id.contains(model_filter.unwrap())
-        })
+        .filter(|model| model_filter.is_none() || model.id.contains(model_filter.unwrap()))
         .collect();
 
     if filtered_models.is_empty() {

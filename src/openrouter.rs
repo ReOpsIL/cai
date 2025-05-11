@@ -24,6 +24,7 @@ pub async fn list_openrouter_models(api_key: &str) -> Result<Vec<Model>, Box<dyn
     Ok(models)
 }
 
+#[allow(dead_code)]
 pub async fn call_openrouter_api(api_key: &str, prompt: &str) -> Result<String, Box<dyn std::error::Error>> {
     let config = configuration::load_configuration()?;
 

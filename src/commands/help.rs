@@ -1,16 +1,15 @@
-use std::io::{self, Write};
-use crate::configuration;
-use crate::openrouter;
-use serde::{Serialize, Deserialize};
+use crate::commands_registry::{Command, register_command};
+use regex::Regex;
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Model {
-    id: String,
-    name: String,
-}
-
-pub async fn handle_help(command: &str) -> Result<(), Box<dyn std::error::Error>> {
-  
-    println!("@set-model should set model");
-    Ok(())
+pub fn register_help_command() {
+    register_command(Command {
+        name: "help".to_string(),
+        pattern: Regex::new(r"@help\(\s*\)").unwrap(),
+        description: "Display help information for available commands".to_string(),
+        usage_example: "@help()".to_string(),
+        handler: |_| {
+            crate::commands_registry::print_help();
+            Ok(None)
+        },
+    });
 }

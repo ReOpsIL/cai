@@ -1,4 +1,9 @@
-@--- [2025-05-10T19:37:48] ---
+@--- [2025-05-11T18:46:01] ---
 
-@help
-exit
+?
+@list-files(./**/*.md)
+help me @list-files(./**/*.md) with cai
+help)(
+help()
+@help()
+

@@ -1,9 +1,8 @@
-use std::fs;
-use serde::{Serialize, Deserialize};
 use directories::UserDirs;
+use serde::{Deserialize, Serialize};
+use std::fs;
 use std::io::Read;
 use toml_edit;
-use std::path::Path;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {

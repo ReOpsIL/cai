@@ -1,15 +1,14 @@
 use tokio;
-
-mod history;
-mod configuration;
-mod command_handler;
-mod commands {
-    pub mod set_model;
-    pub mod help;
-}
 mod chat;
-mod openrouter;
+mod command_handler;
+mod commands;
+mod commands_registry;
+mod configuration;
 mod files;
+mod history;
+mod openrouter;
+#[cfg(test)]
+mod tests;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

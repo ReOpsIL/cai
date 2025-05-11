@@ -1,7 +1,2 @@
-use std::io;
-use crate::commands;
-
-pub async fn handle_command(_command: &str) -> Result<(), Box<dyn std::error::Error>> {
-    // This function is no longer used.
-    Ok(())
-}
+// This file is kept for backwards compatibility but is no longer actively used.
+// Command handling has been moved to the commands_registry module.
