@@ -191,16 +191,56 @@ pub fn register_all_commands() {
         },
     });
 
+    register_command(Command {
+        name: "get-memory".to_string(),
+        pattern: Regex::new(r"@get-memory\(\s*(\S+)\s*\)").unwrap(),
+        description: "Load content from memory into chat".to_string(),
+        usage_example: "@get-memory([memory-id])".to_string(),
+        handler: |params| {
+            if params.len() < 1 {
+                println!("Usage: @get-memory([memory-id])");
+                return Ok(None);
+            }
+            let memory_id = &params[0];
+            let memory = chat::get_memory().lock().unwrap();
+            let content = memory.get(memory_id);
+
+            let not_found = "Memory id not found".to_string();
+            Ok(Some(format!(
+                "```{}:\n\n{}\n```",
+                memory_id,
+                content.unwrap_or_else(|| &not_found)
+            )))
+        },
+    });
+
+    register_command(Command {
+        name: "dump-memory".to_string(),
+        pattern: Regex::new(r"@dump-memory\(\s*\)").unwrap(),
+        description: "Dump all memory content into chat".to_string(),
+        usage_example: "@dump-memory()".to_string(),
+        handler: |_| {
+            let mut content = String::new();
+            let memory = chat::get_memory().lock().unwrap();
+
+            for (key, value) in memory.iter() {
+                content.push_str(&format!("\n```\n{}:\n{}\n```\n", key, value));
+            }
+
+            Ok(Some(content))
+        },
+    });
+
     // Reset context command
     register_command(Command {
-        name: "reset-context".to_string(),
-        pattern: Regex::new(r"@reset-context\(\s*\)").unwrap(),
-        description: "Reset the memory context".to_string(),
-        usage_example: "@reset-context()".to_string(),
+        name: "reset-memory".to_string(),
+        pattern: Regex::new(r"@reset-memory\(\s*\)").unwrap(),
+        description: "Reset the memory".to_string(),
+        usage_example: "@reset-memory()".to_string(),
         handler: |_| {
             let mut memory = chat::get_memory().lock().unwrap();
             memory.clear();
-            Ok(Some("Context reset.".to_string()))
+            Ok(Some("Memory reset done.".to_string()))
         },
     });
 
@@ -223,7 +263,9 @@ pub fn register_all_commands() {
                 Ok(_) => Ok(Some("Model selection complete.".to_string())),
                 Err(e) => {
                     println!("Error selecting model: {}", e);
-                    Ok(Some("Failed to set model. See terminal for details.".to_string()))
+                    Ok(Some(
+                        "Failed to set model. See terminal for details.".to_string(),
+                    ))
                 }
             }
         },
