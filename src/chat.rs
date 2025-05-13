@@ -1,4 +1,5 @@
-use crate::{commands, commands_registry, configuration, history};
+use crate::{commands, commands_registry, configuration};
+use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
 use signal_hook::consts::SIGINT;
 use std::collections::HashMap;
@@ -10,10 +11,46 @@ mod input_handler;
 
 // In-memory context
 lazy_static! {
-    static ref MEMORY: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+    static ref MEMORY: Mutex<HashMap<String, Prompt>> = Mutex::new(HashMap::new());
 }
 
-pub fn get_memory() -> &'static Mutex<HashMap<String, String>> {
+#[derive(Debug, Clone, PartialEq)]
+pub enum PromptType {
+    QUESTION,
+    ANSWER,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Prompt {
+    pub id: String,
+    pub date: DateTime<Utc>,
+    pub value: String,
+    pub ptype: PromptType,
+}
+
+impl Prompt {
+    pub fn new(value: String, ptype: PromptType) -> Self {
+        let prompt = Prompt {
+            id: uuid::Uuid::new_v4()
+                .to_string()
+                .split('-')
+                .next()
+                .unwrap_or("")
+                .to_string(),
+            date: Utc::now(),
+            value,
+            ptype,
+        };
+        let mut memory = get_memory().lock().unwrap();
+        memory.insert(prompt.id.clone(), prompt.clone());
+
+        println!("ID: {}\n----------------", prompt.id);
+
+        prompt
+    }
+}
+
+pub fn get_memory() -> &'static Mutex<HashMap<String, Prompt>> {
     &MEMORY
 }
 
@@ -108,9 +145,6 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Loaded config: {:?}", config);
 
-    let mut prompt_history: Vec<String> = Vec::new();
-    let max_prompts = 10; // Maximum number of prompts to store
-
     let term = Arc::new(AtomicBool::new(false));
     signal_hook::flag::register(SIGINT, Arc::clone(&term))?;
 
@@ -121,12 +155,7 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         input = input.trim().to_owned();
-
-        // Store the prompt in history
-        prompt_history.push(input.to_string());
-        if prompt_history.len() > max_prompts {
-            prompt_history.remove(0); // Remove the oldest prompt
-        }
+        Prompt::new(input.clone(), PromptType::QUESTION);
 
         if term.load(Ordering::Relaxed) || input.eq_ignore_ascii_case("exit") {
             break;
@@ -151,12 +180,13 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
             let enriched_input = check_embedded_commands(&input).await;
 
             println!("OpenRouter input: {}", enriched_input.to_string());
-            let response = "dummy"; // openrouter::call_openrouter_api(&api_key, &input).await?;
+            let response = String::from("dummy"); // openrouter::call_openrouter_api(&api_key, &input).await?;
+
+            Prompt::new(response.clone(), PromptType::ANSWER);
+
             println!("OpenRouter: {}", response);
         }
     }
-
-    history::save_prompt_history(&prompt_history).await?;
 
     Ok(())
 }

@@ -5,10 +5,7 @@ mod commands;
 mod commands_registry;
 mod configuration;
 mod files;
-mod history;
 mod openrouter;
-#[cfg(test)]
-mod tests;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -18,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Warning: Failed to initialize models: {}", e);
         println!("Some commands may not work correctly");
     }
-    
+
     chat::chat_loop().await?;
     Ok(())
 }

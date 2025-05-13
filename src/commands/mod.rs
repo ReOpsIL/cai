@@ -2,7 +2,7 @@ use regex::Regex;
 use std::fs;
 use std::path::Path;
 
-use crate::chat;
+use crate::chat::{self, Prompt, PromptType};
 use crate::commands_registry::{Command, register_command};
 use crate::files::files as file_module;
 
@@ -50,14 +50,13 @@ pub fn register_all_commands() {
         name: "read-files".to_string(),
         pattern: Regex::new(r"@read-files\(\s*(\S+)\s*,\s*(\S+)\s*\)").unwrap(),
         description: "Read multiple files using wildcard pattern into memory".to_string(),
-        usage_example: "@read-files([memory-id], [wildcard])".to_string(),
+        usage_example: "@read-files([wildcard])".to_string(),
         handler: |params| {
-            if params.len() < 2 {
-                println!("Usage: @read-files([memory-id], [wildcard])");
+            if params.is_empty() {
+                println!("Usage: @read-files([wildcard])");
                 return Ok(None);
             }
-            let memory_id = &params[0];
-            let pattern = &params[1];
+            let pattern = &params[0];
             let files_map = file_module::read_files(pattern)?;
 
             // Concatenate all file contents into one string
@@ -68,29 +67,21 @@ pub fn register_all_commands() {
                 combined_content.push_str("\n\n");
             }
 
-            // Save to memory
-            let mut memory = chat::get_memory().lock().unwrap();
-            memory.insert(memory_id.to_string(), combined_content.clone());
-
-            Ok(Some(format!(
-                "Files matching pattern '{}' read into memory id '{}'",
-                pattern, memory_id
-            )))
+            Ok(Some(format!("{}", combined_content)))
         },
     });
 
     register_command(Command {
         name: "read-folders".to_string(),
-        pattern: Regex::new(r"@read-folders\(\s*(\S+)\s*,\s*(\S+)\s*\)").unwrap(),
+        pattern: Regex::new(r"@read-folders\(\s*(\S+)\s*\)").unwrap(),
         description: "Read multiple folders using wildcard pattern into memory".to_string(),
-        usage_example: "@read-folders([memory-id], [wildcard])".to_string(),
+        usage_example: "@read-folders([wildcard])".to_string(),
         handler: |params| {
-            if params.len() < 2 {
-                println!("Usage: @read-folders([memory-id], [wildcard])");
+            if params.is_empty() {
+                println!("Usage: @read-folders([wildcard])");
                 return Ok(None);
             }
-            let memory_id = &params[0];
-            let pattern = &params[1];
+            let pattern = &params[0];
             let files_map = file_module::read_folder(pattern)?;
 
             // Concatenate all file contents into one string
@@ -101,93 +92,25 @@ pub fn register_all_commands() {
                 combined_content.push_str("\n\n");
             }
 
-            // Save to memory
-            let mut memory = chat::get_memory().lock().unwrap();
-            memory.insert(memory_id.to_string(), combined_content.clone());
-
-            Ok(Some(format!(
-                "Files from folders matching pattern '{}' read into memory id '{}'",
-                pattern, memory_id
-            )))
+            Ok(Some(format!("{}", combined_content)))
         },
     });
 
     // Read file command
     register_command(Command {
         name: "read-file".to_string(),
-        pattern: Regex::new(r"@read-file\(\s*(\S+)\s*,\s*(\S+)\s*\)").unwrap(),
-        description: "Read a file into memory".to_string(),
-        usage_example: "@read-file([memory-id], [filename])".to_string(),
+        pattern: Regex::new(r"@read-file\(\s*(\S+)\s*\)").unwrap(),
+        description: "Read a file into prompt".to_string(),
+        usage_example: "@read-file([filename])".to_string(),
         handler: |params| {
-            if params.len() < 2 {
-                println!("Usage: @read-file([memory-id], [filename])");
-                return Ok(None);
-            }
-            let memory_id = &params[0];
-            let filename = &params[1];
-            let contents = file_module::read_file(filename)?;
-
-            // We're using the existing chat module to manage memory
-            // This is just a placeholder - you'll need to adjust this based on how memory is actually handled
-            let mut memory = chat::get_memory().lock().unwrap();
-            memory.insert(memory_id.to_string(), contents.clone());
-
-            Ok(Some(format!(
-                "File {} read into memory id {}",
-                filename, memory_id
-            )))
-        },
-    });
-
-    // Save file command
-    register_command(Command {
-        name: "save-file".to_string(),
-        pattern: Regex::new(r"@save-file\(\s*(\S+)\s*,\s*(\S+)\s*\)").unwrap(),
-        description: "Save content to a file".to_string(),
-        usage_example: "@save-file([memory-id], [filename])".to_string(),
-        handler: |params| {
-            if params.len() < 2 {
-                println!("Usage: @save-file([memory-id], [filename])");
-                return Ok(None);
-            }
-            let memory_id = &params[0];
-            let memory = chat::get_memory().lock().unwrap();
-            let content = memory
-                .get(&memory_id.to_string())
-                .expect("Memory ID not found");
-
-            let filename = &params[1];
-
-            // Ensure the directory exists
-            if let Some(parent) = Path::new(filename).parent() {
-                if !parent.exists() {
-                    fs::create_dir_all(parent)?;
-                }
-            }
-
-            fs::write(filename, content)?;
-
-            Ok(Some(format!("Content saved to file {}", filename)))
-        },
-    });
-
-    // Save file command
-    register_command(Command {
-        name: "save-all".to_string(),
-        pattern: Regex::new(r"@save-all\(\s*(\S+)\s*\)").unwrap(),
-        description: "Save content to a file".to_string(),
-        usage_example: "@save-all([filename])".to_string(),
-        handler: |params| {
-            if params.len() < 1 {
-                println!("Usage: @save-all([filename])");
+            if params.is_empty() {
+                println!("Usage: @read-file([filename])");
                 return Ok(None);
             }
             let filename = &params[0];
-            let memory = chat::get_memory().lock().unwrap();
-            let json = serde_json::to_string(&*memory)?;
-            std::fs::write(filename, json)?;
+            let contents = file_module::read_file(filename)?;
 
-            Ok(Some(format!("Content saved to file {}", filename)))
+            Ok(Some(format!("{}", contents)))
         },
     });
 
@@ -197,37 +120,60 @@ pub fn register_all_commands() {
         description: "Load content from memory into chat".to_string(),
         usage_example: "@get-memory([memory-id])".to_string(),
         handler: |params| {
-            if params.len() < 1 {
+            if params.is_empty() {
                 println!("Usage: @get-memory([memory-id])");
                 return Ok(None);
             }
             let memory_id = &params[0];
             let memory = chat::get_memory().lock().unwrap();
-            let content = memory.get(memory_id);
 
-            let not_found = "Memory id not found".to_string();
-            Ok(Some(format!(
-                "```{}:\n\n{}\n```",
-                memory_id,
-                content.unwrap_or_else(|| &not_found)
-            )))
+            match memory.get(memory_id) {
+                Some(prompt) => Ok(Some(format!("```{}:\n\n{}\n```", memory_id, prompt.value))),
+                None => Ok(Some(format!("Error: prompt id {} not found.", memory_id))),
+            }
         },
     });
 
     register_command(Command {
-        name: "dump-memory".to_string(),
-        pattern: Regex::new(r"@dump-memory\(\s*\)").unwrap(),
-        description: "Dump all memory content into chat".to_string(),
-        usage_example: "@dump-memory()".to_string(),
-        handler: |_| {
+        name: "export".to_string(),
+        pattern: Regex::new(r"@export\(\s*(\S+)\s*,\s*(\S+)\s*\)").unwrap(),
+        description: "Export memory content into file.".to_string(),
+        usage_example: "@export(45dge64 or ? or _ or @, ./output.md)".to_string(),
+        handler: |params| {
             let mut content = String::new();
             let memory = chat::get_memory().lock().unwrap();
 
-            for (key, value) in memory.iter() {
-                content.push_str(&format!("\n```\n{}:\n{}\n```\n", key, value));
+            if params.len() < 2 {
+                println!("Usage: @export([id or ? or _ or @],[file-name])");
+                return Ok(None);
+            }
+            let id = &params[0];
+            let file_name = &params[1];
+
+            let mut prompt_ordered: Vec<&Prompt> = Vec::new();
+            for (_key, val) in memory.iter() {
+                prompt_ordered.push(val);
+            }
+            // Sort prompts by date
+            prompt_ordered.sort_by(|a, b| a.date.cmp(&b.date));
+
+            for prompt in prompt_ordered.iter() {
+                if id == "@"
+                    || (prompt.ptype == PromptType::QUESTION && id == "?")
+                    || (prompt.ptype == PromptType::ANSWER && id == "_")
+                {
+                    content.push_str(&format!("\n```\n{}:\n{}\n```\n", prompt.id, prompt.value));
+                }
             }
 
-            Ok(Some(content))
+            // Ensure the directory exists
+            if let Some(parent) = Path::new(file_name).parent() {
+                if !parent.exists() {
+                    fs::create_dir_all(parent)?;
+                }
+            }
+            fs::write(file_name, content)?;
+            Ok(Some(format!("File saved {}", file_name)))
         },
     });
 
