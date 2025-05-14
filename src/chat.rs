@@ -1,4 +1,4 @@
-use crate::{commands, commands_registry, configuration};
+use crate::{commands, commands_registry, configuration, openrouter};
 use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
 use signal_hook::consts::SIGINT;
@@ -18,6 +18,7 @@ lazy_static! {
 pub enum PromptType {
     QUESTION,
     ANSWER,
+    ALIAS,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -115,13 +116,14 @@ pub async fn check_embedded_commands(input: &str) -> String {
 
             let command = &enriched_input[command_start..command_end];
 
-            println!("Executing command: {}", command);
+            //println!("Executing command: {}", command);
 
             match execute_command(command).await {
                 Ok(Some(output)) => {
                     // Inject the output into the prompt
-                    enriched_input.replace_range(pos..end, &format!("\n```\n{}\n```\n", output));
-                    pos += format!("\n```\n{}\n```\n", output).len();
+                    let formated_output = &format!("{}", output);
+                    enriched_input.replace_range(pos..end, formated_output);
+                    pos += formated_output.len();
                 }
                 Ok(None) => {
                     pos = end;
@@ -155,7 +157,6 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         input = input.trim().to_owned();
-        Prompt::new(input.clone(), PromptType::QUESTION);
 
         if term.load(Ordering::Relaxed) || input.eq_ignore_ascii_case("exit") {
             break;
@@ -163,7 +164,7 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
 
         if input.eq("?") {
             commands_registry::print_help();
-        } else if input.starts_with("@") {
+        } else if input.starts_with("!") {
             match execute_command(&input).await {
                 Ok(Some(output)) => {
                     println!("{}", output);
@@ -179,12 +180,15 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             let enriched_input = check_embedded_commands(&input).await;
 
-            println!("OpenRouter input: {}", enriched_input.to_string());
-            let response = String::from("dummy"); // openrouter::call_openrouter_api(&api_key, &input).await?;
+            Prompt::new(enriched_input.clone(), PromptType::QUESTION);
+
+            println!("You:\n+++++++++++++++++++\n{}", enriched_input.to_string());
+            //let response = String::from(":-) Ok");
+            let response = openrouter::call_openrouter_api(&enriched_input).await?;
 
             Prompt::new(response.clone(), PromptType::ANSWER);
 
-            println!("OpenRouter: {}", response);
+            println!("{}", response);
         }
     }
 

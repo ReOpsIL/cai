@@ -1,9 +1,0 @@
-@--- [2025-05-12T06:39:33] ---
-
-@ss
-@read-files(mark2, ./**/*.md)
-@get-memory(mark2)
-@
-
-
-

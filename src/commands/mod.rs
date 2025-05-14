@@ -24,7 +24,7 @@ pub fn register_all_commands() {
             }
             let pattern = &params[0];
             let files = file_module::list_files(pattern)?;
-            Ok(Some(files.join("\n")))
+            Ok(Some(format!("\n{}\n", files.join("\n"))))
         },
     });
 
@@ -110,7 +110,7 @@ pub fn register_all_commands() {
             let filename = &params[0];
             let contents = file_module::read_file(filename)?;
 
-            Ok(Some(format!("{}", contents)))
+            Ok(Some(format!("File: {}\n{}", filename, contents)))
         },
     });
 
@@ -128,8 +128,35 @@ pub fn register_all_commands() {
             let memory = chat::get_memory().lock().unwrap();
 
             match memory.get(memory_id) {
-                Some(prompt) => Ok(Some(format!("```{}:\n\n{}\n```", memory_id, prompt.value))),
+                Some(prompt) => Ok(Some(format!("{}:\n{}\n", memory_id, prompt.value))),
                 None => Ok(Some(format!("Error: prompt id {} not found.", memory_id))),
+            }
+        },
+    });
+
+    register_command(Command {
+        name: "set-alias".to_string(),
+        pattern: Regex::new(r"@set-alias\(\s*(\S+)\s*,\s*(\S+)\s*\)").unwrap(),
+        description: "Load content from memory into chat".to_string(),
+        usage_example: "@set-alias([alias-id])".to_string(),
+        handler: |params| {
+            if params.is_empty() {
+                println!("Usage: @set-alias([alias-id])");
+                return Ok(None);
+            }
+            let alias_id = &params[0];
+            let alias = &params[0];
+            let memory = chat::get_memory().lock().unwrap();
+
+            match memory.get(alias_id) {
+                Some(prompt) => Ok(Some(format!(
+                    "Error: alias id {} all ready found with content {}.",
+                    prompt.id, prompt.value
+                ))),
+                None => {
+                    let prompt = Prompt::new(alias.clone(), PromptType::ALIAS);
+                    Ok(Some(format!("Alias {} added.", prompt.id)))
+                }
             }
         },
     });
@@ -162,7 +189,7 @@ pub fn register_all_commands() {
                     || (prompt.ptype == PromptType::QUESTION && id == "?")
                     || (prompt.ptype == PromptType::ANSWER && id == "_")
                 {
-                    content.push_str(&format!("\n```\n{}:\n{}\n```\n", prompt.id, prompt.value));
+                    content.push_str(&format!("{}:\n{}\n", prompt.id, prompt.value));
                 }
             }
 
@@ -180,9 +207,9 @@ pub fn register_all_commands() {
     // Reset context command
     register_command(Command {
         name: "reset-memory".to_string(),
-        pattern: Regex::new(r"@reset-memory\(\s*\)").unwrap(),
+        pattern: Regex::new(r"!reset-memory\(\s*\)").unwrap(),
         description: "Reset the memory".to_string(),
-        usage_example: "@reset-memory()".to_string(),
+        usage_example: "!reset-memory()".to_string(),
         handler: |_| {
             let mut memory = chat::get_memory().lock().unwrap();
             memory.clear();
@@ -193,17 +220,17 @@ pub fn register_all_commands() {
     // set model command
     register_command(Command {
         name: "set-model".to_string(),
-        pattern: Regex::new(r"@set-model\(\s*(\S+)\s*\)").unwrap(),
+        pattern: Regex::new(r"!set-model\(\s*(\S+)\s*\)").unwrap(),
         description: "Set LLM model".to_string(),
-        usage_example: "@set-model([model-id])".to_string(),
+        usage_example: "!set-model([model-id])".to_string(),
         handler: |params| {
             if params.len() < 1 {
-                println!("Usage: @set-model([model-id])");
+                println!("Usage: !set-model([model-id])");
                 return Ok(None);
             }
             let model_id = &params[0];
 
-            let command = format!("@set-model({})", model_id);
+            let command = format!("!set-model({})", model_id);
             println!("Starting model change process for {}", model_id);
             match crate::commands::set_model::handle_set_model(&command) {
                 Ok(_) => Ok(Some("Model selection complete.".to_string())),

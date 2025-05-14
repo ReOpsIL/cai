@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 pub async fn get_input() -> Result<String, Box<dyn std::error::Error>> {
-    print!("You: ");
+    print!("> ");
     io::stdout().flush()?;
 
     let mut input = String::new();

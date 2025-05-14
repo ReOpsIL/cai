@@ -13,15 +13,15 @@ lazy_static! {
 }
 
 pub async fn initialize_models() -> Result<(), Box<dyn std::error::Error>> {
-    let api_key = std::env::var("OPENROUTER_API_KEY")
-        .expect("OPENROUTER_API_KEY environment variable not set");
-    
-    let models = openrouter::list_openrouter_models(&api_key).await?;
-    
+    let models = openrouter::list_openrouter_models().await?;
+
     let mut models_store = MODELS.lock().unwrap();
     *models_store = models;
-    
-    println!("Models initialized: {} models available", models_store.len());
+
+    println!(
+        "Models initialized: {} models available",
+        models_store.len()
+    );
     Ok(())
 }
 

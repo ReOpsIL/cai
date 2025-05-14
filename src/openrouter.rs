@@ -9,10 +9,10 @@ pub struct Model {
     pub name: String,
 }
 
-pub async fn list_openrouter_models(
-    api_key: &str,
-) -> Result<Vec<Model>, Box<dyn std::error::Error>> {
+pub async fn list_openrouter_models() -> Result<Vec<Model>, Box<dyn std::error::Error>> {
     let url = "https://openrouter.ai/api/v1/models";
+    let api_key = std::env::var("OPENROUTER_API_KEY")
+        .expect("OPENROUTER_API_KEY environment variable not set");
 
     let client = Client::new();
     let resp = client
@@ -28,11 +28,10 @@ pub async fn list_openrouter_models(
 }
 
 #[allow(dead_code)]
-pub async fn call_openrouter_api(
-    api_key: &str,
-    prompt: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
+pub async fn call_openrouter_api(prompt: &str) -> Result<String, Box<dyn std::error::Error>> {
     let config = configuration::load_configuration()?;
+    let api_key = std::env::var("OPENROUTER_API_KEY")
+        .expect("OPENROUTER_API_KEY environment variable not set");
 
     let client = Client::new();
     let endpoint = "https://openrouter.ai/api/v1/chat/completions";
