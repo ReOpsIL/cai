@@ -5,6 +5,8 @@ use rustyline::highlight::CmdKind;
 use std::sync::OnceLock;
 use termion::color::{Fg, Reset};
 use crate::terminal;
+use std::path::PathBuf; // Add this for path manipulation
+use std::fs; // Add this for filesystem operations
 
 static COMMAND_REGEX: OnceLock<Regex> = OnceLock::new();
 
@@ -56,6 +58,61 @@ impl rustyline::highlight::Highlighter for ColoredPrompt {
 }
 impl rustyline::completion::Completer for ColoredPrompt {
     type Candidate = String;
+
+    fn complete(&self, line: &str, pos: usize, _ctx: &rustyline::Context<'_>) -> Result<(usize, Vec<Self::Candidate>), rustyline::error::ReadlineError> {
+        let text_before_cursor = &line[..pos];
+
+        // Find the last opening parenthesis before the cursor
+        if let Some(open_paren_idx) = text_before_cursor.rfind('(') {
+            // Basic check if the text before the parenthesis looks like a command call prefix
+            // A more robust implementation might check against a list of known commands
+             let potential_command_prefix = &text_before_cursor[..open_paren_idx];
+             if potential_command_prefix.contains('@') || potential_command_prefix.contains('!') {
+
+                // Extract the text within the potential command argument
+                let partial_path_segment = &text_before_cursor[open_paren_idx + 1..pos];
+
+                // Determine the directory to list and the prefix to match
+                let (base_dir, file_prefix) = if let Some(last_slash_idx) = partial_path_segment.rfind('/') {
+                    // Path includes a directory part
+                    let dir_part = &partial_path_segment[..=last_slash_idx];
+                    let prefix = &partial_path_segment[last_slash_idx + 1..];
+                    (PathBuf::from(dir_part), prefix)
+                } else {
+                    // Only a file prefix, list current directory
+                    (PathBuf::from("."), partial_path_segment)
+                };
+
+                let mut completions = Vec::new();
+                // Attempt to list directory contents
+                // Use `read_dir` which returns an iterator over results
+                if let Ok(entries) = fs::read_dir(&base_dir) {
+                    for entry in entries.flatten() { // Flatten to skip entries that failed to read
+                        if let Ok(file_name) = entry.file_name().into_string() {
+                            // Check if the file/directory name starts with the prefix
+                            if file_name.starts_with(file_prefix) {
+                                let mut candidate = file_name;
+                                // Add a slash for directories to make it easier to navigate
+                                if entry.path().is_dir() {
+                                    candidate.push('/');
+                                }
+                                completions.push(candidate);
+                            }
+                        }
+                    }
+                }
+
+                // Calculate the start position for replacement
+                // This is the index in the original line where the file_prefix begins.
+                let replacement_start = open_paren_idx + 1 + partial_path_segment.rfind('/').map_or(0, |i| i + 1);
+
+                return Ok((replacement_start, completions));
+            }
+        }
+
+        // Default behavior: no completions
+        Ok((pos, Vec::new()))
+    }
 }
 impl rustyline::hint::Hinter for ColoredPrompt {
     type Hint = String;

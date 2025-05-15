@@ -11,5 +11,6 @@ pub fn register_help_command() {
             crate::commands_registry::print_help();
             Ok(None)
         },
+        section: "Help".to_string(),
     });
 }

@@ -26,6 +26,7 @@ pub fn register_all_commands() {
             let files = file_module::list_files(pattern)?;
             Ok(Some(format!("\n{}\n", files.join("\n"))))
         },
+        section: "file".to_string(),
     });
 
     // List folders command
@@ -43,6 +44,7 @@ pub fn register_all_commands() {
             let folders = file_module::list_folders(pattern)?;
             Ok(Some(folders.join("\n")))
         },
+        section: "folder".to_string(),
     });
 
     // Read files command
@@ -69,6 +71,7 @@ pub fn register_all_commands() {
 
             Ok(Some(format!("{}", combined_content)))
         },
+        section: "file".to_string(),
     });
 
     register_command(Command {
@@ -94,6 +97,7 @@ pub fn register_all_commands() {
 
             Ok(Some(format!("{}", combined_content)))
         },
+        section: "folder".to_string(),
     });
 
     // Read file command
@@ -112,6 +116,7 @@ pub fn register_all_commands() {
 
             Ok(Some(format!("File: {}\n{}", filename, contents)))
         },
+        section: "file".to_string(),
     });
 
     register_command(Command {
@@ -132,6 +137,7 @@ pub fn register_all_commands() {
                 None => Ok(Some(format!("Error: prompt id {} not found.", memory_id))),
             }
         },
+        section: "memory".to_string(),
     });
 
     register_command(Command {
@@ -159,6 +165,7 @@ pub fn register_all_commands() {
                 }
             }
         },
+        section: "memory".to_string(),
     });
 
     register_command(Command {
@@ -203,6 +210,7 @@ pub fn register_all_commands() {
             fs::write(file_name, content)?;
             Ok(Some(format!("File saved {}", file_name)))
         },
+        section: "utility".to_string(),
     });
 
     // Reset context command
@@ -216,6 +224,7 @@ pub fn register_all_commands() {
             memory.clear();
             Ok(Some("Memory reset done.".to_string()))
         },
+        section: "memory".to_string(),
     });
 
     register_command(Command {
@@ -233,6 +242,7 @@ pub fn register_all_commands() {
             memory.remove(memory_id);
             Ok(Some(format!("Removed memory item {}", memory_id)))
         },
+        section: "memory".to_string(),
     });
 
     // set model command
@@ -260,6 +270,7 @@ pub fn register_all_commands() {
                 }
             }
         },
+        section: "utility".to_string(),
     });
 
     // Register help command and set model command from existing modules

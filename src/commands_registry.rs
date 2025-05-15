@@ -14,6 +14,7 @@ pub struct Command {
     pub description: String,
     pub usage_example: String,
     pub handler: CommandHandler,
+    pub section: String, // Add section field
 }
 
 impl fmt::Debug for Command {
@@ -23,6 +24,7 @@ impl fmt::Debug for Command {
             .field("pattern", &self.pattern.as_str())
             .field("description", &self.description)
             .field("usage_example", &self.usage_example)
+            .field("section", &self.section) // Include section in Debug output
             .finish()
     }
 }
@@ -86,14 +88,43 @@ pub fn execute_command(input: &str) -> Result<Option<String>, Box<dyn std::error
     Err("Command not found".into())
 }
 
+// Modified print_help function to group commands by section
 pub fn print_help() {
     let registry = COMMAND_REGISTRY.lock().unwrap();
     println!("{}", terminal::format_info("Available commands:"));
 
+    use std::collections::BTreeMap;
+    let mut sections: BTreeMap<String, Vec<&Command>> = BTreeMap::new();
+
+    // Group commands by section
     for command in registry.values() {
-        println!("  {} - {}", 
-            terminal::cyan(&command.usage_example), 
-            terminal::white(&command.description)
-        );
+        sections
+            .entry(command.section.clone())
+            .or_default()
+            .push(command);
+    }
+
+    // Sort commands within each section by name
+    for commands in sections.values_mut() {
+        commands.sort_by_key(|c| &c.name);
+    }
+
+    // Print sections and commands
+    for (section_name, commands) in sections {
+        // Capitalize the first letter of the section name for the headline
+        let formatted_section_name = if let Some(first_char) = section_name.chars().next() {
+            format!("{}{}", first_char.to_uppercase(), section_name.chars().skip(1).collect::<String>())
+        } else {
+            section_name.clone()
+        };
+
+        println!("\n{}", terminal::yellow(&format!("--- {} Commands ---", formatted_section_name)));
+        for command in commands {
+            println!(
+                "  {} - {}",
+                terminal::cyan(&command.usage_example),
+                terminal::white(&command.description)
+            );
+        }
     }
 }
