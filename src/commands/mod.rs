@@ -188,6 +188,7 @@ pub fn register_all_commands() {
                 if id == "@"
                     || (prompt.ptype == PromptType::QUESTION && id == "?")
                     || (prompt.ptype == PromptType::ANSWER && id == "_")
+                    || (prompt.ptype == PromptType::ALIAS && id == "^")
                 {
                     content.push_str(&format!("{}:\n{}\n", prompt.id, prompt.value));
                 }
@@ -214,6 +215,23 @@ pub fn register_all_commands() {
             let mut memory = chat::get_memory().lock().unwrap();
             memory.clear();
             Ok(Some("Memory reset done.".to_string()))
+        },
+    });
+
+    register_command(Command {
+        name: "remove-memory".to_string(),
+        pattern: Regex::new(r"!remove-memory\(\s*(\S+)\s*\)").unwrap(),
+        description: "Remove memory item by id".to_string(),
+        usage_example: "!remove-memory([memory-id])".to_string(),
+        handler: |params| {
+            if params.len() < 1 {
+                println!("Usage: !remove-memory([memory-id])");
+                return Ok(None);
+            }
+            let memory_id = &params[0];
+            let mut memory = chat::get_memory().lock().unwrap();
+            memory.remove(memory_id);
+            Ok(Some(format!("Removed memory item {}", memory_id)))
         },
     });
 

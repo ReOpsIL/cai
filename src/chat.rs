@@ -1,4 +1,4 @@
-use crate::{commands, commands_registry, configuration, openrouter};
+use crate::{commands, commands_registry, configuration, openrouter, terminal};
 use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
 use signal_hook::consts::SIGINT;
@@ -45,7 +45,7 @@ impl Prompt {
         let mut memory = get_memory().lock().unwrap();
         memory.insert(prompt.id.clone(), prompt.clone());
 
-        println!("ID: {}\n----------------", prompt.id);
+        println!("ID: {}\n", terminal::magenta(&prompt.id));
 
         prompt
     }
@@ -73,7 +73,10 @@ async fn execute_command(command: &str) -> Result<Option<String>, Box<dyn std::e
         return registry_result;
     }
 
-    println!("Unknown command: {}", command);
+    println!(
+        "{}",
+        terminal::format_error(&format!("Unknown command: {}", command))
+    );
     Ok(None)
 }
 
@@ -129,7 +132,10 @@ pub async fn check_embedded_commands(input: &str) -> String {
                     pos = end;
                 }
                 Err(e) => {
-                    println!("Error executing command: {}", e);
+                    println!(
+                        "{}",
+                        terminal::format_error(&format!("Error executing command: {}", e))
+                    );
                     pos = end;
                 }
             }
@@ -145,7 +151,10 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = configuration::load_configuration()?;
 
-    println!("Loaded config: {:?}", config);
+    println!(
+        "{}",
+        terminal::format_info(&format!("Loaded config: {:?}", config))
+    );
 
     let term = Arc::new(AtomicBool::new(false));
     signal_hook::flag::register(SIGINT, Arc::clone(&term))?;
@@ -153,12 +162,31 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let mut input = match input_handler::get_input().await {
             Ok(input) => input,
-            Err(_) => break, // Handle Ctrl-d
+            Err(e) => {
+                if e.to_string().contains("Input interrupted")
+                    || e.to_string().contains("Input terminated")
+                {
+                    println!("\n{}", terminal::format_success("Goodbye!"));
+                    break;
+                } else {
+                    println!(
+                        "{}",
+                        terminal::format_error(&format!("Error reading input: {}", e))
+                    );
+                    continue;
+                }
+            }
         };
 
         input = input.trim().to_owned();
 
-        if term.load(Ordering::Relaxed) || input.eq_ignore_ascii_case("exit") {
+        if term.load(Ordering::Relaxed) {
+            println!("\n{}", terminal::format_warning("Interrupted, exiting..."));
+            break;
+        }
+
+        if input.eq_ignore_ascii_case("exit") {
+            println!("{}", terminal::format_success("Goodbye!"));
             break;
         }
 
@@ -170,7 +198,10 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
                     println!("{}", output);
                 }
                 Ok(None) => {
-                    println!("Sorry - Unrecognized command...");
+                    println!(
+                        "{}",
+                        terminal::format_error("Sorry - Unrecognized command...")
+                    );
                     commands_registry::print_help();
                 }
                 Err(e) => {
@@ -182,13 +213,12 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
 
             Prompt::new(enriched_input.clone(), PromptType::QUESTION);
 
-            println!("You:\n+++++++++++++++++++\n{}", enriched_input.to_string());
+            // println!("{}\n+++++++++++++++++++\n{}", terminal::cyan("You:"), enriched_input.to_string());
             //let response = String::from(":-) Ok");
             let response = openrouter::call_openrouter_api(&enriched_input).await?;
 
-            Prompt::new(response.clone(), PromptType::ANSWER);
-
             println!("{}", response);
+            Prompt::new(response.clone(), PromptType::ANSWER);
         }
     }
 

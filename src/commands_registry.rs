@@ -3,6 +3,7 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::Mutex;
+use crate::terminal;
 
 pub type CommandHandler = fn(&[String]) -> Result<Option<String>, Box<dyn std::error::Error>>;
 
@@ -82,14 +83,17 @@ pub fn execute_command(input: &str) -> Result<Option<String>, Box<dyn std::error
         }
     }
 
-    Ok(None)
+    Err("Command not found".into())
 }
 
 pub fn print_help() {
     let registry = COMMAND_REGISTRY.lock().unwrap();
-    println!("Available commands:");
+    println!("{}", terminal::format_info("Available commands:"));
 
     for command in registry.values() {
-        println!("  {} - {}", command.usage_example, command.description);
+        println!("  {} - {}", 
+            terminal::cyan(&command.usage_example), 
+            terminal::white(&command.description)
+        );
     }
 }

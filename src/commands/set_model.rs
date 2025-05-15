@@ -1,5 +1,6 @@
 use crate::configuration;
 use crate::openrouter;
+use crate::terminal;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::io::{self, Write};
@@ -19,8 +20,8 @@ pub async fn initialize_models() -> Result<(), Box<dyn std::error::Error>> {
     *models_store = models;
 
     println!(
-        "Models initialized: {} models available",
-        models_store.len()
+        "{}",
+        terminal::format_success(&format!("Models initialized: {} models available", models_store.len()))
     );
     Ok(())
 }
@@ -45,14 +46,14 @@ pub fn handle_set_model(command: &str) -> Result<(), Box<dyn std::error::Error>>
         .collect();
 
     if filtered_models.is_empty() {
-        println!("No models found matching filter: {:?}", model_filter);
+        println!("{}", terminal::format_warning(&format!("No models found matching filter: {:?}", model_filter)));
     } else {
-        println!("Available models:");
+        println!("{}", terminal::format_info("Available models:"));
         for (i, model) in filtered_models.iter().enumerate() {
-            println!("{}: {}", i + 1, model.name);
+            println!("{}: {}", terminal::cyan(i + 1), terminal::white(&model.name));
         }
 
-        println!("Enter the number of the model to select (or press Enter to cancel):");
+        println!("{}", terminal::yellow("Enter the number of the model to select (or press Enter to cancel):"));
         io::stdout().flush()?;
 
         let mut model_index_input = String::new();
@@ -61,19 +62,19 @@ pub fn handle_set_model(command: &str) -> Result<(), Box<dyn std::error::Error>>
         if let Ok(model_index) = model_index_input.trim().parse::<usize>() {
             if model_index > 0 && model_index <= filtered_models.len() {
                 let selected_model = &filtered_models[model_index - 1];
-                println!("Selected model: {}", selected_model.name);
+                println!("{}", terminal::format_success(&format!("Selected model: {}", selected_model.name)));
 
                 // Update config
                 let mut config = configuration::load_configuration()?;
                 config.model = selected_model.id.clone();
                 configuration::save_configuration(&config)?;
 
-                println!("Model saved to config file.");
+                println!("{}", terminal::format_success("Model saved to config file."));
             } else {
-                println!("Invalid model number.");
+                println!("{}", terminal::format_error("Invalid model number."));
             }
         } else {
-            println!("No model selected.");
+            println!("{}", terminal::format_warning("No model selected."));
         }
     }
 

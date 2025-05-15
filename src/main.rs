@@ -6,6 +6,7 @@ mod commands_registry;
 mod configuration;
 mod files;
 mod openrouter;
+mod terminal;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
