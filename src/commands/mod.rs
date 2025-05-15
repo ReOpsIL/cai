@@ -193,6 +193,7 @@ pub fn register_all_commands() {
 
             for prompt in prompt_ordered.iter() {
                 if id == "@"
+                    || *id == prompt.id
                     || (prompt.ptype == PromptType::QUESTION && id == "?")
                     || (prompt.ptype == PromptType::ANSWER && id == "_")
                     || (prompt.ptype == PromptType::ALIAS && id == "^")
@@ -210,7 +211,7 @@ pub fn register_all_commands() {
             fs::write(file_name, content)?;
             Ok(Some(format!("File saved {}", file_name)))
         },
-        section: "utility".to_string(),
+        section: "Utility".to_string(),
     });
 
     // Reset context command
