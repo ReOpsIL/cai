@@ -2,6 +2,7 @@ use crate::commands_registry::{Command, CommandType, register_command};
 use crate::input_handler::autocomplete_empty;
 use regex::Regex;
 use std::process::Command as BashCommand;
+use syntect::util::{LinesWithEndings, as_24_bit_terminal_escaped};
 
 pub fn register_bash_command() {
     register_command(Command {
@@ -74,7 +75,7 @@ fn highlight_bash_output(code: &str) -> String {
     const RESET_ALL: &str = "\x1B[0m";
 
     // Foreground Color (Standard White)
-    const FG_WHITE_STANDARD: &str = "37";
+    const FG_WHITE_STANDARD: &str = "15";
     // OR: Foreground Color (8-bit Bright White - often index 15 or 231)
     // const FG_WHITE_8BIT: &str = "38;5;15"; // Using 38;5;{N} for foreground
 
@@ -97,14 +98,20 @@ fn highlight_bash_output(code: &str) -> String {
                           // FG_WHITE_8BIT
     );
 
-    format!(
-        "{}{}{}{}{}{}{}",
-        CSI,          // Start SGR sequence
-        color_params, // e.g., "48;5;234;37"
-        "m",          // End SGR sequence
-        CSI,          // Start Erase Line sequence
-        ERASE_LINE,   // Erase the line (fills with newly set background)
-        code,         // Your actual text
-        RESET_ALL
-    )
+    let mut highlighted_code = String::new();
+
+    for line in LinesWithEndings::from(code) {
+        // LinesWithEndings enables use of newlines mode
+        highlighted_code.push_str(&format!(
+            "{}{}{}{}{}{}{}",
+            CSI,          // Start SGR sequence
+            color_params, // e.g., "48;5;234;37"
+            "m",          // End SGR sequence
+            CSI,          // Start Erase Line sequence
+            ERASE_LINE,   // Erase the line (fills with newly set background)
+            line,         // Your actual text
+            RESET_ALL
+        ));
+    }
+    highlighted_code
 }

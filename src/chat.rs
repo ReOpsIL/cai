@@ -290,22 +290,21 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             let (enriched_input, offline) = check_embedded_commands(&input).await;
             Prompt::new(enriched_input.clone(), PromptType::QUESTION);
-            println!(
-                "{}\n+++++++++{}++++++++++\n{}",
-                terminal::cyan("You:"),
-                offline,
-                enriched_input.to_string()
-            );
+            // println!(
+            //     "{}\n+++++++++{}++++++++++\n{}",
+            //     terminal::cyan("You:"),
+            //     offline,
+            //     enriched_input.to_string()
+            // );
 
-            // if offline == false {
-            //
-            //     //let response = String::from(":-) Ok");
-            //     let response = openrouter::call_openrouter_api(&enriched_input).await?;
+            if !offline {
+                //let response = String::from(":-) Ok");
+                let response = openrouter::call_openrouter_api(&enriched_input).await?;
 
-            //     let highlighted_response = highlight_code(&response);
-            //     println!("{}", highlighted_response);
-            //     Prompt::new(response.clone(), PromptType::ANSWER);
-            // }
+                let highlighted_response = highlight_code(&response);
+                println!("{}", highlighted_response);
+                Prompt::new(response.clone(), PromptType::ANSWER);
+            }
         }
     }
 
