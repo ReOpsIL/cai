@@ -1,6 +1,7 @@
 use crate::chat::get_memory;
 use crate::commands_registry;
 use crate::openrouter::list_openrouter_models;
+use lazy_static::lazy_static;
 use regex::Regex;
 use rustyline::completion::Pair as Completion;
 use rustyline::config::Configurer;
@@ -388,17 +389,39 @@ impl rustyline::hint::Hinter for ColoredPrompt {
 }
 
 impl rustyline::validate::Validator for ColoredPrompt {}
+use std::sync::Mutex;
+lazy_static! {
+    static ref RL_EDITOR: Mutex<rustyline::Editor::<ColoredPrompt, rustyline::history::DefaultHistory>> = {
+        let mut rl = rustyline::Editor::<ColoredPrompt, rustyline::history::DefaultHistory>::new()
+            .expect("Failed to initialize Rustyline editor"); // Handle error, panic if critical
+
+        rl.set_helper(Some(ColoredPrompt::default()));
+        rl.set_auto_add_history(true);
+        if rl.load_history("history.txt").is_err() {
+            println!("No previous history.");
+        }
+        Mutex::new(rl)
+    };
+}
 
 // Get user input with autocompletion and command highlighting
 pub async fn get_input() -> Result<String, Box<dyn std::error::Error>> {
-    let mut rl = rustyline::Editor::<ColoredPrompt, rustyline::history::DefaultHistory>::new()?;
-    rl.set_helper(Some(ColoredPrompt::default()));
-    rl.set_auto_add_history(true);
+    let mut editor_guard = RL_EDITOR.lock().unwrap(); // unwrap() panics if Mutex is poisoned
 
-    match rl.readline("You: ") {
+    match editor_guard.readline("You: ") {
         Ok(line) => Ok(line),
         Err(ReadlineError::Interrupted) => Err("Input interrupted".to_string().into()),
         Err(ReadlineError::Eof) => Err("Input terminated".to_string().into()),
         Err(err) => Err(Box::new(err)),
     }
+}
+
+pub fn save_history() {
+    let mut editor_guard = RL_EDITOR.lock().unwrap(); // unwrap() panics if Mutex is poisoned
+
+    editor_guard
+        .save_history("history.txt")
+        .unwrap_or_else(|err| {
+            eprintln!("Failed to save history: {}", err);
+        });
 }
