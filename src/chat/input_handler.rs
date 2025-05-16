@@ -1,19 +1,19 @@
+use crate::terminal;
 use regex::Regex;
 use rustyline::config::Configurer;
 use rustyline::error::ReadlineError;
 use rustyline::highlight::CmdKind;
-use std::sync::OnceLock;
-use termion::color::{Fg, Reset};
-use crate::terminal;
+use std::fs;
 use std::path::PathBuf; // Add this for path manipulation
-use std::fs; // Add this for filesystem operations
+use std::sync::OnceLock;
+use termion::color::{Fg, Reset}; // Add this for filesystem operations
 
 static COMMAND_REGEX: OnceLock<Regex> = OnceLock::new();
 
 fn get_command_regex() -> &'static Regex {
     COMMAND_REGEX.get_or_init(|| {
         // This regex matches all commands found in mod.rs
-        // It handles both @ and ! command prefixes and properly captures the parameters
+        // It handles both @ and ! and > command prefixes and properly captures the parameters
         Regex::new(r"([@!][a-zA-Z\-]*)") //\(\s*(?:\S+\s*(?:,\s*\S+\s*)*)??\)
             .expect("Failed to compile command regex")
     })
@@ -31,7 +31,7 @@ fn colorize_commands(input: &str) -> String {
         // Insert termion color codes
         let reset = format!("{}", Fg(Reset));
         let cyan = format!("{}", Fg(terminal::CYAN));
-        
+
         result.insert_str(end, &reset);
         result.insert_str(start, &cyan);
 
@@ -59,35 +59,41 @@ impl rustyline::highlight::Highlighter for ColoredPrompt {
 impl rustyline::completion::Completer for ColoredPrompt {
     type Candidate = String;
 
-    fn complete(&self, line: &str, pos: usize, _ctx: &rustyline::Context<'_>) -> Result<(usize, Vec<Self::Candidate>), rustyline::error::ReadlineError> {
+    fn complete(
+        &self,
+        line: &str,
+        pos: usize,
+        _ctx: &rustyline::Context<'_>,
+    ) -> Result<(usize, Vec<Self::Candidate>), rustyline::error::ReadlineError> {
         let text_before_cursor = &line[..pos];
 
         // Find the last opening parenthesis before the cursor
         if let Some(open_paren_idx) = text_before_cursor.rfind('(') {
             // Basic check if the text before the parenthesis looks like a command call prefix
             // A more robust implementation might check against a list of known commands
-             let potential_command_prefix = &text_before_cursor[..open_paren_idx];
-             if potential_command_prefix.contains('@') || potential_command_prefix.contains('!') {
-
+            let potential_command_prefix = &text_before_cursor[..open_paren_idx];
+            if potential_command_prefix.contains('@') || potential_command_prefix.contains('!') {
                 // Extract the text within the potential command argument
                 let partial_path_segment = &text_before_cursor[open_paren_idx + 1..pos];
 
                 // Determine the directory to list and the prefix to match
-                let (base_dir, file_prefix) = if let Some(last_slash_idx) = partial_path_segment.rfind('/') {
-                    // Path includes a directory part
-                    let dir_part = &partial_path_segment[..=last_slash_idx];
-                    let prefix = &partial_path_segment[last_slash_idx + 1..];
-                    (PathBuf::from(dir_part), prefix)
-                } else {
-                    // Only a file prefix, list current directory
-                    (PathBuf::from("."), partial_path_segment)
-                };
+                let (base_dir, file_prefix) =
+                    if let Some(last_slash_idx) = partial_path_segment.rfind('/') {
+                        // Path includes a directory part
+                        let dir_part = &partial_path_segment[..=last_slash_idx];
+                        let prefix = &partial_path_segment[last_slash_idx + 1..];
+                        (PathBuf::from(dir_part), prefix)
+                    } else {
+                        // Only a file prefix, list current directory
+                        (PathBuf::from("."), partial_path_segment)
+                    };
 
                 let mut completions = Vec::new();
                 // Attempt to list directory contents
                 // Use `read_dir` which returns an iterator over results
                 if let Ok(entries) = fs::read_dir(&base_dir) {
-                    for entry in entries.flatten() { // Flatten to skip entries that failed to read
+                    for entry in entries.flatten() {
+                        // Flatten to skip entries that failed to read
                         if let Ok(file_name) = entry.file_name().into_string() {
                             // Check if the file/directory name starts with the prefix
                             if file_name.starts_with(file_prefix) {
@@ -104,7 +110,8 @@ impl rustyline::completion::Completer for ColoredPrompt {
 
                 // Calculate the start position for replacement
                 // This is the index in the original line where the file_prefix begins.
-                let replacement_start = open_paren_idx + 1 + partial_path_segment.rfind('/').map_or(0, |i| i + 1);
+                let replacement_start =
+                    open_paren_idx + 1 + partial_path_segment.rfind('/').map_or(0, |i| i + 1);
 
                 return Ok((replacement_start, completions));
             }

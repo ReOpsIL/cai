@@ -30,3 +30,6 @@ tempfile = "3.8"
 version = "1.16.0"
 # Lets you generate random UUIDs
 features = ["v4"]
+
+[profile.dev]
+debug = "full"

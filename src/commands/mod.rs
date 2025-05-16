@@ -3,9 +3,11 @@ use std::fs;
 use std::path::Path;
 
 use crate::chat::{self, Prompt, PromptType};
-use crate::commands_registry::{Command, register_command};
+use crate::commands_registry::{Command, CommandType, register_command};
 use crate::files::files as file_module;
+use crate::input_handler::{autocomplete_file_path, autocomplete_memory_id, autocomplete_model_id}; // Import autocomplete handlers
 
+pub mod bash_cmd;
 pub mod help;
 pub mod set_model;
 
@@ -27,6 +29,8 @@ pub fn register_all_commands() {
             Ok(Some(format!("\n{}\n", files.join("\n"))))
         },
         section: "file".to_string(),
+        command_type: CommandType::NotLLM,
+        autocomplete_handler: Some(autocomplete_file_path),
     });
 
     // List folders command
@@ -45,6 +49,8 @@ pub fn register_all_commands() {
             Ok(Some(folders.join("\n")))
         },
         section: "folder".to_string(),
+        command_type: CommandType::NotLLM,
+        autocomplete_handler: Some(autocomplete_file_path),
     });
 
     // Read files command
@@ -72,6 +78,8 @@ pub fn register_all_commands() {
             Ok(Some(format!("{}", combined_content)))
         },
         section: "file".to_string(),
+        command_type: CommandType::LLM,
+        autocomplete_handler: Some(autocomplete_file_path),
     });
 
     register_command(Command {
@@ -98,6 +106,8 @@ pub fn register_all_commands() {
             Ok(Some(format!("{}", combined_content)))
         },
         section: "folder".to_string(),
+        command_type: CommandType::LLM,
+        autocomplete_handler: Some(autocomplete_file_path),
     });
 
     // Read file command
@@ -117,6 +127,8 @@ pub fn register_all_commands() {
             Ok(Some(format!("File: {}\n{}", filename, contents)))
         },
         section: "file".to_string(),
+        command_type: CommandType::LLM,
+        autocomplete_handler: Some(autocomplete_file_path),
     });
 
     register_command(Command {
@@ -138,6 +150,8 @@ pub fn register_all_commands() {
             }
         },
         section: "memory".to_string(),
+        command_type: CommandType::LLM,
+        autocomplete_handler: Some(autocomplete_memory_id),
     });
 
     register_command(Command {
@@ -166,6 +180,8 @@ pub fn register_all_commands() {
             }
         },
         section: "memory".to_string(),
+        command_type: CommandType::NotLLM,
+        autocomplete_handler: Some(autocomplete_memory_id),
     });
 
     register_command(Command {
@@ -212,6 +228,8 @@ pub fn register_all_commands() {
             Ok(Some(format!("File saved {}", file_name)))
         },
         section: "Utility".to_string(),
+        command_type: CommandType::NotLLM,
+        autocomplete_handler: Some(autocomplete_memory_id),
     });
 
     // Reset context command
@@ -226,6 +244,8 @@ pub fn register_all_commands() {
             Ok(Some("Memory reset done.".to_string()))
         },
         section: "memory".to_string(),
+        command_type: CommandType::NotLLM,
+        autocomplete_handler: None,
     });
 
     register_command(Command {
@@ -244,6 +264,8 @@ pub fn register_all_commands() {
             Ok(Some(format!("Removed memory item {}", memory_id)))
         },
         section: "memory".to_string(),
+        command_type: CommandType::NotLLM,
+        autocomplete_handler: Some(autocomplete_memory_id),
     });
 
     // set model command
@@ -272,8 +294,11 @@ pub fn register_all_commands() {
             }
         },
         section: "utility".to_string(),
+        command_type: CommandType::NotLLM,
+        autocomplete_handler: Some(autocomplete_model_id),
     });
 
     // Register help command and set model command from existing modules
     help::register_help_command();
+    bash_cmd::register_bash_command();
 }

@@ -5,6 +5,7 @@ mod commands;
 mod commands_registry;
 mod configuration;
 mod files;
+mod input_handler;
 mod openrouter;
 mod terminal;
 

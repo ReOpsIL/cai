@@ -1,18 +1,17 @@
+use crate::commands_registry::{CommandHandlerResult, CommandType};
 use crate::{commands, commands_registry, configuration, openrouter, terminal};
 use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
+use regex::Regex;
 use signal_hook::consts::SIGINT;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
-
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style, ThemeSet};
 use syntect::parsing::SyntaxSet;
 use syntect::util::{LinesWithEndings, as_24_bit_terminal_escaped};
-
-mod input_handler;
 
 // In-memory context
 lazy_static! {
@@ -68,7 +67,9 @@ pub struct Command {
     pub parameter: String,
 }
 
-async fn execute_command(command: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+async fn execute_command(
+    command: &str,
+) -> Result<Option<CommandHandlerResult>, Box<dyn std::error::Error>> {
     // First try to execute with the command registry
     let registry_result = commands_registry::execute_command(command);
     if registry_result.is_ok()
@@ -82,7 +83,7 @@ async fn execute_command(command: &str) -> Result<Option<String>, Box<dyn std::e
 
     println!(
         "{}",
-        terminal::format_error(&format!("Unknown command: {}", command))
+        terminal::format_error(&format!("Unknown command: {} ", command))
     );
     Ok(None)
 }
@@ -102,7 +103,7 @@ fn highlight_code(code: &str) -> String {
     const CSI: &str = "\x1B[";
     const RESET_ALL: &str = "\x1B[0m";
     const FG_BLACK: &str = "30";
-    const BG_BRIGHT_WHITE: &str = "107"; // Or "47" for standard white
+    const BG_WHITE: &str = "47"; // Or "47" for standard white
     const ERASE_LINE: &str = "2K"; // Erases the entire line, cursor does not move (typically stays at column 1)
 
     for line in LinesWithEndings::from(code) {
@@ -112,9 +113,9 @@ fn highlight_code(code: &str) -> String {
         let highlighted_line_wh_bg = terminal::white_bg(highlighted_line);
         highlighted_code.push_str(&format!(
             "{}{};{}m{}{}{}{}",
-            CSI,             // Start sequence
-            BG_BRIGHT_WHITE, // Set background to bright white
-            FG_BLACK,        // Set foreground to black (separated by ';')
+            CSI,      // Start sequence
+            BG_WHITE, // Set background to white
+            FG_BLACK, // Set foreground to black (separated by ';')
             CSI,
             ERASE_LINE,             // Erase the line (fills with current background)
             highlighted_line_wh_bg, // Your actual text
@@ -125,10 +126,11 @@ fn highlight_code(code: &str) -> String {
     highlighted_code
 }
 
-pub async fn check_embedded_commands(input: &str) -> String {
+pub async fn check_embedded_commands(input: &str) -> (String, bool) {
     // Check for embedded commands
     let mut enriched_input = input.to_string();
     let mut pos = 0;
+    let mut offline = false;
     while pos < enriched_input.len() {
         if enriched_input[pos..].starts_with("@") {
             // Find the end of the command (space, newline, or end of string)
@@ -169,9 +171,28 @@ pub async fn check_embedded_commands(input: &str) -> String {
             match execute_command(command).await {
                 Ok(Some(output)) => {
                     // Inject the output into the prompt
-                    let formated_output = &format!("{}", output);
-                    enriched_input.replace_range(pos..end, formated_output);
-                    pos += formated_output.len();
+                    if output.command.command_type == CommandType::Terminal
+                        || output.command.command_type == CommandType::NotLLM
+                    {
+                        offline = true;
+                    }
+                    match output.command_output {
+                        Ok(Some(s)) => {
+                            let formated_output = &format!("{}", s);
+                            enriched_input.replace_range(pos..end, formated_output);
+                            pos += formated_output.len();
+                        }
+                        Ok(None) => {
+                            println!(
+                                "Calling command succeeded, but no returned value was present."
+                            );
+                            pos = end;
+                        }
+                        Err(e) => {
+                            println!("An error occurred while calling command: {}", e);
+                            pos = end;
+                        }
+                    }
                 }
                 Ok(None) => {
                     pos = end;
@@ -188,7 +209,7 @@ pub async fn check_embedded_commands(input: &str) -> String {
             pos += 1;
         }
     }
-    enriched_input
+    (enriched_input, offline)
 }
 pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
     // Register all commands
@@ -205,7 +226,7 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
     signal_hook::flag::register(SIGINT, Arc::clone(&term))?;
 
     loop {
-        let mut input = match input_handler::get_input().await {
+        let mut input = match crate::input_handler::get_input().await {
             Ok(input) => input,
             Err(e) => {
                 if e.to_string().contains("Input interrupted")
@@ -235,13 +256,26 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
             break;
         }
 
+        let re_offline_cmd = Regex::new(r"^[>|!].").unwrap();
         if input.eq("?") {
             commands_registry::print_help();
-        } else if input.starts_with("!") {
+        } else if re_offline_cmd.is_match(&input) {
             match execute_command(&input).await {
-                Ok(Some(output)) => {
-                    println!("{}", output);
-                }
+                Ok(Some(output)) => match output.command_output {
+                    Ok(Some(output_str)) => {
+                        println!("{}", output_str);
+                    }
+                    Err(e) => {
+                        println!("Error executing command: {}", e);
+                    }
+                    Ok(None) => {
+                        println!(
+                            "{}",
+                            terminal::format_error("Sorry - Unrecognized command...")
+                        );
+                        commands_registry::print_help();
+                    }
+                },
                 Ok(None) => {
                     println!(
                         "{}",
@@ -254,17 +288,24 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
         } else {
-            let enriched_input = check_embedded_commands(&input).await;
-
+            let (enriched_input, offline) = check_embedded_commands(&input).await;
             Prompt::new(enriched_input.clone(), PromptType::QUESTION);
+            println!(
+                "{}\n+++++++++{}++++++++++\n{}",
+                terminal::cyan("You:"),
+                offline,
+                enriched_input.to_string()
+            );
 
-            // println!("{}\n+++++++++++++++++++\n{}", terminal::cyan("You:"), enriched_input.to_string());
-            //let response = String::from(":-) Ok");
-            let response = openrouter::call_openrouter_api(&enriched_input).await?;
+            // if offline == false {
+            //
+            //     //let response = String::from(":-) Ok");
+            //     let response = openrouter::call_openrouter_api(&enriched_input).await?;
 
-            let highlighted_response = highlight_code(&response);
-            println!("{}", highlighted_response);
-            Prompt::new(response.clone(), PromptType::ANSWER);
+            //     let highlighted_response = highlight_code(&response);
+            //     println!("{}", highlighted_response);
+            //     Prompt::new(response.clone(), PromptType::ANSWER);
+            // }
         }
     }
 

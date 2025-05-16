@@ -91,6 +91,14 @@ pub fn white_bg<D: fmt::Display>(text: D) -> Colored<D> {
     Colored::new(text).bg(WHITE)
 }
 
+pub fn grey_bg<D: fmt::Display>(text: D) -> Colored<D> {
+    Colored::new(text).bg(GRAY)
+}
+
+pub fn grey_dark_bg<D: fmt::Display>(text: D) -> Colored<D> {
+    Colored::new(text).bg(DARK_GRAY)
+}
+
 pub fn black<D: fmt::Display>(text: D) -> Colored<D> {
     Colored::new(text).fg(BLACK)
 }

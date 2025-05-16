@@ -1,11 +1,24 @@
+use crate::terminal;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::Mutex;
-use crate::terminal;
 
-pub type CommandHandler = fn(&[String]) -> Result<Option<String>, Box<dyn std::error::Error>>;
+pub type CommandHandlerOutputType = Result<Option<String>, Box<dyn std::error::Error>>;
+
+pub type CommandHandler = fn(&[String]) -> CommandHandlerOutputType;
+use rustyline::completion::Pair as Completion;
+use rustyline::error::ReadlineError;
+
+pub type AutocompleteHandler = fn(&str, usize) -> Result<(usize, Vec<Completion>), ReadlineError>;
+
+#[derive(Clone, PartialEq)]
+pub enum CommandType {
+    NotLLM,
+    LLM,
+    Terminal,
+}
 
 #[derive(Clone)]
 pub struct Command {
@@ -14,7 +27,14 @@ pub struct Command {
     pub description: String,
     pub usage_example: String,
     pub handler: CommandHandler,
-    pub section: String, // Add section field
+    pub section: String,
+    pub command_type: CommandType,
+    pub autocomplete_handler: Option<AutocompleteHandler>, // Add autocomplete handler field
+}
+
+pub struct CommandHandlerResult {
+    pub command_output: CommandHandlerOutputType,
+    pub command: Command,
 }
 
 impl fmt::Debug for Command {
@@ -24,7 +44,8 @@ impl fmt::Debug for Command {
             .field("pattern", &self.pattern.as_str())
             .field("description", &self.description)
             .field("usage_example", &self.usage_example)
-            .field("section", &self.section) // Include section in Debug output
+            .field("section", &self.section)
+            .field("autocomplete_handler", &self.autocomplete_handler.is_some())
             .finish()
     }
 }
@@ -48,7 +69,6 @@ pub fn get_command(name: &str) -> Option<Command> {
     registry.get(name).cloned()
 }
 
-#[allow(dead_code)]
 pub fn get_all_commands() -> Vec<Command> {
     let registry = COMMAND_REGISTRY.lock().unwrap();
     registry.values().cloned().collect()
@@ -78,10 +98,17 @@ pub fn parse_command(input: &str) -> Option<CommandResult> {
     None
 }
 
-pub fn execute_command(input: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+pub fn execute_command(
+    input: &str,
+) -> Result<Option<CommandHandlerResult>, Box<dyn std::error::Error>> {
     if let Some(command_result) = parse_command(input) {
         if let Some(command) = get_command(&command_result.command_name) {
-            return (command.handler)(&command_result.parameters);
+            let command_handler_output = (command.handler)(&command_result.parameters);
+
+            return Ok(Some(CommandHandlerResult {
+                command_output: command_handler_output,
+                command: command,
+            }));
         }
     }
 
@@ -113,12 +140,19 @@ pub fn print_help() {
     for (section_name, commands) in sections {
         // Capitalize the first letter of the section name for the headline
         let formatted_section_name = if let Some(first_char) = section_name.chars().next() {
-            format!("{}{}", first_char.to_uppercase(), section_name.chars().skip(1).collect::<String>())
+            format!(
+                "{}{}",
+                first_char.to_uppercase(),
+                section_name.chars().skip(1).collect::<String>()
+            )
         } else {
             section_name.clone()
         };
 
-        println!("\n{}", terminal::yellow(&format!("--- {} Commands ---", formatted_section_name)));
+        println!(
+            "\n{}",
+            terminal::yellow(&format!("--- {} Commands ---", formatted_section_name))
+        );
         for command in commands {
             println!(
                 "  {} - {}",
