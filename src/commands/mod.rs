@@ -2,10 +2,10 @@ use regex::Regex;
 use std::fs;
 use std::path::Path;
 
+use crate::autocomplete::{autocomplete_file_path, autocomplete_memory_id, autocomplete_model_id};
 use crate::chat::{self, Prompt, PromptType};
 use crate::commands_registry::{Command, CommandType, register_command};
-use crate::files::files as file_module;
-use crate::input_handler::{autocomplete_file_path, autocomplete_memory_id, autocomplete_model_id}; // Import autocomplete handlers
+use crate::files::files as file_module; // Import autocomplete handlers
 
 pub mod bash_cmd;
 pub mod help;

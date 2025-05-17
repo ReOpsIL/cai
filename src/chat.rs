@@ -1,5 +1,5 @@
 use crate::commands_registry::{CommandHandlerResult, CommandType};
-use crate::{commands, commands_registry, configuration, input_handler, openrouter, terminal};
+use crate::{autocomplete, commands, commands_registry, configuration, openrouter, terminal};
 use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -233,7 +233,7 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
                     || e.to_string().contains("Input terminated")
                 {
                     println!("\n{}", terminal::format_success("Goodbye!"));
-                    input_handler::save_history();
+                    autocomplete::save_history();
                     break;
                 } else {
                     println!(
@@ -254,7 +254,7 @@ pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
 
         if input.eq_ignore_ascii_case("exit") {
             println!("{}", terminal::format_success("Goodbye!"));
-            input_handler::save_history();
+            autocomplete::save_history();
             break;
         }
 

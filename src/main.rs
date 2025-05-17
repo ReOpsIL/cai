@@ -8,6 +8,7 @@ mod files;
 mod input_handler;
 mod openrouter;
 mod terminal;
+mod autocomplete;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

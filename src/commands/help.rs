@@ -1,3 +1,4 @@
+use crate::autocomplete;
 use crate::commands_registry::{Command, CommandType, register_command};
 use regex::Regex;
 use rustyline::completion::Pair as Completion;
@@ -48,8 +49,7 @@ pub fn register_help_command() {
                     // Score options based on fuzzy matching
                     let mut scored_options: Vec<_> = Vec::new();
                     for option in options {
-                        if let Some(score) = crate::input_handler::fuzzy_match(option, param_start)
-                        {
+                        if let Some(score) = autocomplete::fuzzy_match(option, param_start) {
                             scored_options.push((score, option.to_string()));
                         }
                     }

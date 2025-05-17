@@ -1,8 +1,8 @@
+use crate::autocomplete::autocomplete_empty;
 use crate::commands_registry::{Command, CommandType, register_command};
-use crate::input_handler::autocomplete_empty;
 use regex::Regex;
 use std::process::Command as BashCommand;
-use syntect::util::{LinesWithEndings, as_24_bit_terminal_escaped};
+use syntect::util::{LinesWithEndings};
 
 pub fn register_bash_command() {
     register_command(Command {

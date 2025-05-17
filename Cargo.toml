@@ -31,5 +31,9 @@ version = "1.16.0"
 # Lets you generate random UUIDs
 features = ["v4"]
 
+
 [profile.dev]
-debug = "full"
+opt-level = 0
+
+[profile.release]
+opt-level = 3
