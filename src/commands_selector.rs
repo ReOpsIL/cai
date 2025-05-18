@@ -1,0 +1,112 @@
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
+use ratatui::widgets::{Clear, List, ListDirection, ListItem};
+use ratatui::{
+    Frame,
+    layout::{Constraint, Flex, Layout, Rect},
+    widgets::{Block},
+};
+
+use ratatui::{
+    style::{
+        palette::tailwind::{SKY}, Style, Stylize,
+    },
+
+};
+
+
+use crate::commands_registry;
+use crate::commands_registry::Command;
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CommandSelectorState {
+    Selected,
+    NotSelected,
+    Exit,
+}
+
+pub struct CommandSelector {
+    current_index: usize
+}
+
+impl CommandSelector {
+
+    pub fn new() -> Self {
+        let commands = commands_registry::get_all_commands();
+        Self {
+            current_index: 0
+        }
+    }
+
+    fn select_next(&mut self) {
+        let commands = commands_registry::get_all_commands();
+        if self.current_index <  commands.len()-1 { self.current_index+=1 };
+    }
+
+    fn select_previous(&mut self) {
+        if self.current_index > 0 { self.current_index-=1 };
+    }
+
+    pub fn handle_key(&mut self, key: KeyEvent) -> (Option<Command>, CommandSelectorState) {
+        let commands = commands_registry::get_all_commands();
+
+        if key.kind != KeyEventKind::Press {
+            return (None, CommandSelectorState::NotSelected);
+        }
+        match key.code {
+            KeyCode::Down => {
+                self.select_next();
+            },
+            KeyCode::Up => {
+                self.select_previous();
+            },
+            KeyCode::Esc => {
+                return (None, CommandSelectorState::Exit);
+            }
+            KeyCode::Right | KeyCode::Enter => {
+                return (Some(commands[self.current_index].clone()), CommandSelectorState::Selected);
+            }
+            _ => {
+                return (None, CommandSelectorState::NotSelected);
+            }
+        }
+        return (None, CommandSelectorState::NotSelected);
+    }
+
+    pub fn render_commands_popup(&self, frame: &mut Frame) {
+        let commands = commands_registry::get_all_commands();
+
+        let items: Vec<ListItem> = commands
+            .iter()
+            .enumerate()
+            .map(|(i, command)| {
+                if i == self.current_index {
+                    ListItem::from(command.name.clone()).bg(SKY.c900)
+                }
+                else {
+                    ListItem::from(command.name.clone())
+                }
+            }).collect();
+
+        let area = self.popup_area(frame.area(), 60, 40);
+
+        let list = List::new(items)
+            .block(Block::bordered().title("Commands popup, Press 'Esc' to close"))
+            .style(Style::new().white())
+            .highlight_style(Style::new().italic())
+            .highlight_symbol(">>")
+            .repeat_highlight_symbol(true)
+            .direction(ListDirection::TopToBottom);
+
+        frame.render_widget(Clear, area);
+        frame.render_widget(list, area);
+    }
+
+    fn popup_area(&self, area: Rect, percent_x: u16, percent_y: u16) -> Rect {
+        let vertical = Layout::vertical([Constraint::Percentage(percent_y)]).flex(Flex::Center);
+        let horizontal = Layout::horizontal([Constraint::Percentage(percent_x)]).flex(Flex::Center);
+        let [area] = vertical.areas(area);
+        let [area] = horizontal.areas(area);
+        area
+    }
+}

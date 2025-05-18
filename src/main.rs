@@ -9,7 +9,11 @@ mod input_handler;
 mod openrouter;
 mod terminal;
 mod autocomplete;
+mod chat_ui;
+mod commands_selector;
 
+use chat_ui::main_ui;
+//use editor::run_editor;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize models at startup
@@ -19,6 +23,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Some commands may not work correctly");
     }
 
-    chat::chat_loop().await?;
+    main_ui()?;
+    
+    //chat::chat_loop().await?;
     Ok(())
 }

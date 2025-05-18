@@ -32,6 +32,28 @@ pub struct Command {
     pub autocomplete_handler: Option<AutocompleteHandler>, // Add autocomplete handler field
 }
 
+impl Command {
+    pub fn new(
+        name: String,
+        pattern: Regex,
+        description: String,
+        usage_example: String,
+        handler: CommandHandler,
+        section: String,
+    ) -> Self {
+        Self {
+            name,
+            pattern,
+            description,
+            usage_example,
+            handler,
+            section,
+            command_type: CommandType::NotLLM,
+            autocomplete_handler: None,
+        }
+    }
+}
+
 pub struct CommandHandlerResult {
     pub command_output: CommandHandlerOutputType,
     pub command: Command,
