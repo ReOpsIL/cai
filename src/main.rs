@@ -11,6 +11,7 @@ mod terminal;
 mod autocomplete;
 mod chat_ui;
 mod commands_selector;
+mod files_selector;
 
 use chat_ui::main_ui;
 //use editor::run_editor;
@@ -23,8 +24,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Some commands may not work correctly");
     }
 
-    main_ui()?;
-    
+    main_ui();
+
     //chat::chat_loop().await?;
     Ok(())
 }

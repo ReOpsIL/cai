@@ -16,42 +16,41 @@ use ratatui::{
 
 use crate::commands_registry;
 use crate::commands_registry::Command;
-
+use crate::files::files::{list_files, read_file};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum CommandSelectorState {
+pub enum FileSelectorState {
     Selected,
     NotSelected,
     Exit,
 }
 
-pub struct CommandSelector {
+pub struct FileSelector {
+    list_source :  Vec<String>,
     current_index: usize
 }
 
-impl CommandSelector {
+impl FileSelector {
 
     pub fn new() -> Self {
-        let commands = commands_registry::get_all_commands();
         Self {
+            list_source: Vec::new(),
             current_index: 0
         }
     }
 
     fn select_next(&mut self) {
-        let commands = commands_registry::get_all_commands();
-        if self.current_index <  commands.len()-1 { self.current_index+=1 };
+        if self.current_index <  self.list_source.len()-1 { self.current_index+=1 };
     }
 
     fn select_previous(&mut self) {
         if self.current_index > 0 { self.current_index-=1 };
     }
 
-    pub fn handle_key(&mut self, key: KeyEvent) -> (Option<Command>, CommandSelectorState) {
-        let commands = commands_registry::get_all_commands();
+    pub fn handle_key(&mut self, key: KeyEvent) -> (Option<String>, FileSelectorState) {
 
         if key.kind != KeyEventKind::Press {
-            return (None, CommandSelectorState::NotSelected);
+            return (None, FileSelectorState::NotSelected);
         }
         match key.code {
             KeyCode::Down => {
@@ -61,30 +60,31 @@ impl CommandSelector {
                 self.select_previous();
             },
             KeyCode::Esc => {
-                return (None, CommandSelectorState::Exit);
+                return (None, FileSelectorState::Exit);
             }
             KeyCode::Right | KeyCode::Enter => {
-                return (Some(commands[self.current_index].clone()), CommandSelectorState::Selected);
+                return (Some(self.list_source[self.current_index].clone()), FileSelectorState::Selected);
             }
             _ => {
-                return (None, CommandSelectorState::NotSelected);
+                return (None, FileSelectorState::NotSelected);
             }
         }
-        return (None, CommandSelectorState::NotSelected);
+        return (None, FileSelectorState::NotSelected);
     }
 
-    pub fn render_commands_popup(&self, frame: &mut Frame) {
-        let commands = commands_registry::get_all_commands();
+    pub fn render_files_popup(&mut self, frame: &mut Frame) {
 
-        let items: Vec<ListItem> = commands
+        self.list_source =  list_files(&"./**/*.md").expect("REASON");
+
+        let items: Vec<ListItem> = self.list_source
             .iter()
             .enumerate()
-            .map(|(i, command)| {
+            .map(|(i, value)| {
                 if i == self.current_index {
-                    ListItem::from(command.name.clone()).bg(SKY.c900)
+                    ListItem::from(value.clone()).bg(SKY.c900)
                 }
                 else {
-                    ListItem::from(command.name.clone())
+                    ListItem::from(value.clone())
                 }
             }).collect();
 
@@ -104,7 +104,7 @@ impl CommandSelector {
         let details_area = chunks[1];
 
         let list = List::new(items)
-            .block(Block::bordered().title("Commands: ('Enter' to select, 'Esc' to close)"))
+            .block(Block::bordered().title("Files: ('Enter' to select, 'Esc' to close)"))
             .style(Style::new().white())
             .highlight_style(Style::new().italic())
             .highlight_symbol(">>")
@@ -113,7 +113,7 @@ impl CommandSelector {
 
         frame.render_widget(Clear, popup_area);
         frame.render_widget(list, list_area);
-        self.render_command_details(frame, details_area);
+        self.render_file_snipest(frame, details_area);
     }
 
     fn popup_area(&self, area: Rect, percent_x: u16, percent_y: u16) -> Rect {
@@ -124,26 +124,22 @@ impl CommandSelector {
         area
     }
 
-    fn render_command_details(&self, frame: &mut Frame, area: Rect) {
-        let commands = commands_registry::get_all_commands();
-        if self.current_index < commands.len() {
-            let command = &commands[self.current_index];
+    fn render_file_snipest(&self, frame: &mut Frame, area: Rect) {
 
-            let details = format!(
-                "Name: {}\n\nDescription: {}\n\nUsage Example: {}\n\nSection: {}\n\nType: {:?}",
-                command.name,
-                command.description,
-                command.usage_example,
-                command.section,
-                command.command_type
-            );
+        if self.current_index < self.list_source.len() {
+            let value = &self.list_source[self.current_index];
 
-            let details_widget = Paragraph::new(details)
-                .block(Block::bordered().title("Command Details"))
-                .style(Style::new().white())
-                .wrap(Wrap { trim: true });
+            match read_file(value) {
+                Ok(contents) => {
+                    let details_widget = Paragraph::new(contents)
+                        .block(Block::bordered().title("Content:"))
+                        .style(Style::new().white())
+                        .wrap(Wrap { trim: true });
 
-            frame.render_widget(details_widget, area);
+                    frame.render_widget(details_widget, area);
+                }
+                Err(_) => {}
+            }
         }
     }
 }

@@ -67,7 +67,7 @@ pub struct Command {
     pub parameter: String,
 }
 
-async fn execute_command(
+pub async fn execute_command(
     command: &str,
 ) -> Result<Option<CommandHandlerResult>, Box<dyn std::error::Error>> {
     // First try to execute with the command registry
@@ -88,7 +88,7 @@ async fn execute_command(
     Ok(None)
 }
 
-fn highlight_code(code: &str) -> String {
+pub fn highlight_code(code: &str) -> String {
     let ss = &*SYNTAX_SET;
     let ts = &*THEME_SET;
 
@@ -211,104 +211,4 @@ pub async fn check_embedded_commands(input: &str) -> (String, bool) {
     }
     (enriched_input, offline)
 }
-pub async fn chat_loop() -> Result<(), Box<dyn std::error::Error>> {
-    // Register all commands
-    commands::register_all_commands();
 
-    let config = configuration::load_configuration()?;
-
-    println!(
-        "{}",
-        terminal::format_info(&format!("Loaded config: {:?}", config))
-    );
-
-    let term = Arc::new(AtomicBool::new(false));
-    signal_hook::flag::register(SIGINT, Arc::clone(&term))?;
-
-    loop {
-        let mut input = match crate::input_handler::get_input().await {
-            Ok(input) => input,
-            Err(e) => {
-                if e.to_string().contains("Input interrupted")
-                    || e.to_string().contains("Input terminated")
-                {
-                    println!("\n{}", terminal::format_success("Goodbye!"));
-                    autocomplete::save_history();
-                    break;
-                } else {
-                    println!(
-                        "{}",
-                        terminal::format_error(&format!("Error reading input: {}", e))
-                    );
-                    continue;
-                }
-            }
-        };
-
-        input = input.trim().to_owned();
-
-        if term.load(Ordering::Relaxed) {
-            println!("\n{}", terminal::format_warning("Interrupted, exiting..."));
-            break;
-        }
-
-        if input.eq_ignore_ascii_case("exit") {
-            println!("{}", terminal::format_success("Goodbye!"));
-            autocomplete::save_history();
-            break;
-        }
-
-        let re_offline_cmd = Regex::new(r"^[>|!].").unwrap();
-        if input.eq("?") {
-            commands_registry::print_help();
-        } else if re_offline_cmd.is_match(&input) {
-            match execute_command(&input).await {
-                Ok(Some(output)) => match output.command_output {
-                    Ok(Some(output_str)) => {
-                        println!("{}", output_str);
-                    }
-                    Err(e) => {
-                        println!("Error executing command: {}", e);
-                    }
-                    Ok(None) => {
-                        println!(
-                            "{}",
-                            terminal::format_error("Sorry - Unrecognized command...")
-                        );
-                        commands_registry::print_help();
-                    }
-                },
-                Ok(None) => {
-                    println!(
-                        "{}",
-                        terminal::format_error("Sorry - Unrecognized command...")
-                    );
-                    commands_registry::print_help();
-                }
-                Err(e) => {
-                    println!("Error executing command: {}", e);
-                }
-            }
-        } else {
-            let (enriched_input, offline) = check_embedded_commands(&input).await;
-            Prompt::new(enriched_input.clone(), PromptType::QUESTION);
-            // println!(
-            //     "{}\n+++++++++{}++++++++++\n{}",
-            //     terminal::cyan("You:"),
-            //     offline,
-            //     enriched_input.to_string()
-            // );
-
-            if !offline {
-                //let response = String::from(":-) Ok");
-                let response = openrouter::call_openrouter_api(&enriched_input).await?;
-
-                let highlighted_response = highlight_code(&response);
-                println!("{}", highlighted_response);
-                Prompt::new(response.clone(), PromptType::ANSWER);
-            }
-        }
-    }
-
-    Ok(())
-}
