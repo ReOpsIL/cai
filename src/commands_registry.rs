@@ -13,7 +13,7 @@ use rustyline::error::ReadlineError;
 
 pub type AutocompleteHandler = fn(&str, usize) -> Result<(usize, Vec<Completion>), ReadlineError>;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum CommandType {
     NotLLM,
     LLM,

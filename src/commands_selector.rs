@@ -1,8 +1,8 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
-use ratatui::widgets::{Clear, List, ListDirection, ListItem};
+use ratatui::widgets::{Clear, List, ListDirection, ListItem, Paragraph, Wrap};
 use ratatui::{
     Frame,
-    layout::{Constraint, Flex, Layout, Rect},
+    layout::{Constraint, Flex, Layout, Rect, Direction},
     widgets::{Block},
 };
 
@@ -88,18 +88,32 @@ impl CommandSelector {
                 }
             }).collect();
 
-        let area = self.popup_area(frame.area(), 60, 40);
+        // Get the overall popup area
+        let popup_area = self.popup_area(frame.area(), 80, 60);
+
+        // Split the popup area into two parts: list on the left, details on the right
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(60),  // 40% for the list
+                Constraint::Percentage(40),  // 60% for the details
+            ])
+            .split(popup_area);
+
+        let list_area = chunks[0];
+        let details_area = chunks[1];
 
         let list = List::new(items)
-            .block(Block::bordered().title("Commands popup, Press 'Esc' to close"))
+            .block(Block::bordered().title("Commands (Press 'Esc' to close)"))
             .style(Style::new().white())
             .highlight_style(Style::new().italic())
             .highlight_symbol(">>")
             .repeat_highlight_symbol(true)
             .direction(ListDirection::TopToBottom);
 
-        frame.render_widget(Clear, area);
-        frame.render_widget(list, area);
+        frame.render_widget(Clear, popup_area);
+        frame.render_widget(list, list_area);
+        self.render_command_details(frame, details_area);
     }
 
     fn popup_area(&self, area: Rect, percent_x: u16, percent_y: u16) -> Rect {
@@ -108,5 +122,28 @@ impl CommandSelector {
         let [area] = vertical.areas(area);
         let [area] = horizontal.areas(area);
         area
+    }
+
+    fn render_command_details(&self, frame: &mut Frame, area: Rect) {
+        let commands = commands_registry::get_all_commands();
+        if self.current_index < commands.len() {
+            let command = &commands[self.current_index];
+
+            let details = format!(
+                "Name: {}\n\nDescription: {}\n\nUsage Example: {}\n\nSection: {}\n\nType: {:?}",
+                command.name,
+                command.description,
+                command.usage_example,
+                command.section,
+                command.command_type
+            );
+
+            let details_widget = Paragraph::new(details)
+                .block(Block::bordered().title("Command Details"))
+                .style(Style::new().white())
+                .wrap(Wrap { trim: true });
+
+            frame.render_widget(details_widget, area);
+        }
     }
 }
