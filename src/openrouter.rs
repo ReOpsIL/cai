@@ -38,10 +38,7 @@ pub async fn call_openrouter_api(prompt: &str) -> Result<String, Box<dyn std::er
 
     let body = json!({
         "model": &config.model,
-        "messages": [{
-                    "role": "system",
-                    "content": "Allways provide output using Markdown format",
-                },
+        "messages": [
                 {
                     "role": "user",
                     "content": prompt

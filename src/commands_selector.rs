@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
+use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::widgets::{Clear, List, ListDirection, ListItem, Paragraph, Wrap};
 use ratatui::{
     Frame,

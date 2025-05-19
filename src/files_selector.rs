@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
+use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::widgets::{Clear, List, ListDirection, ListItem, Paragraph, Wrap};
 use ratatui::{
     Frame,
@@ -13,11 +13,7 @@ use ratatui::{
 
 };
 
-
-use crate::commands_registry;
-use crate::commands_registry::Command;
 use crate::files::files::{list_files, read_file};
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum FileSelectorState {
     Selected,

@@ -1,5 +1,6 @@
-
+use std::io::{stdout, Write};
 use color_eyre::Result;
+use ratatui::crossterm::execute;
 use ratatui::{
     crossterm::event::{Event, KeyCode },
     layout::{Constraint, Layout, Direction,},
@@ -9,6 +10,7 @@ use ratatui::{
     },
     DefaultTerminal,
 };
+use ratatui::crossterm::event::{KeyEventKind, KeyModifiers};
 use ratatui::widgets::Clear;
 use tui_textarea::{ TextArea };
 use crate::{autocomplete, commands, commands_registry, commands_selector, configuration, openrouter, terminal};
@@ -43,6 +45,7 @@ struct ChatUIApp<'a> {
     file_sel : FileSelector,
     question_text_area: TextArea<'a>,
     answer_text_area: TextArea<'a>,
+    llm_question: String,
 }
 
 impl ChatUIApp<'_> {
@@ -55,6 +58,7 @@ impl ChatUIApp<'_> {
             file_sel: FileSelector::new(),
             question_text_area: TextArea::default(),
             answer_text_area: TextArea::default(),
+            llm_question: String::new(),
         }
     }
 
@@ -62,6 +66,16 @@ impl ChatUIApp<'_> {
 
 impl ChatUIApp<'_> {
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+
+        let mut stdout = stdout();
+        ratatui::crossterm::terminal::enable_raw_mode()?;
+
+        execute!(
+            stdout,
+            ratatui::crossterm::terminal::Clear(ratatui::crossterm::terminal::ClearType::All),
+            ratatui::crossterm::cursor::MoveTo(0, 0)
+        )?;
+        stdout.flush()?;
 
         self.question_text_area.set_block(
             Block::default()
@@ -78,7 +92,8 @@ impl ChatUIApp<'_> {
         loop {
             if self.start_llm {
                 self.start_llm = false;
-
+                let question = self.llm_question.clone();
+                self.execute_llm_command(question);
             }
             terminal.draw(|frame| {
                 let layout = Layout::default()
@@ -100,7 +115,7 @@ impl ChatUIApp<'_> {
                 }
             })?;
 
-            if let Event::Key(key) = crossterm::event::read()? {
+            if let Event::Key(key) = ratatui::crossterm::event::read()? {
                 // Your own key mapping to break the event loop
                 if self.show_commands_popup {
                     let (command, state) = self.cmd_sel.handle_key(key);
@@ -129,11 +144,11 @@ impl ChatUIApp<'_> {
                         }
                         KeyCode::Char('!') => {
                             let content: Vec<String> = self.question_text_area.lines().to_vec();
-                            tokio::spawn(async move { execute_offline_command(&content).await });
+                            //tokio::spawn(async move { execute_offline_command(&content).await });
                         }
                         KeyCode::Char('>') => {
                             let content: Vec<String> = self.question_text_area.lines().to_vec();
-                            tokio::spawn(async move { execute_offline_command(&content).await });
+                            //tokio::spawn(async move { execute_offline_command(&content).await });
                         }
                         KeyCode::Char('@') => {
                             self.show_commands_popup = true
@@ -144,15 +159,12 @@ impl ChatUIApp<'_> {
                         KeyCode::Esc => {
                             autocomplete::save_history();
                             break Ok(())
-                        }
-                        KeyCode::Enter => {
-                            if key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) {
-                                // let content: Vec<String> = self.answer_text_area.lines().to_vec();
-                                // let ans_prompt = tokio::spawn(execute_llm_command(&content));
-                                // if let Ok(ans_prompt) = tokio::runtime::Runtime::new()?.block_on(ans_prompt) {
-                                //     let highlighted_response = highlight_code(&ans_prompt.value);
-                                //     self.answer_text_area.insert_str(&highlighted_response);
-                                // }
+                        },
+                        KeyCode::Char('\\') => {
+                            if key.kind == KeyEventKind::Press {  // First check if it's a press event
+                                if key.modifiers == KeyModifiers::ALT {
+                                    self.prepare_to_run_llm();
+                                }
                             }
                         },
                         _ => {
@@ -164,16 +176,40 @@ impl ChatUIApp<'_> {
             }
         }
     }
+    fn prepare_to_run_llm(&mut self) {
+        let content: Vec<String> = self.answer_text_area.lines().to_vec();
+        self.llm_question = content.join(&"\n");
+        self.start_llm = true;
+    }
+
+    fn execute_llm_command(&mut self, content:String) {
+        let (tx, rx) = tokio::sync::oneshot::channel();
+
+        tokio::spawn(async move {
+            let (enriched_input, _offline) = check_embedded_commands(content.as_str()).await;
+            let _question = Prompt::new(enriched_input.clone(), PromptType::QUESTION);
+
+            match openrouter::call_openrouter_api(&enriched_input).await {
+                Ok(response_text) => {
+                    let ans_prompt = Prompt::new(response_text, PromptType::ANSWER);
+                    let highlighted_response = highlight_code(ans_prompt.value.as_str());
+                    let _ = tx.send(highlighted_response);
+                },
+                Err(e) => {
+                    println!("Error calling OpenRouter API: {}", e);
+                    let _ = tx.send(format!("Error: {}", e));
+                }
+            }
+        });
+
+        if let Ok(response) = rx.blocking_recv() {
+            self.answer_text_area.insert_str(&response);
+        }
+    }
+
 }
 
-async fn execute_llm_command(lines: &[String]) -> Prompt {
-    let content = lines.join(&"\n");
-    let (enriched_input, offline) = check_embedded_commands(content.as_str()).await;
-    Prompt::new(enriched_input.clone(), PromptType::QUESTION);
-    let response = openrouter::call_openrouter_api(&enriched_input).await;
 
-    Prompt::new(response.unwrap(), PromptType::ANSWER)
-}
 async fn execute_offline_command(lines: &[String]) {
     let content = lines.join(&"\n");
 
