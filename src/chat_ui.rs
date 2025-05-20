@@ -18,6 +18,8 @@ use commands_selector::CommandSelector;
 use crate::chat::{check_embedded_commands, highlight_code, Prompt, PromptType};
 use crate::commands_selector::CommandSelectorState;
 use crate::files_selector::{FileSelector, FileSelectorState};
+use std::time::Duration;  
+use tokio::sync::oneshot;  
 
 pub fn main_ui() -> Result<()> {
     color_eyre::install()?;
@@ -40,12 +42,11 @@ pub fn main_ui() -> Result<()> {
 struct ChatUIApp<'a> {
     show_commands_popup: bool,
     show_files_popup: bool,
-    start_llm: bool,
     cmd_sel : CommandSelector,
     file_sel : FileSelector,
     question_text_area: TextArea<'a>,
     answer_text_area: TextArea<'a>,
-    llm_question: String,
+    llm_rx: Option<oneshot::Receiver<String>>, // Add this field
 }
 
 impl ChatUIApp<'_> {
@@ -53,20 +54,17 @@ impl ChatUIApp<'_> {
         Self {
             show_commands_popup: false,
             show_files_popup: false,
-            start_llm: false,
             cmd_sel: CommandSelector::new(),
             file_sel: FileSelector::new(),
             question_text_area: TextArea::default(),
             answer_text_area: TextArea::default(),
-            llm_question: String::new(),
+            llm_rx: None, // Initialize here
         }
     }
-
 }
 
 impl ChatUIApp<'_> {
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
-
         let mut stdout = stdout();
         ratatui::crossterm::terminal::enable_raw_mode()?;
 
@@ -90,11 +88,6 @@ impl ChatUIApp<'_> {
         );
 
         loop {
-            if self.start_llm {
-                self.start_llm = false;
-                let question = self.llm_question.clone();
-                self.execute_llm_command(question);
-            }
             terminal.draw(|frame| {
                 let layout = Layout::default()
                     .direction(Direction::Vertical)
@@ -115,76 +108,101 @@ impl ChatUIApp<'_> {
                 }
             })?;
 
-            if let Event::Key(key) = ratatui::crossterm::event::read()? {
-                // Your own key mapping to break the event loop
-                if self.show_commands_popup {
-                    let (command, state) = self.cmd_sel.handle_key(key);
-                    if command.is_some() && state == CommandSelectorState::Selected {
-                        self.question_text_area.insert_str(command.unwrap().usage_example.as_str());
-                        self.show_commands_popup = false
+            // Check for LLM response non-blockingly
+            if let Some(rx) = self.llm_rx.as_mut() { // Borrow mutably to call try_recv
+                match rx.try_recv() {
+                    Ok(response) => {
+                        self.answer_text_area.insert_str(&response);
+                        self.llm_rx = None; // Clear the receiver once handled
                     }
-                    else if state == CommandSelectorState::Exit{
-                        self.show_commands_popup = false
+                    Err(oneshot::error::TryRecvError::Empty) => {
+                        // Not ready yet, do nothing, will check next loop iteration
                     }
-                }
-                else if self.show_files_popup {
-                    let (file_name, state) = self.file_sel.handle_key(key);
-                    if file_name.is_some() && state == FileSelectorState::Selected {
-                        self.question_text_area.insert_str(file_name.unwrap().as_str());
-                        self.show_files_popup = false
-                    }
-                    else if state == FileSelectorState::Exit{
-                        self.show_files_popup = false
+                    Err(oneshot::error::TryRecvError::Closed) => {
+                        // Sender dropped (task panicked or completed without sending)
+                        self.answer_text_area.insert_str("Error: LLM task failed or was cancelled.");
+                        self.llm_rx = None; // Clear the receiver
                     }
                 }
-                else {
-                    match key.code {
-                        KeyCode::Char('?') => {
-                            commands_registry::print_help();
-                        }
-                        KeyCode::Char('!') => {
-                            let content: Vec<String> = self.question_text_area.lines().to_vec();
-                            //tokio::spawn(async move { execute_offline_command(&content).await });
-                        }
-                        KeyCode::Char('>') => {
-                            let content: Vec<String> = self.question_text_area.lines().to_vec();
-                            //tokio::spawn(async move { execute_offline_command(&content).await });
-                        }
-                        KeyCode::Char('@') => {
-                            self.show_commands_popup = true
-                        },
-                        KeyCode::Char('$') => {
-                            self.show_files_popup = true
-                        },
-                        KeyCode::Esc => {
-                            autocomplete::save_history();
-                            break Ok(())
-                        },
-                        KeyCode::Char('\\') => {
-                            if key.kind == KeyEventKind::Press {  // First check if it's a press event
-                                if key.modifiers == KeyModifiers::ALT {
-                                    self.prepare_to_run_llm();
-                                }
-                            }
-                        },
-                        _ => {
-                            self.question_text_area.input(key);
-                        }
-                    }
-                }
+            }
 
+            // Poll for crossterm events with a timeout
+            // This makes the loop iterate even if there are no key presses,
+            // allowing the llm_rx check above to run.
+            if ratatui::crossterm::event::poll(Duration::from_millis(100))? {
+                if let Event::Key(key) = ratatui::crossterm::event::read()? {
+                    // Your own key mapping to break the event loop
+                    if self.show_commands_popup {
+                        let (command, state) = self.cmd_sel.handle_key(key);
+                        if command.is_some() && state == CommandSelectorState::Selected {
+                            self.question_text_area.insert_str(command.unwrap().usage_example.as_str());
+                            self.show_commands_popup = false
+                        }
+                        else if state == CommandSelectorState::Exit{
+                            self.show_commands_popup = false
+                        }
+                    }
+                    else if self.show_files_popup {
+                        let (file_name, state) = self.file_sel.handle_key(key);
+                        if file_name.is_some() && state == FileSelectorState::Selected {
+                            self.question_text_area.insert_str(file_name.unwrap().as_str());
+                            self.show_files_popup = false
+                        }
+                        else if state == FileSelectorState::Exit{
+                            self.show_files_popup = false
+                        }
+                    }
+                    else {
+                        match key.code {
+                            KeyCode::Char('?') => {
+                                commands_registry::print_help();
+                            }
+                            KeyCode::Char('!') => {
+                                // let content: Vec<String> = self.question_text_area.lines().to_vec();
+                                // tokio::spawn(async move { execute_offline_command(&content).await });
+                            }
+                            KeyCode::Char('>') => {
+                                // let content: Vec<String> = self.question_text_area.lines().to_vec();
+                                // tokio::spawn(async move { execute_offline_command(&content).await });
+                            }
+                            KeyCode::Char('@') => {
+                                self.show_commands_popup = true
+                            },
+                            KeyCode::Char('$') => {
+                                self.show_files_popup = true
+                            },
+                            KeyCode::Esc => {
+                                autocomplete::save_history();
+                                break Ok(())
+                            },
+                            KeyCode::Char('±') => {
+                                if key.kind == KeyEventKind::Press {
+                                    if self.llm_rx.is_none() {
+                                        self.execute_llm_command();
+                                    } else {
+                                        // Optionally, provide feedback that a command is already in progress
+                                        // self.answer_text_area.insert_str("An LLM command is already running...\n");
+                                    }
+                                }
+                            },
+                            _ => {
+                                self.question_text_area.input(key);
+                            }
+                        }
+                    }
+                }
             }
         }
     }
-    fn prepare_to_run_llm(&mut self) {
-        let content: Vec<String> = self.answer_text_area.lines().to_vec();
-        self.llm_question = content.join(&"\n");
-        self.start_llm = true;
-    }
 
-    fn execute_llm_command(&mut self, content:String) {
+    fn execute_llm_command(&mut self) {
+        let content: Vec<String> = self.question_text_area.lines().to_vec();
+        let content = content.join(&"\n");
+
         let (tx, rx) = tokio::sync::oneshot::channel();
+        self.llm_rx = Some(rx); // Store the receiver
 
+        // This tokio::spawn will use the existing runtime (e.g., from #[tokio::main])
         tokio::spawn(async move {
             let (enriched_input, _offline) = check_embedded_commands(content.as_str()).await;
             let _question = Prompt::new(enriched_input.clone(), PromptType::QUESTION);
@@ -193,52 +211,20 @@ impl ChatUIApp<'_> {
                 Ok(response_text) => {
                     let ans_prompt = Prompt::new(response_text, PromptType::ANSWER);
                     let highlighted_response = highlight_code(ans_prompt.value.as_str());
-                    let _ = tx.send(highlighted_response);
+                    if tx.send(highlighted_response).is_err() {
+                        // Receiver was dropped, maybe UI closed or another command started
+                        eprintln!("LLM task: Receiver for response was dropped.");
+                    }
                 },
                 Err(e) => {
-                    println!("Error calling OpenRouter API: {}", e);
-                    let _ = tx.send(format!("Error: {}", e));
+                    let error_msg = format!("Error calling OpenRouter API: {}", e);
+                    eprintln!("{}", error_msg); // Log to console
+                    if tx.send(format!("Error: {}", e)).is_err() {
+                        eprintln!("LLM task: Receiver for error response was dropped.");
+                    }
                 }
             }
         });
 
-        if let Ok(response) = rx.blocking_recv() {
-            self.answer_text_area.insert_str(&response);
-        }
     }
-
-}
-
-
-async fn execute_offline_command(lines: &[String]) {
-    let content = lines.join(&"\n");
-
-    match crate::chat::execute_command(content.as_str()).await {
-        Ok(Some(output)) => match output.command_output {
-            Ok(Some(output_str)) => {
-                println!("{}", output_str);
-            }
-            Err(e) => {
-                println!("Error executing command: {}", e);
-            }
-            Ok(None) => {
-                println!(
-                    "{}",
-                    terminal::format_error("Sorry - Unrecognized command...")
-                );
-                commands_registry::print_help();
-            }
-        },
-        Ok(None) => {
-            println!(
-                "{}",
-                terminal::format_error("Sorry - Unrecognized command...")
-            );
-            commands_registry::print_help();
-        }
-        Err(e) => {
-            println!("Error executing command: {}", e);
-        }
-    }
-
 }
