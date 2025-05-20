@@ -50,9 +50,6 @@ impl Prompt {
         };
         let mut memory = get_memory().lock().unwrap();
         memory.insert(prompt.id.clone(), prompt.clone());
-
-        println!("ID: {}\n", terminal::magenta(&prompt.id));
-
         prompt
     }
 }
@@ -67,7 +64,7 @@ pub struct Command {
     pub parameter: String,
 }
 
-pub async fn execute_command(
+pub fn execute_command(
     command: &str,
 ) -> Result<Option<CommandHandlerResult>, Box<dyn std::error::Error>> {
     // First try to execute with the command registry
@@ -126,7 +123,7 @@ pub fn highlight_code(code: &str) -> String {
     highlighted_code
 }
 
-pub async fn check_embedded_commands(input: &str) -> (String, bool) {
+pub fn check_embedded_commands(input: &str) -> (String, bool) {
     // Check for embedded commands
     let mut enriched_input = input.to_string();
     let mut pos = 0;
@@ -168,7 +165,7 @@ pub async fn check_embedded_commands(input: &str) -> (String, bool) {
 
             //println!("Executing command: {}", command);
 
-            match execute_command(command).await {
+            match execute_command(command) {
                 Ok(Some(output)) => {
                     // Inject the output into the prompt
                     if output.command.command_type == CommandType::Terminal

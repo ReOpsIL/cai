@@ -18,8 +18,8 @@ use commands_selector::CommandSelector;
 use crate::chat::{check_embedded_commands, highlight_code, Prompt, PromptType};
 use crate::commands_selector::CommandSelectorState;
 use crate::files_selector::{FileSelector, FileSelectorState};
-use std::time::Duration;  
-use tokio::sync::oneshot;  
+use std::time::Duration;
+use tokio::sync::oneshot;
 
 pub fn main_ui() -> Result<()> {
     color_eyre::install()?;
@@ -46,7 +46,7 @@ struct ChatUIApp<'a> {
     file_sel : FileSelector,
     question_text_area: TextArea<'a>,
     answer_text_area: TextArea<'a>,
-    llm_rx: Option<oneshot::Receiver<String>>, // Add this field
+    llm_rx: Option<oneshot::Receiver<Prompt>>, // Add this field
 }
 
 impl ChatUIApp<'_> {
@@ -111,9 +111,18 @@ impl ChatUIApp<'_> {
             // Check for LLM response non-blockingly
             if let Some(rx) = self.llm_rx.as_mut() { // Borrow mutably to call try_recv
                 match rx.try_recv() {
-                    Ok(response) => {
-                        self.answer_text_area.insert_str(&response);
+                    Ok(prompt) => {
+                        self.answer_text_area = TextArea::default();
+                        self.answer_text_area.set_block(
+                            Block::default()
+                                .borders(Borders::ALL)
+                                .title(format!("LLM: [ID:{}]",prompt.id))
+                        );
+
+                        //let highlighted_response = highlight_code(ans_prompt.value.as_str());
+                        self.answer_text_area.insert_str(&prompt.value);
                         self.llm_rx = None; // Clear the receiver once handled
+
                     }
                     Err(oneshot::error::TryRecvError::Empty) => {
                         // Not ready yet, do nothing, will check next loop iteration
@@ -199,19 +208,36 @@ impl ChatUIApp<'_> {
         let content: Vec<String> = self.question_text_area.lines().to_vec();
         let content = content.join(&"\n");
 
+        let (enriched_input, _offline) = check_embedded_commands(content.as_str());
+        if _offline {
+            self.answer_text_area = TextArea::default();
+            self.answer_text_area.set_block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("LLM: [LOCAL]")
+            );
+            
+            self.answer_text_area.insert_str(enriched_input.as_str());
+            return;
+        }
+        let ques_prompt = Prompt::new(enriched_input.clone(), PromptType::QUESTION);
+
+        self.question_text_area.set_block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(format!("YOU: [ID:{}]",ques_prompt.id))
+        );
+
+        
         let (tx, rx) = tokio::sync::oneshot::channel();
         self.llm_rx = Some(rx); // Store the receiver
 
         // This tokio::spawn will use the existing runtime (e.g., from #[tokio::main])
         tokio::spawn(async move {
-            let (enriched_input, _offline) = check_embedded_commands(content.as_str()).await;
-            let _question = Prompt::new(enriched_input.clone(), PromptType::QUESTION);
-
             match openrouter::call_openrouter_api(&enriched_input).await {
                 Ok(response_text) => {
                     let ans_prompt = Prompt::new(response_text, PromptType::ANSWER);
-                    let highlighted_response = highlight_code(ans_prompt.value.as_str());
-                    if tx.send(highlighted_response).is_err() {
+                    if tx.send(ans_prompt).is_err() {
                         // Receiver was dropped, maybe UI closed or another command started
                         eprintln!("LLM task: Receiver for response was dropped.");
                     }
@@ -219,9 +245,7 @@ impl ChatUIApp<'_> {
                 Err(e) => {
                     let error_msg = format!("Error calling OpenRouter API: {}", e);
                     eprintln!("{}", error_msg); // Log to console
-                    if tx.send(format!("Error: {}", e)).is_err() {
-                        eprintln!("LLM task: Receiver for error response was dropped.");
-                    }
+                    eprintln!("LLM task: Receiver for error response was dropped.");
                 }
             }
         });
