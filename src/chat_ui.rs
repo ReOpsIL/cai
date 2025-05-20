@@ -3,15 +3,14 @@ use color_eyre::Result;
 use ratatui::crossterm::execute;
 use ratatui::{
     crossterm::event::{Event, KeyCode },
-    layout::{Constraint, Layout, Direction,},
-
+    layout::{Constraint, Layout, Direction},
     widgets::{
         Block, Borders,
     },
     DefaultTerminal,
 };
-use ratatui::crossterm::event::{KeyEventKind, KeyModifiers};
 use ratatui::widgets::Clear;
+use ratatui::crossterm::event::{DisableMouseCapture, EnableMouseCapture, KeyEventKind, KeyModifiers, MouseButton, MouseEventKind};
 use tui_textarea::{ TextArea };
 use crate::{autocomplete, commands, commands_registry, commands_selector, configuration, openrouter, terminal};
 use commands_selector::CommandSelector;
@@ -19,7 +18,14 @@ use crate::chat::{check_embedded_commands, highlight_code, Prompt, PromptType};
 use crate::commands_selector::CommandSelectorState;
 use crate::files_selector::{FileSelector, FileSelectorState};
 use std::time::Duration;
+use ratatui::crossterm::terminal::{disable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use ratatui::layout::{Position, Rect};
 use tokio::sync::oneshot;
+
+pub enum FocusedInputArea {
+    Question,
+    Answer,
+}
 
 pub fn main_ui() -> Result<()> {
     color_eyre::install()?;
@@ -44,9 +50,12 @@ struct ChatUIApp<'a> {
     show_files_popup: bool,
     cmd_sel : CommandSelector,
     file_sel : FileSelector,
-    question_text_area: TextArea<'a>,
-    answer_text_area: TextArea<'a>,
+    question_text_widget: TextArea<'a>,
+    answer_text_widget: TextArea<'a>,
+    question_text_rect: Rect,
+    answer_text_rect: Rect,
     llm_rx: Option<oneshot::Receiver<Prompt>>, // Add this field
+    current_focus_area: FocusedInputArea,
 }
 
 impl ChatUIApp<'_> {
@@ -56,32 +65,49 @@ impl ChatUIApp<'_> {
             show_files_popup: false,
             cmd_sel: CommandSelector::new(),
             file_sel: FileSelector::new(),
-            question_text_area: TextArea::default(),
-            answer_text_area: TextArea::default(),
-            llm_rx: None, // Initialize here
+            question_text_widget: TextArea::default(),
+            answer_text_widget: TextArea::default(),
+            question_text_rect: Rect::default(),
+            answer_text_rect: Rect::default(),
+            llm_rx: None,
+            current_focus_area: FocusedInputArea::Question,
         }
     }
 }
 
 impl ChatUIApp<'_> {
+
+    fn focus_at_mouse_pos(&mut self, col: u16, row: u16) {
+        let mouse_pos = Position { x: col, y: row };
+        if self.question_text_rect.contains(mouse_pos) {
+            self.current_focus_area = FocusedInputArea::Question;
+        } else if self.answer_text_rect.contains(mouse_pos) {
+            self.current_focus_area = FocusedInputArea::Answer;
+        }
+    }
+
+
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         let mut stdout = stdout();
         ratatui::crossterm::terminal::enable_raw_mode()?;
 
+        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+
         execute!(
             stdout,
+            EnterAlternateScreen, EnableMouseCapture,
             ratatui::crossterm::terminal::Clear(ratatui::crossterm::terminal::ClearType::All),
             ratatui::crossterm::cursor::MoveTo(0, 0)
         )?;
         stdout.flush()?;
 
-        self.question_text_area.set_block(
+        self.question_text_widget.set_block(
             Block::default()
                 .borders(Borders::ALL)
                 .title("YOU:"),
         );
 
-        self.answer_text_area.set_block(
+        self.answer_text_widget.set_block(
             Block::default()
                 .borders(Borders::ALL)
                 .title("LLM:"),
@@ -98,8 +124,13 @@ impl ChatUIApp<'_> {
                     .split(frame.area());
 
                 frame.render_widget(Clear, frame.area());
-                frame.render_widget(&self.question_text_area, layout[0]);
-                frame.render_widget(&self.answer_text_area, layout[1]);
+
+                self.question_text_rect = layout[0];
+                self.answer_text_rect = layout[1];
+
+                // Render the TextAreas - TextArea has built-in scrolling functionality
+                frame.render_widget(&self.question_text_widget, layout[0]);
+                frame.render_widget(&self.answer_text_widget, layout[1]);
                 if self.show_commands_popup {
                     self.cmd_sel.render_commands_popup(frame);
                 }
@@ -112,15 +143,15 @@ impl ChatUIApp<'_> {
             if let Some(rx) = self.llm_rx.as_mut() { // Borrow mutably to call try_recv
                 match rx.try_recv() {
                     Ok(prompt) => {
-                        self.answer_text_area = TextArea::default();
-                        self.answer_text_area.set_block(
+                        self.answer_text_widget = TextArea::default();
+                        self.answer_text_widget.set_block(
                             Block::default()
                                 .borders(Borders::ALL)
                                 .title(format!("LLM: [ID:{}]",prompt.id))
                         );
 
                         //let highlighted_response = highlight_code(ans_prompt.value.as_str());
-                        self.answer_text_area.insert_str(&prompt.value);
+                        self.answer_text_widget.insert_str(&prompt.value);
                         self.llm_rx = None; // Clear the receiver once handled
 
                     }
@@ -129,7 +160,7 @@ impl ChatUIApp<'_> {
                     }
                     Err(oneshot::error::TryRecvError::Closed) => {
                         // Sender dropped (task panicked or completed without sending)
-                        self.answer_text_area.insert_str("Error: LLM task failed or was cancelled.");
+                        self.answer_text_widget.insert_str("Error: LLM task failed or was cancelled.");
                         self.llm_rx = None; // Clear the receiver
                     }
                 }
@@ -139,96 +170,123 @@ impl ChatUIApp<'_> {
             // This makes the loop iterate even if there are no key presses,
             // allowing the llm_rx check above to run.
             if ratatui::crossterm::event::poll(Duration::from_millis(100))? {
-                if let Event::Key(key) = ratatui::crossterm::event::read()? {
-                    // Your own key mapping to break the event loop
-                    if self.show_commands_popup {
-                        let (command, state) = self.cmd_sel.handle_key(key);
-                        if command.is_some() && state == CommandSelectorState::Selected {
-                            self.question_text_area.insert_str(command.unwrap().usage_example.as_str());
-                            self.show_commands_popup = false
-                        }
-                        else if state == CommandSelectorState::Exit{
-                            self.show_commands_popup = false
-                        }
-                    }
-                    else if self.show_files_popup {
-                        let (file_name, state) = self.file_sel.handle_key(key);
-                        if file_name.is_some() && state == FileSelectorState::Selected {
-                            self.question_text_area.insert_str(file_name.unwrap().as_str());
-                            self.show_files_popup = false
-                        }
-                        else if state == FileSelectorState::Exit{
-                            self.show_files_popup = false
-                        }
-                    }
-                    else {
-                        match key.code {
-                            KeyCode::Char('?') => {
-                                commands_registry::print_help();
-                            }
-                            KeyCode::Char('!') => {
-                                // let content: Vec<String> = self.question_text_area.lines().to_vec();
-                                // tokio::spawn(async move { execute_offline_command(&content).await });
-                            }
-                            KeyCode::Char('>') => {
-                                // let content: Vec<String> = self.question_text_area.lines().to_vec();
-                                // tokio::spawn(async move { execute_offline_command(&content).await });
-                            }
-                            KeyCode::Char('@') => {
-                                self.show_commands_popup = true
-                            },
-                            KeyCode::Char('$') => {
-                                self.show_files_popup = true
-                            },
-                            KeyCode::Esc => {
-                                autocomplete::save_history();
-                                break Ok(())
-                            },
-                            KeyCode::Char('±') => {
-                                if key.kind == KeyEventKind::Press {
-                                    if self.llm_rx.is_none() {
-                                        self.execute_llm_command();
-                                    } else {
-                                        // Optionally, provide feedback that a command is already in progress
-                                        // self.answer_text_area.insert_str("An LLM command is already running...\n");
+                match ratatui::crossterm::event::read()? {
+                    Event::Key(key) => {
+                            match key.code {
+                                KeyCode::Char('?') => {
+                                    commands_registry::print_help();
+                                }
+                                KeyCode::Char('!') => {
+                                    // let content: Vec<String> = self.question_text_area.lines().to_vec();
+                                    // tokio::spawn(async move { execute_offline_command(&content).await });
+                                }
+                                KeyCode::Char('>') => {
+                                    // let content: Vec<String> = self.question_text_area.lines().to_vec();
+                                    // tokio::spawn(async move { execute_offline_command(&content).await });
+                                }
+                                KeyCode::Char('@') => {
+                                    self.show_commands_popup = true
+                                },
+                                KeyCode::Char('$') => {
+                                    self.show_files_popup = true
+                                },
+                                KeyCode::Esc => {
+                                    autocomplete::save_history();
+                                    break Ok(())
+                                },
+                                KeyCode::F(1) => {
+                                    if key.kind == KeyEventKind::Press {
+                                        if self.llm_rx.is_none() {
+                                            self.execute_llm_command();
+                                        } else {
+                                            // Optionally, provide feedback that a command is already in progress
+                                            // self.answer_text_area.insert_str("An LLM command is already running...\n");
+                                        }
                                     }
                                 }
-                            },
-                            _ => {
-                                self.question_text_area.input(key);
+                                _ => {
+                                    if self.show_commands_popup {
+                                        let (command, state) = self.cmd_sel.handle_key(key);
+                                        if command.is_some() && state == CommandSelectorState::Selected {
+                                            self.question_text_widget.insert_str(command.unwrap().usage_example.as_str());
+                                            self.show_commands_popup = false
+                                        }
+                                        else if state == CommandSelectorState::Exit{
+                                            self.show_commands_popup = false
+                                        }
+                                    }
+                                    else if self.show_files_popup {
+                                        let (file_name, state) = self.file_sel.handle_key(key);
+                                        if file_name.is_some() && state == FileSelectorState::Selected {
+                                            self.question_text_widget.insert_str(file_name.unwrap().as_str());
+                                            self.show_files_popup = false
+                                        }
+                                        else if state == FileSelectorState::Exit{
+                                            self.show_files_popup = false
+                                        }
+                                    }
+
+                                    match self.current_focus_area {
+                                        FocusedInputArea::Question => {
+                                            self.question_text_widget.input(key);
+                                        },
+                                        FocusedInputArea::Answer => {
+
+                                            match key.code {
+                                                KeyCode::Up | KeyCode::Down | KeyCode::PageUp | KeyCode::PageDown | KeyCode::Home | KeyCode::End => {
+                                                    self.answer_text_widget.input(key);
+                                                },
+                                                _ => {}
+                                            }
+                                        }
+                                    }
+                                }
                             }
+                        },
+                    Event::Mouse(mouse_event) => {
+                        match mouse_event.kind {
+                            MouseEventKind::Down(MouseButton::Left) |  MouseEventKind::ScrollDown | MouseEventKind::ScrollUp => {
+                                self.focus_at_mouse_pos(mouse_event.column, mouse_event.row);
+                            }
+                            _ => {}
                         }
                     }
+                    _ => {
+
+
+                    }
+
                 }
             }
         }
+
     }
 
     fn execute_llm_command(&mut self) {
-        let content: Vec<String> = self.question_text_area.lines().to_vec();
+        let content: Vec<String> = self.question_text_widget.lines().to_vec();
         let content = content.join(&"\n");
 
         let (enriched_input, _offline) = check_embedded_commands(content.as_str());
         if _offline {
-            self.answer_text_area = TextArea::default();
-            self.answer_text_area.set_block(
+            self.answer_text_widget = TextArea::default();
+            self.answer_text_widget.set_block(
                 Block::default()
                     .borders(Borders::ALL)
                     .title("LLM: [LOCAL]")
             );
-            
-            self.answer_text_area.insert_str(enriched_input.as_str());
+
+            self.answer_text_widget.insert_str(enriched_input.as_str());
             return;
         }
         let ques_prompt = Prompt::new(enriched_input.clone(), PromptType::QUESTION);
 
-        self.question_text_area.set_block(
+        self.question_text_widget.set_block(
             Block::default()
                 .borders(Borders::ALL)
                 .title(format!("YOU: [ID:{}]",ques_prompt.id))
         );
 
-        
+
         let (tx, rx) = tokio::sync::oneshot::channel();
         self.llm_rx = Some(rx); // Store the receiver
 
@@ -251,4 +309,6 @@ impl ChatUIApp<'_> {
         });
 
     }
+
+
 }
