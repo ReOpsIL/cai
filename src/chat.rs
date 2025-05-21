@@ -20,14 +20,15 @@ lazy_static! {
     static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub enum PromptType {
+    #[default]
     QUESTION,
     ANSWER,
     ALIAS,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Prompt {
     pub id: String,
     pub date: DateTime<Utc>,

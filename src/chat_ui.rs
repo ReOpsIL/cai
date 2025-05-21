@@ -54,7 +54,9 @@ struct ChatUIApp<'a> {
     answer_text_widget: TextArea<'a>,
     question_text_rect: Rect,
     answer_text_rect: Rect,
-    llm_rx: Option<oneshot::Receiver<Prompt>>, // Add this field
+    question_prompt: Prompt,
+    answer_prompt: Prompt,
+    llm_rx: Option<oneshot::Receiver<String>>, // Add this field
     current_focus_area: FocusedInputArea,
 }
 
@@ -69,6 +71,8 @@ impl ChatUIApp<'_> {
             answer_text_widget: TextArea::default(),
             question_text_rect: Rect::default(),
             answer_text_rect: Rect::default(),
+            question_prompt: Prompt::default(),
+            answer_prompt: Prompt::default(),
             llm_rx: None,
             current_focus_area: FocusedInputArea::Question,
         }
@@ -106,6 +110,7 @@ impl ChatUIApp<'_> {
                 .borders(Borders::ALL)
                 .title("YOU:"),
         );
+        
 
         self.answer_text_widget.set_block(
             Block::default()
@@ -139,21 +144,41 @@ impl ChatUIApp<'_> {
                 }
             })?;
 
+            if self.answer_text_widget.lines().len() > 0 {
+
+                let wrapped_str = textwrap::wrap(self.answer_prompt.value.as_str(), self.answer_text_rect.width as usize).join("\n");
+                //let highlighted_response = highlight_code(ans_prompt.value.as_str());
+                self.answer_text_widget = TextArea::default();
+                self.answer_text_widget.set_block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(format!("LLM: [ID:{}]",self.answer_prompt.id))
+                );
+                self.answer_text_widget.insert_str(wrapped_str);
+
+                // let wrapped_str = textwrap::wrap(&*lines.join(" "), self.answer_text_rect.width as usize).join("\n");
+            }
+
             // Check for LLM response non-blockingly
             if let Some(rx) = self.llm_rx.as_mut() { // Borrow mutably to call try_recv
                 match rx.try_recv() {
-                    Ok(prompt) => {
+                    Ok(response_text) => {
+                        self.answer_prompt = Prompt::new(response_text, PromptType::ANSWER);
+
                         self.answer_text_widget = TextArea::default();
                         self.answer_text_widget.set_block(
                             Block::default()
                                 .borders(Borders::ALL)
-                                .title(format!("LLM: [ID:{}]",prompt.id))
+                                .title(format!("LLM: [ID:{}]",self.answer_prompt.id))
                         );
 
+                        let wrapped_str = textwrap::wrap(self.answer_prompt.value.as_str(), self.answer_text_rect.width as usize).join("\n");
                         //let highlighted_response = highlight_code(ans_prompt.value.as_str());
-                        self.answer_text_widget.insert_str(&prompt.value);
-                        self.llm_rx = None; // Clear the receiver once handled
+                        self.answer_text_widget.insert_str(wrapped_str);
 
+                        //self.answer_text_widget.insert_str(prompt.value.as_str());
+                        self.llm_rx = None; // Clear the receiver once handled
+                        
                     }
                     Err(oneshot::error::TryRecvError::Empty) => {
                         // Not ready yet, do nothing, will check next loop iteration
@@ -278,12 +303,12 @@ impl ChatUIApp<'_> {
             self.answer_text_widget.insert_str(enriched_input.as_str());
             return;
         }
-        let ques_prompt = Prompt::new(enriched_input.clone(), PromptType::QUESTION);
+        self.question_prompt = Prompt::new(enriched_input.clone(), PromptType::QUESTION);
 
         self.question_text_widget.set_block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(format!("YOU: [ID:{}]",ques_prompt.id))
+                .title(format!("YOU: [ID:{}]",self.question_prompt.id))
         );
 
 
@@ -294,8 +319,7 @@ impl ChatUIApp<'_> {
         tokio::spawn(async move {
             match openrouter::call_openrouter_api(&enriched_input).await {
                 Ok(response_text) => {
-                    let ans_prompt = Prompt::new(response_text, PromptType::ANSWER);
-                    if tx.send(ans_prompt).is_err() {
+                    if tx.send(response_text).is_err() {
                         // Receiver was dropped, maybe UI closed or another command started
                         eprintln!("LLM task: Receiver for response was dropped.");
                     }
