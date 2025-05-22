@@ -80,7 +80,8 @@ impl ChatUIApp<'_> {
 }
 
 impl ChatUIApp<'_> {
-    fn create_textarea_block(&self, title: String) -> Block<'_> {
+
+    fn create_textarea_block<'a>(&self, title: String) -> Block<'a> {
         Block::default().borders(Borders::ALL).title(title)
     }
 
@@ -94,7 +95,7 @@ impl ChatUIApp<'_> {
     }
 
 
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(&mut self, mut terminal: DefaultTerminal) -> Result<()> {
         let mut stdout = stdout();
         ratatui::crossterm::terminal::enable_raw_mode()?;
 
