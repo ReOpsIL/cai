@@ -8,17 +8,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
-use syntect::easy::HighlightLines;
-use syntect::highlighting::{Style, ThemeSet};
-use syntect::parsing::SyntaxSet;
-use syntect::util::{LinesWithEndings, as_24_bit_terminal_escaped};
 
 // In-memory context
 lazy_static! {
     static ref MEMORY: Mutex<HashMap<String, Prompt>> = Mutex::new(HashMap::new());
-    static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
-    static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
 }
+
+// mod syntax_highlighting; // Removed as it will be declared in main.rs
 
 #[derive(Debug, Default, Clone, PartialEq)]
 pub enum PromptType {
@@ -86,89 +82,79 @@ pub fn execute_command(
     Ok(None)
 }
 
-pub fn highlight_code(code: &str) -> String {
-    let ss = &*SYNTAX_SET;
-    let ts = &*THEME_SET;
-
-    let ps = SyntaxSet::load_defaults_newlines();
-    let mut highlighted_code = String::new();
-    let syntax = ss
-        .find_syntax_by_extension("py")
-        .unwrap_or_else(|| ss.find_syntax_plain_text());
-
-    let mut h = HighlightLines::new(syntax, &ts.themes["InspiredGitHub"]);
-
-    const CSI: &str = "\x1B[";
-    const RESET_ALL: &str = "\x1B[0m";
-    const FG_BLACK: &str = "30";
-    const BG_WHITE: &str = "47"; // Or "47" for standard white
-    const ERASE_LINE: &str = "2K"; // Erases the entire line, cursor does not move (typically stays at column 1)
-
-    for line in LinesWithEndings::from(code) {
-        // LinesWithEndings enables use of newlines mode
-        let ranges: Vec<(Style, &str)> = h.highlight_line(line, &ps).unwrap();
-        let highlighted_line = as_24_bit_terminal_escaped(&ranges[..], true);
-        let highlighted_line_wh_bg = terminal::white_bg(highlighted_line);
-        highlighted_code.push_str(&format!(
-            "{}{};{}m{}{}{}{}",
-            CSI,      // Start sequence
-            BG_WHITE, // Set background to white
-            FG_BLACK, // Set foreground to black (separated by ';')
-            CSI,
-            ERASE_LINE,             // Erase the line (fills with current background)
-            highlighted_line_wh_bg, // Your actual text
-            RESET_ALL
-        ));
+// Helper function to parse command and its length from input segment
+fn parse_command_from_input(input_segment: &str) -> Option<(String, usize)> {
+    if !input_segment.starts_with("@") {
+        return None;
     }
 
-    highlighted_code
+    // Determine the initial end of the command name part (before parameters)
+    let command_name_end = input_segment
+        .find(|c: char| c == ' ' || c == '\n' || c == '(')
+        .unwrap_or(input_segment.len());
+
+    let potential_command_text = &input_segment[..command_name_end];
+
+    // Now, determine the actual end of the full command including parameters
+    let command_actual_end = if input_segment[command_name_end..].starts_with('(') {
+        // Command has parameters in parentheses
+        let mut paren_level = 0;
+        let mut in_string = false;
+        let mut last_char_was_escape = false;
+        let mut end_idx = command_name_end; // Start searching from after the command name
+
+        for (i, char_code) in input_segment[command_name_end..].char_indices() {
+            end_idx = command_name_end + i + char_code.len_utf8();
+            if last_char_was_escape {
+                last_char_was_escape = false;
+                continue;
+            }
+            match char_code {
+                '\\' => last_char_was_escape = true,
+                '"' if !last_char_was_escape => in_string = !in_string,
+                '(' if !in_string => paren_level += 1,
+                ')' if !in_string => {
+                    paren_level -= 1;
+                    if paren_level == 0 {
+                        break; // Found matching closing parenthesis
+                    }
+                }
+                _ => {}
+            }
+        }
+        if paren_level == 0 {
+            end_idx // End is after the closing parenthesis
+        } else {
+            // Mismatched parentheses, fallback to newline or end of string
+            input_segment
+                .find('\n')
+                .unwrap_or(input_segment.len())
+        }
+    } else {
+        // Command does not have parameters in parentheses, ends at space or newline
+        command_name_end
+    };
+    
+    let command_str = input_segment[..command_actual_end].to_string();
+    Some((command_str, command_actual_end))
 }
 
+
 pub fn check_embedded_commands(input: &str) -> (String, bool) {
-    // Check for embedded commands
     let mut enriched_input = input.to_string();
-    let mut pos = 0;
+    let mut current_pos = 0;
     let mut offline = false;
-    while pos < enriched_input.len() {
-        if enriched_input[pos..].starts_with("@") {
-            // Find the end of the command (space, newline, or end of string)
-            let end = enriched_input[pos..]
-                .find(|c: char| c == ' ' || c == '\n')
-                .map(|x| x + pos)
-                .unwrap_or(enriched_input.len());
 
-            // Extract the full command including parameters
-            // Need to find the closing parenthesis for commands with the new format
-            let command_start = pos;
-            let command_text = &enriched_input[pos..];
+    while current_pos < enriched_input.len() {
+        if let Some((command, command_len_in_original_segment)) =
+            parse_command_from_input(&enriched_input[current_pos..])
+        {
+            // The `command_len_in_original_segment` is the length of the command string itself,
+            // which is also the length to replace in the `enriched_input` starting from `current_pos`.
+            let command_end_in_enriched_input = current_pos + command_len_in_original_segment;
 
-            // Find the end of the command - either at the next newline or after the closing parenthesis
-            let command_end = if command_text.contains('(') {
-                let paren_pos = command_text.find('(').unwrap_or(0) + pos;
-                let remaining = &enriched_input[paren_pos..];
-                let closing_paren = remaining.find(')').map(|x| x + paren_pos + 1);
-
-                match closing_paren {
-                    Some(end) => end,
-                    None => enriched_input[pos..]
-                        .find('\n')
-                        .map(|x| x + pos)
-                        .unwrap_or(enriched_input.len()),
-                }
-            } else {
-                enriched_input[pos..]
-                    .find('\n')
-                    .map(|x| x + pos)
-                    .unwrap_or(enriched_input.len())
-            };
-
-            let command = &enriched_input[command_start..command_end];
-
-            //println!("Executing command: {}", command);
-
-            match execute_command(command) {
+            match execute_command(&command) {
                 Ok(Some(output)) => {
-                    // Inject the output into the prompt
                     if output.command.command_type == CommandType::Terminal
                         || output.command.command_type == CommandType::NotLLM
                     {
@@ -176,37 +162,47 @@ pub fn check_embedded_commands(input: &str) -> (String, bool) {
                     }
                     match output.command_output {
                         Ok(Some(s)) => {
-                            let formated_output = &format!("{}", s);
-                            enriched_input.replace_range(pos..end, formated_output);
-                            pos += formated_output.len();
+                            let formatted_output = format!("{}", s);
+                            enriched_input.replace_range(
+                                current_pos..command_end_in_enriched_input,
+                                &formatted_output,
+                            );
+                            current_pos += formatted_output.len();
                         }
                         Ok(None) => {
+                            // Command succeeded but no output, advance past the command
                             println!(
-                                "Calling command succeeded, but no returned value was present."
+                                "Calling command {} succeeded, but no returned value was present.",
+                                command
                             );
-                            pos = end;
+                            current_pos = command_end_in_enriched_input;
                         }
                         Err(e) => {
-                            println!("An error occurred while calling command: {}", e);
-                            pos = end;
+                            // Command execution resulted in an error
+                            println!("An error occurred while calling command {}: {}", command, e);
+                            current_pos = command_end_in_enriched_input;
                         }
                     }
                 }
                 Ok(None) => {
-                    pos = end;
+                    // Command not found or no action taken by command
+                    // It's important to advance past the parsed command to avoid infinite loops
+                    current_pos = command_end_in_enriched_input;
                 }
                 Err(e) => {
                     println!(
                         "{}",
-                        terminal::format_error(&format!("Error executing command: {}", e))
+                        terminal::format_error(&format!(
+                            "Error executing command {}: {}",
+                            command, e
+                        ))
                     );
-                    pos = end;
+                    current_pos = command_end_in_enriched_input;
                 }
             }
         } else {
-            pos += 1;
+            current_pos += 1;
         }
     }
     (enriched_input, offline)
 }
-
