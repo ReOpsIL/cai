@@ -1,6 +1,5 @@
 use tokio;
 mod chat;
-mod command_handler;
 mod commands;
 mod commands_registry;
 mod configuration;

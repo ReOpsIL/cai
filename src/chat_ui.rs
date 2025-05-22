@@ -217,11 +217,23 @@ impl ChatUIApp<'_> {
         }
     }
 
+    fn handle_prompting_key(&mut self, key: ratatui::crossterm::event::KeyEvent) {
+        match self.current_focus_area {
+            FocusedInputArea::Question => {
+                self.question_text_widget.input(key);
+            }
+            FocusedInputArea::Answer => {
+                match key.code {
+                    KeyCode::Up | KeyCode::Down | KeyCode::PageUp | KeyCode::PageDown | KeyCode::Home | KeyCode::End => {
+                        self.answer_text_widget.input(key);
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
     fn handle_key_event(&mut self, key: ratatui::crossterm::event::KeyEvent) -> color_eyre::Result<Option<()>> {
         match key.code {
-            KeyCode::Char('?') => {
-                commands_registry::print_help();
-            }
             KeyCode::Char('!') => {
                 // Functionality for '!' was commented out
             }
@@ -261,19 +273,8 @@ impl ChatUIApp<'_> {
                 } else if self.show_files_popup {
                    self.handle_files_key(key)
                 }
-
-                match self.current_focus_area {
-                    FocusedInputArea::Question => {
-                        self.question_text_widget.input(key);
-                    }
-                    FocusedInputArea::Answer => {
-                        match key.code {
-                            KeyCode::Up | KeyCode::Down | KeyCode::PageUp | KeyCode::PageDown | KeyCode::Home | KeyCode::End => {
-                                self.answer_text_widget.input(key);
-                            }
-                            _ => {}
-                        }
-                    }
+                else {
+                    self.handle_prompting_key(key)
                 }
             }
         }
