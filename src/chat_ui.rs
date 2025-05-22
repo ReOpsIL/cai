@@ -197,6 +197,25 @@ impl ChatUIApp<'_> {
         }
 
     }
+    fn handle_command_key(&mut self, key: ratatui::crossterm::event::KeyEvent) {
+        let (command, state) = self.cmd_sel.handle_key(key);
+        if command.is_some() && state == CommandSelectorState::Selected {
+            self.question_text_widget.insert_str(command.unwrap().usage_example.as_str());
+            self.show_commands_popup = false;
+        } else if state == CommandSelectorState::Exit {
+            self.show_commands_popup = false;
+        }
+    }
+    
+    fn handle_files_key(&mut self , key: ratatui::crossterm::event::KeyEvent) {
+        let (file_name, state) = self.file_sel.handle_key(key);
+        if file_name.is_some() && state == FileSelectorState::Selected {
+            self.question_text_widget.insert_str(file_name.unwrap().as_str());
+            self.show_files_popup = false;
+        } else if state == FileSelectorState::Exit {
+            self.show_files_popup = false;
+        }
+    }
 
     fn handle_key_event(&mut self, key: ratatui::crossterm::event::KeyEvent) -> color_eyre::Result<Option<()>> {
         match key.code {
@@ -216,8 +235,15 @@ impl ChatUIApp<'_> {
                 self.show_files_popup = true;
             }
             KeyCode::Esc => {
-                autocomplete::save_history();
-                return Ok(Some(())); // Signal to exit
+                if self.show_commands_popup {
+                    self.handle_command_key(key)
+                } else if self.show_files_popup {
+                    self.handle_files_key(key)
+                }
+                else {
+                    autocomplete::save_history();
+                    return Ok(Some(())); // Signal to exit    
+                }
             }
             KeyCode::F(1) => {
                 if key.kind == KeyEventKind::Press {
@@ -231,21 +257,9 @@ impl ChatUIApp<'_> {
             }
             _ => {
                 if self.show_commands_popup {
-                    let (command, state) = self.cmd_sel.handle_key(key);
-                    if command.is_some() && state == CommandSelectorState::Selected {
-                        self.question_text_widget.insert_str(command.unwrap().usage_example.as_str());
-                        self.show_commands_popup = false;
-                    } else if state == CommandSelectorState::Exit {
-                        self.show_commands_popup = false;
-                    }
+                   self.handle_command_key(key)
                 } else if self.show_files_popup {
-                    let (file_name, state) = self.file_sel.handle_key(key);
-                    if file_name.is_some() && state == FileSelectorState::Selected {
-                        self.question_text_widget.insert_str(file_name.unwrap().as_str());
-                        self.show_files_popup = false;
-                    } else if state == FileSelectorState::Exit {
-                        self.show_files_popup = false;
-                    }
+                   self.handle_files_key(key)
                 }
 
                 match self.current_focus_area {
