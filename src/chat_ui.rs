@@ -85,6 +85,13 @@ impl ChatUIApp<'_> {
         Block::default().borders(Borders::ALL).title(title)
     }
 
+    fn wrap_answer_widget(&mut self) {
+        let wrapped_str = textwrap::wrap(self.answer_prompt.value.as_str(), self.answer_text_rect.width as usize).join("\n");
+        //let highlighted_response = highlight_code(ans_prompt.value.as_str());
+        self.answer_text_widget = TextArea::default();
+        self.answer_text_widget.set_block(self.create_textarea_block(format!("LLM: [ID:{}]", self.answer_prompt.id)));
+        self.answer_text_widget.insert_str(wrapped_str);
+    }
     fn focus_at_mouse_pos(&mut self, col: u16, row: u16) {
         let mouse_pos = Position { x: col, y: row };
         if self.question_text_rect.contains(mouse_pos) {
@@ -138,17 +145,6 @@ impl ChatUIApp<'_> {
                 }
             })?;
 
-            if self.answer_text_widget.lines().len() > 0 {
-
-                let wrapped_str = textwrap::wrap(self.answer_prompt.value.as_str(), self.answer_text_rect.width as usize).join("\n");
-                //let highlighted_response = highlight_code(ans_prompt.value.as_str());
-                self.answer_text_widget = TextArea::default();
-                self.answer_text_widget.set_block(self.create_textarea_block(format!("LLM: [ID:{}]", self.answer_prompt.id)));
-                self.answer_text_widget.insert_str(wrapped_str);
-
-                // let wrapped_str = textwrap::wrap(&*lines.join(" "), self.answer_text_rect.width as usize).join("\n");
-            }
-
             // Check for LLM response non-blockingly
             if let Some(rx) = self.llm_rx.as_mut() { // Borrow mutably to call try_recv
                 match rx.try_recv() {
@@ -191,8 +187,9 @@ impl ChatUIApp<'_> {
                         self.handle_mouse_event(mouse_event);
                     }
                     _ => {
-
-
+                        if self.answer_text_widget.lines().len() > 0 {  
+                            self.wrap_answer_widget()
+                        }
                     }
 
                 }
