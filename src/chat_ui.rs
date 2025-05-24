@@ -267,11 +267,17 @@ impl ChatUIApp<'_> {
                         if let Some(_) = self.handle_key_event(key)? {
                             break Ok(());
                         }
-                        self.handle_tree_key_event(Event::Key(key))?;
+                        match self.current_focus_area {
+                            FocusedInputArea::ProjectTree => self.handle_tree_event(Event::Key(key))?,
+                            FocusedInputArea::Question | FocusedInputArea::Answer => {},
+                        } 
                     },
                     Event::Mouse(mouse_event) => {
                         self.handle_mouse_event(mouse_event);
-                        self.handle_tree_key_event(Event::Mouse(mouse_event))?;
+                        match self.current_focus_area {
+                            FocusedInputArea::ProjectTree => self.handle_tree_event(Event::Mouse(mouse_event))?,
+                            FocusedInputArea::Question | FocusedInputArea::Answer => {},
+                        }
                     }
                     _ => {
                         if self.answer_text_widget.lines().len() > 0 {
@@ -284,7 +290,7 @@ impl ChatUIApp<'_> {
         }
 
     }
-    fn handle_tree_key_event(&mut self, event: Event) -> std::io::Result<()> {
+    fn handle_tree_event(&mut self, event: Event) -> std::io::Result<()> {
         let update_tree = match event {
             Event::Key(key) if !matches!(key.kind, KeyEventKind::Press) => false,
             Event::Key(key) => match key.code {
@@ -341,16 +347,6 @@ impl ChatUIApp<'_> {
 
     fn handle_prompting_key(&mut self, key: ratatui::crossterm::event::KeyEvent) {
         match self.current_focus_area {
-            FocusedInputArea::ProjectTree => {
-                // Handle tree navigation
-                match key.code {
-                    KeyCode::Up => { self.state.key_up(); }
-                    KeyCode::Down => { self.state.key_down(); }
-                    KeyCode::Left => { self.state.key_left(); }
-                    KeyCode::Right => { self.state.key_right(); }
-                    _ => {}
-                }
-            }
             FocusedInputArea::Question => {
                 let _ = self.question_text_widget.input(key);
             }
@@ -362,6 +358,7 @@ impl ChatUIApp<'_> {
                     _ => {}
                 }
             }
+            FocusedInputArea::ProjectTree => {}
         }
     }
     fn handle_key_event(&mut self, key: ratatui::crossterm::event::KeyEvent) -> color_eyre::Result<Option<()>> {
