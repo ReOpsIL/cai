@@ -1,12 +1,3 @@
-
-# Feature List for Extending CAI Project Capabilities
-
-Based on my exploration of the CAI (Chat AI) project, here's a comprehensive list of features that could extend its capabilities, improve usability, and add fun elements:
-
-## Enhanced AI Interaction
-
-1. **Conversation Memory**: Implement persistent conversation history across sessions.
-2. **Multiple Concurrent Chats**: Allow users to maintain multiple separate conversations with different contexts.
 3. **Chat Templates**: Pre-defined prompts for common use cases (code review, brainstorming, etc.).
 4. **Model Switching**: Quick toggle between different AI models during a conversation.
 5. **Context Window Management**: Tools to optimize token usage by summarizing or pruning conversation history.

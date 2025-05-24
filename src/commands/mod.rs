@@ -2,7 +2,7 @@ use regex::Regex;
 use std::fs;
 use std::path::Path;
 
-use crate::autocomplete::{autocomplete_file_path, autocomplete_memory_id, autocomplete_model_id};
+use crate::autocomplete::{autocomplete_memory_id, autocomplete_model_id};
 use crate::chat::{self, Prompt, PromptType};
 use crate::commands::files_cmd::register_files_cmd;
 use crate::commands_registry::{Command, CommandType, register_command};

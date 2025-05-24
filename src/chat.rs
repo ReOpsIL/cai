@@ -1,13 +1,9 @@
 use crate::commands_registry::{CommandHandlerResult, CommandType};
-use crate::{autocomplete, commands, commands_registry, configuration, openrouter, terminal};
+use crate::{commands_registry, terminal};
 use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
-use regex::Regex;
-use signal_hook::consts::SIGINT;
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 // In-memory context
 lazy_static! {
@@ -93,7 +89,7 @@ fn parse_command_from_input(input_segment: &str) -> Option<(String, usize)> {
         .find(|c: char| c == ' ' || c == '\n' || c == '(')
         .unwrap_or(input_segment.len());
 
-    let potential_command_text = &input_segment[..command_name_end];
+    let _potential_command_text = &input_segment[..command_name_end];
 
     // Now, determine the actual end of the full command including parameters
     let command_actual_end = if input_segment[command_name_end..].starts_with('(') {

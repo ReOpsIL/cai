@@ -32,7 +32,7 @@ pub struct CommandSelector {
 impl CommandSelector {
 
     pub fn new() -> Self {
-        let commands = commands_registry::get_all_commands();
+        let _commands = commands_registry::get_all_commands();
         Self {
             current_index: 0
         }
