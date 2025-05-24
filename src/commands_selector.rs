@@ -77,14 +77,14 @@ impl CommandSelector {
         let mut commands = commands_registry::get_all_commands();
         commands.sort_by_key(|cmd| cmd.command_type.cmp(&cmd.command_type));
 
-        commands.sort_by(|cmd_a: &Command, cmd_b:&Command| {
-            if cmd_a.command_type == cmd_b.command_type {
-                cmd_a.name.cmp(&cmd_b.name)
-            }
-            else {
-                cmd_a.command_type.cmp(&cmd_b.command_type)
-            }
-        });
+        // commands.sort_by(|cmd_a: &Command, cmd_b:&Command| {
+        //     if cmd_a.command_type == cmd_b.command_type {
+        //         cmd_a.name.cmp(&cmd_b.name)
+        //     }
+        //     else {
+        //         cmd_a.command_type.cmp(&cmd_b.command_type)
+        //     }
+        // });
 
 
         let items: Vec<ListItem> = commands

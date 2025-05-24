@@ -11,17 +11,12 @@ mod autocomplete;
 mod chat_ui;
 mod commands_selector;
 mod files_selector;
+mod tree;
 
 use chat_ui::main_ui;
 //use editor::run_editor;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Initialize models at startup
-    println!("Initializing models...");
-    if let Err(e) = commands::set_model::initialize_models().await {
-        println!("Warning: Failed to initialize models: {}", e);
-        println!("Some commands may not work correctly");
-    }
 
     main_ui();
 
