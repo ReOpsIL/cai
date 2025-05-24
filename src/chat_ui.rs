@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::{stdout, Write};
 use color_eyre::Result;
 use ratatui::crossterm::execute;
@@ -64,6 +65,7 @@ struct ChatUIApp<'a> {
     state: TreeState<String>,
     project_tree_items: Vec<TreeItem<'a, String>>,
     project_tree_do_refresh: bool,
+    project_tree_ids_map: HashMap<String,u32>,
 }
 
 impl ChatUIApp<'_> {
@@ -84,6 +86,7 @@ impl ChatUIApp<'_> {
             current_focus_area: FocusedInputArea::Question,
             state: TreeState::default(),
             project_tree_items: Vec::new(),
+            project_tree_ids_map: HashMap::new(),
             project_tree_do_refresh: true,
         };
         let style = Style::default();
@@ -144,8 +147,9 @@ impl ChatUIApp<'_> {
         }
 
         match generate_md_tree(".") {
-            Ok(tree_items) => {
+            Ok((tree_items, ids_map)) => {
                 self.project_tree_items = tree_items;
+                self.project_tree_ids_map = ids_map;
                 self.project_tree_do_refresh = false
             },
             Err(e) => {
@@ -270,7 +274,7 @@ impl ChatUIApp<'_> {
                         match self.current_focus_area {
                             FocusedInputArea::ProjectTree => self.handle_tree_event(Event::Key(key))?,
                             FocusedInputArea::Question | FocusedInputArea::Answer => {},
-                        } 
+                        }
                     },
                     Event::Mouse(mouse_event) => {
                         self.handle_mouse_event(mouse_event);
@@ -314,7 +318,17 @@ impl ChatUIApp<'_> {
                 MouseEventKind::ScrollDown => self.state.scroll_down(1),
                 MouseEventKind::ScrollUp => self.state.scroll_up(1),
                 MouseEventKind::Down(_button) => {
-                    self.state.click_at(Position::new(mouse.column, mouse.row))
+                    let ret = self.state.click_at(Position::new(mouse.column, mouse.row));
+                    let selected_tree_item_ideas = self.state.selected();
+                    let leaf_id = selected_tree_item_ideas.last();
+                    for item in &self.project_tree_ids_map {
+                        if let Some(leaf_id) = leaf_id {
+                            if item.1.to_string() == *leaf_id {
+                                println!("Selected: {:?}", item.0);
+                            }
+                        }
+                    }
+                    ret
                 }
                 _ => false,
             },

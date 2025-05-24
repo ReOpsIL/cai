@@ -27,7 +27,7 @@ pub struct TreeNode {
 /// ```
 pub fn generate_md_tree<P: AsRef<Path>>(
     root_path: P,
-) -> Result<Vec<TreeItem<'static, String>>, Box<dyn std::error::Error>> {
+) -> Result<(Vec<TreeItem<'static, String>>, HashMap<String,u32>), Box<dyn std::error::Error>> {
     let root = root_path.as_ref();
 
     if !root.exists() {
@@ -39,9 +39,9 @@ pub fn generate_md_tree<P: AsRef<Path>>(
     }
 
     let tree_nodes = scan_directory(root)?;
-    let tree_items = convert_nodes_to_tree_items(tree_nodes)?;
+    let (tree_items, tree_id_map) = convert_nodes_to_tree_items(tree_nodes)?;
 
-    Ok(tree_items)
+    Ok((tree_items, tree_id_map))
 }
 
 /// Recursively scans a directory and builds tree nodes
@@ -115,7 +115,7 @@ fn has_md_files(nodes: &[TreeNode]) -> bool {
 /// Converts TreeNode structure to TreeItem structure for the TUI widget
 fn convert_nodes_to_tree_items(
     nodes: Vec<TreeNode>,
-) -> Result<Vec<TreeItem<'static, String>>, Box<dyn std::error::Error>> {
+) -> Result<(Vec<TreeItem<'static, String>>, HashMap<String,u32>), Box<dyn std::error::Error>> {
     let mut tree_items = Vec::new();
     let mut id_counter = 0u32;
     let mut id_map = HashMap::new();
@@ -125,7 +125,7 @@ fn convert_nodes_to_tree_items(
         tree_items.push(tree_item);
     }
 
-    Ok(tree_items)
+    Ok((tree_items, id_map))
 }
 
 /// Recursively converts a single TreeNode to TreeItem
@@ -179,6 +179,8 @@ fn generate_unique_id(
     id.to_string()
 }
 
+
+
 /// Alternative function that returns TreeNode structure if you need more control
 pub fn scan_md_directory<P: AsRef<Path>>(
     root_path: P,
@@ -196,7 +198,7 @@ pub fn scan_md_directory<P: AsRef<Path>>(
     scan_directory(root)
 }
 
-// Utility function to get the full path of a selected item from the tree state
+//Utility function to get the full path of a selected item from the tree state
 // pub fn get_selected_path(
 //     tree_items: &[TreeItem<'static, String>],
 //     selected_identifier: &str,
@@ -210,21 +212,21 @@ pub fn scan_md_directory<P: AsRef<Path>>(
 //             // This is a simplified version
 //             return Some(PathBuf::from(item.));
 //         }
-//
+// 
 //         for child in item.children() {
 //             if let Some(path) = search_tree_item(child, target_id) {
 //                 return Some(path);
 //             }
 //         }
-//
+// 
 //         None
 //     }
-//
+// 
 //     for item in tree_items {
 //         if let Some(path) = search_tree_item(item, selected_identifier) {
 //             return Some(path);
 //         }
 //     }
-//
+// 
 //     None
 // }
