@@ -182,6 +182,7 @@ fn generate_unique_id(
 
 
 /// Alternative function that returns TreeNode structure if you need more control
+#[allow(dead_code)]
 pub fn scan_md_directory<P: AsRef<Path>>(
     root_path: P,
 ) -> Result<Vec<TreeNode>, Box<dyn std::error::Error>> {

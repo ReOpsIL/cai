@@ -33,6 +33,7 @@ pub struct Command {
 }
 
 impl Command {
+    #[allow(dead_code)]
     pub fn new(
         name: String,
         pattern: Regex,

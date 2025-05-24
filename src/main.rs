@@ -18,7 +18,7 @@ use chat_ui::main_ui;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
-    main_ui();
+    let _ = main_ui();
 
     //chat::chat_loop().await?;
     Ok(())

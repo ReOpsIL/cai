@@ -1,27 +1,26 @@
 use std::collections::HashMap;
+use std::fs;
 use std::io::{stdout, Write};
 use color_eyre::Result;
 use ratatui::crossterm::execute;
 use ratatui::{crossterm::event::{Event, KeyCode}, layout::{Constraint, Layout, Direction}, widgets::{
     Block, Borders,
-}, DefaultTerminal, Frame};
+}, DefaultTerminal};
 use ratatui::widgets::{Clear, Scrollbar, ScrollbarOrientation};
-use ratatui::crossterm::event::{DisableMouseCapture, EnableMouseCapture, KeyEventKind, KeyModifiers, MouseButton, MouseEventKind};
+use ratatui::crossterm::event::{EnableMouseCapture, KeyEventKind, KeyModifiers, MouseButton, MouseEventKind};
 use tui_textarea::{CursorMove, TextArea};
-use crate::{autocomplete, commands, commands_registry, commands_selector, configuration, openrouter, terminal};
+use crate::{autocomplete, commands, commands_selector, configuration, openrouter, terminal};
 use commands_selector::CommandSelector;
 use crate::chat::{check_embedded_commands, Prompt, PromptType}; // Removed highlight_code
 use crate::commands_selector::CommandSelectorState;
 use crate::files_selector::{FileSelector, FileSelectorState};
 use std::time::Duration;
-use ratatui::crossterm::style::Color;
-use ratatui::crossterm::terminal::{disable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use ratatui::crossterm::terminal::{EnterAlternateScreen};
 use ratatui::layout::{Position, Rect};
 use ratatui::style::Style;
-use rustyline::KeyEvent;
 use tokio::sync::oneshot;
 use tui_tree_widget::{Tree, TreeItem, TreeState};
-use crate::tree::{generate_md_tree, TreeNode};
+use crate::tree::{generate_md_tree};
 
 pub enum FocusedInputArea {
     Question,
@@ -66,6 +65,7 @@ struct ChatUIApp<'a> {
     project_tree_items: Vec<TreeItem<'a, String>>,
     project_tree_do_refresh: bool,
     project_tree_ids_map: HashMap<String,u32>,
+    last_file_path: String,
 }
 
 impl ChatUIApp<'_> {
@@ -88,6 +88,7 @@ impl ChatUIApp<'_> {
             project_tree_items: Vec::new(),
             project_tree_ids_map: HashMap::new(),
             project_tree_do_refresh: true,
+            last_file_path: "".to_string(),
         };
         let style = Style::default();
         ret.question_text_widget.set_line_number_style(style);
@@ -109,6 +110,7 @@ impl ChatUIApp<'_> {
         self.answer_text_widget.set_block(self.create_textarea_block(format!("LLM: [ID:{}]", self.answer_prompt.id)));
         self.answer_text_widget.insert_str(wrapped_str);
     }
+    #[allow(dead_code)]
     fn handle_mouse_click_in_widget(widget: &mut TextArea, widget_rect: Rect, col: u16, row: u16) {
 
         let (cur_row, _cur_col) = widget.cursor();
@@ -123,7 +125,7 @@ impl ChatUIApp<'_> {
 
         widget.move_cursor(CursorMove::Jump((page_start + row as usize) as u16, col))
     }
-    fn focus_at_mouse_pos(&mut self, col: u16, row: u16, is_click: bool) {
+    fn focus_at_mouse_pos(&mut self, col: u16, row: u16, _is_click: bool) {
         let mouse_pos = Position { x: col, y: row };
         if self.question_text_rect.contains(mouse_pos) {
             self.current_focus_area = FocusedInputArea::Question;
@@ -139,6 +141,26 @@ impl ChatUIApp<'_> {
         } else if self.project_tree_widget_rect.contains(mouse_pos) {
             self.current_focus_area = FocusedInputArea::ProjectTree;
         }
+    }
+
+    fn open_prompt_file(&mut self, file_path: String) {
+        let contents = fs::read_to_string(file_path);
+        match contents{
+            Ok(file_content) => {
+                self.question_text_widget.select_all();
+                self.question_text_widget.insert_str(file_content.as_str());
+                self.question_text_widget.move_cursor(CursorMove::Jump(0, 0));
+                self.current_focus_area = FocusedInputArea::Question;
+            }
+            Err(_) => {
+
+            }
+        }
+    }
+
+    fn save_prompt_file(&mut self, file_path: String) {
+        let content = self.question_text_widget.clone().into_lines().join("\n");
+        fs::write(file_path, content).expect("Unable to write file");
     }
 
     fn refresh_project_tree(&mut self) {
@@ -320,11 +342,20 @@ impl ChatUIApp<'_> {
                 MouseEventKind::Down(_button) => {
                     let ret = self.state.click_at(Position::new(mouse.column, mouse.row));
                     let selected_tree_item_ideas = self.state.selected();
-                    let leaf_id = selected_tree_item_ideas.last();
-                    for item in &self.project_tree_ids_map {
-                        if let Some(leaf_id) = leaf_id {
-                            if item.1.to_string() == *leaf_id {
-                                println!("Selected: {:?}", item.0);
+                    if let Some(leaf_id) = selected_tree_item_ideas.last() {
+                        let leaf_id_str = leaf_id.to_string();
+                        let file_to_open = self.project_tree_ids_map
+                            .iter()
+                            .find(|item| item.1.to_string() == leaf_id_str)
+                            .map(|item| item.0.to_string());
+                        if let Some(file_path) = file_to_open {
+                            let fp =  file_path;
+                            if self.last_file_path.len() > 0 && self.last_file_path != fp {
+                                self.save_prompt_file(self.last_file_path.clone());
+                            }
+                            if fp.ends_with(".md") {
+                                self.last_file_path = fp.clone();
+                                self.open_prompt_file(fp);     
                             }
                         }
                     }

@@ -2,6 +2,7 @@ use crate::{autocomplete};
 use rustyline::error::ReadlineError;
 
 
+#[allow(dead_code)]
 pub async fn get_input() -> Result<String, Box<dyn std::error::Error>> {
     let mut editor_guard = autocomplete::RL_EDITOR.lock().unwrap(); // unwrap() panics if Mutex is poisoned
 

@@ -13,6 +13,7 @@ lazy_static! {
     static ref MODELS: Mutex<Vec<Model>> = Mutex::new(Vec::new());
 }
 
+#[allow(dead_code)]
 pub async fn initialize_models() -> Result<(), Box<dyn std::error::Error>> {
     let models = openrouter::list_openrouter_models().await?;
 
