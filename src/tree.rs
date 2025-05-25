@@ -139,13 +139,14 @@ fn convert_node_to_tree_item(
         // Remove .md extension for display
         node.name.strip_suffix(".md").unwrap_or(&node.name).to_string()
     } else {
-        format!("📁 {}", node.name)
+        //format!("📁 {}", node.name)
+        format!("{}", node.name)
     };
 
     if node.children.is_empty() {
         // Leaf node (file)
-        let icon = if node.is_file { "📄 " } else { "" };
-        Ok(TreeItem::new_leaf(id, format!("{}{}", icon, display_name)))
+        //let icon = if node.is_file { "📄 " } else { "" };
+        Ok(TreeItem::new_leaf(id, format!("{}", display_name)))
     } else {
         // Branch node (directory with children)
         let mut child_items = Vec::new();

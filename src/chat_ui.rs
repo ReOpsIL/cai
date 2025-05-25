@@ -15,6 +15,7 @@ use crate::chat::{check_embedded_commands, Prompt, PromptType}; // Removed highl
 use crate::commands_selector::CommandSelectorState;
 use crate::files_selector::{FileSelector, FileSelectorState};
 use std::time::Duration;
+use color_eyre::owo_colors::OwoColorize;
 use ratatui::crossterm::terminal::{EnterAlternateScreen};
 use ratatui::layout::{Position, Rect};
 use ratatui::style::Style;
@@ -22,6 +23,7 @@ use tokio::sync::oneshot;
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 use crate::tree::{generate_md_tree};
 
+#[derive(PartialEq)]
 pub enum FocusedInputArea {
     Question,
     Answer,
@@ -66,6 +68,7 @@ struct ChatUIApp<'a> {
     project_tree_do_refresh: bool,
     project_tree_ids_map: HashMap<String,u32>,
     last_file_path: String,
+    escape_count: u8,
 }
 
 impl ChatUIApp<'_> {
@@ -89,6 +92,7 @@ impl ChatUIApp<'_> {
             project_tree_ids_map: HashMap::new(),
             project_tree_do_refresh: true,
             last_file_path: "".to_string(),
+            escape_count: 0,
         };
         let style = Style::default();
         ret.question_text_widget.set_line_number_style(style);
@@ -99,15 +103,14 @@ impl ChatUIApp<'_> {
 
 impl ChatUIApp<'_> {
 
-    fn create_textarea_block<'a>(&self, title: String) -> Block<'a> {
-        Block::default().borders(Borders::ALL).title(title)
+    fn create_textarea_block<'a>(&self, title: String, color: ratatui::style::Color ) -> Block<'a> {
+        Block::default().borders(Borders::ALL).border_style(Style::default().fg(color)).title(title)
     }
 
     fn wrap_answer_widget(&mut self) {
         let wrapped_str = textwrap::wrap(self.answer_prompt.value.as_str(), self.answer_text_rect.width as usize).join("\n");
         //let highlighted_response = highlight_code(ans_prompt.value.as_str());
-        self.answer_text_widget = TextArea::default();
-        self.answer_text_widget.set_block(self.create_textarea_block(format!("LLM: [ID:{}]", self.answer_prompt.id)));
+        self.answer_text_widget.select_all();
         self.answer_text_widget.insert_str(wrapped_str);
     }
     #[allow(dead_code)]
@@ -125,23 +128,23 @@ impl ChatUIApp<'_> {
 
         widget.move_cursor(CursorMove::Jump((page_start + row as usize) as u16, col))
     }
-    fn focus_at_mouse_pos(&mut self, col: u16, row: u16, _is_click: bool) {
-        let mouse_pos = Position { x: col, y: row };
-        if self.question_text_rect.contains(mouse_pos) {
-            self.current_focus_area = FocusedInputArea::Question;
-            // if is_click {
-            //     Self::handle_mouse_click_in_widget(&mut self.question_text_widget, self.question_text_rect, col, row);
-            // }
-        } else if self.answer_text_rect.contains(mouse_pos) {
-            self.current_focus_area = FocusedInputArea::Answer;
-            // if is_click {
-            //     Self::handle_mouse_click_in_widget(&mut self.answer_text_widget, self.answer_text_rect, col, row);
-            // }
-
-        } else if self.project_tree_widget_rect.contains(mouse_pos) {
-            self.current_focus_area = FocusedInputArea::ProjectTree;
-        }
-    }
+    // fn focus_at_mouse_pos(&mut self, col: u16, row: u16, _is_click: bool) {
+    //     let mouse_pos = Position { x: col, y: row };
+    //     if self.question_text_rect.contains(mouse_pos) {
+    //         self.current_focus_area = FocusedInputArea::Question;
+    //         // if is_click {
+    //         //     Self::handle_mouse_click_in_widget(&mut self.question_text_widget, self.question_text_rect, col, row);
+    //         // }
+    //     } else if self.answer_text_rect.contains(mouse_pos) {
+    //         self.current_focus_area = FocusedInputArea::Answer;
+    //         // if is_click {
+    //         //     Self::handle_mouse_click_in_widget(&mut self.answer_text_widget, self.answer_text_rect, col, row);
+    //         // }
+    //
+    //     } else if self.project_tree_widget_rect.contains(mouse_pos) {
+    //         self.current_focus_area = FocusedInputArea::ProjectTree;
+    //     }
+    // }
 
     fn open_prompt_file(&mut self, file_path: String) {
         let contents = fs::read_to_string(file_path);
@@ -180,12 +183,19 @@ impl ChatUIApp<'_> {
             }
         };
     }
-    fn create_project_tree_widget<'a>(tree_items: &'a Vec<TreeItem<String>>) -> Tree<'a, String> {
+    fn create_project_tree_widget<'a>(&self, tree_items: &'a Vec<TreeItem<String>>) -> Tree<'a, String> {
+        let mut border_color = ratatui::style::Color::LightYellow;
+        if self.current_focus_area == FocusedInputArea::ProjectTree {
+            border_color = ratatui::style::Color::Blue;
+        }
+
         Tree::new(tree_items)
             .expect("all item identifiers are unique")
             .block(
                 Block::bordered()
-                    .title("Tree Widget"),
+                    .title("Project Tree")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(border_color)),
             )
             .experimental_scrollbar(Some(
                 Scrollbar::new(ScrollbarOrientation::VerticalRight)
@@ -214,17 +224,41 @@ impl ChatUIApp<'_> {
         )?;
         stdout.flush()?;
 
-        self.question_text_widget.set_block(self.create_textarea_block("YOU:".to_string()));
-        self.answer_text_widget.set_block(self.create_textarea_block("LLM:".to_string()));
+
 
         loop {
             terminal.draw(|frame| {
 
-                let outer_layout = Layout::default()
+                let question_text_block = self.create_textarea_block("YOU:".to_string(),
+                if self.current_focus_area == FocusedInputArea::Question {
+                        ratatui::style::Color::Blue
+                } else {
+                    ratatui::style::Color::LightYellow
+                });
+
+                let answer_text_block = self.create_textarea_block("LLM:".to_string(),
+                   if self.current_focus_area == FocusedInputArea::Answer {
+                        ratatui::style::Color::Blue
+                   } else {
+                       ratatui::style::Color::LightYellow
+                   });
+
+                self.question_text_widget.set_block(question_text_block);
+                self.answer_text_widget.set_block(answer_text_block);
+
+                let command_and_other_layout = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints(vec![
+                        Constraint::Percentage(90),
+                        Constraint::Percentage(10),
+                    ])
+                    .split(frame.area());
+
+                let tree_and_prompt_layout = Layout::default()
                     .direction(Direction::Horizontal)
                     .constraints(vec![
-                        Constraint::Percentage(30),
-                        Constraint::Percentage(70),
+                        Constraint::Percentage(20),
+                        Constraint::Percentage(80),
                     ])
                     .split(frame.area());
 
@@ -234,18 +268,46 @@ impl ChatUIApp<'_> {
                         Constraint::Percentage(30),
                         Constraint::Percentage(70),
                     ])
-                    .split(outer_layout[1]);
+                    .split(tree_and_prompt_layout[1]);
 
                 frame.render_widget(Clear, frame.area());
 
-                self.project_tree_widget_rect = outer_layout[0];
+                self.project_tree_widget_rect = tree_and_prompt_layout[0];
                 self.question_text_rect = qa_layout[0];
                 self.answer_text_rect = qa_layout[1];
 
                 self.refresh_project_tree();
-                let tree_widget = ChatUIApp::create_project_tree_widget(&self.project_tree_items);
-                frame.render_stateful_widget(tree_widget, self.project_tree_widget_rect, &mut self.state);
+                let mut tree_widget = ChatUIApp::create_project_tree_widget(self, &self.project_tree_items);
 
+                // match self.current_focus_area {
+                //     FocusedInputArea::Answer => {
+                //         self.answer_text_widget.set_block(
+                //             self.answer_text_widget
+                //                 .block()
+                //                 .unwrap().clone()
+                //                 .border_style(Style::default().fg(ratatui::style::Color::LightYellow))
+                //         )
+                //     },
+                //     FocusedInputArea::Question => {
+                //         self.question_text_widget.set_block(
+                //             self.question_text_widget
+                //                 .block()
+                //                 .unwrap().clone()
+                //                 .border_style(Style::default().fg(ratatui::style::Color::LightYellow))
+                //         )
+                //     },
+                //     FocusedInputArea::ProjectTree => {
+                //
+                //             tree_widget
+                //                 .block(/* ratatui::widgets::Block<'_> */)
+                //                 .unwrap().clone()
+                //                 .border_style(Style::default().fg(ratatui::style::Color::LightYellow))
+                //
+                //     }
+                //
+                // }
+
+                frame.render_stateful_widget(tree_widget, self.project_tree_widget_rect, &mut self.state);
                 frame.render_widget(&self.question_text_widget, self.question_text_rect);
                 frame.render_widget(&self.answer_text_widget, self.answer_text_rect);
                 if self.show_commands_popup {
@@ -254,6 +316,7 @@ impl ChatUIApp<'_> {
                 if self.show_files_popup {
                     self.file_sel.render_files_popup(frame)
                 }
+
             })?;
 
             // Check for LLM response non-blockingly
@@ -261,12 +324,11 @@ impl ChatUIApp<'_> {
                 match rx.try_recv() {
                     Ok(response_text) => {
                         self.answer_prompt = Prompt::new(response_text, PromptType::ANSWER);
-
-                        self.answer_text_widget = TextArea::default();
-                        self.answer_text_widget.set_block(self.create_textarea_block(format!("LLM: [ID:{}]", self.answer_prompt.id)));
+                        //self.current_focus_area = FocusedInputArea::Answer;
 
                         let wrapped_str = textwrap::wrap(self.answer_prompt.value.as_str(), self.answer_text_rect.width as usize).join("\n");
                         //let highlighted_response = highlight_code(ans_prompt.value.as_str());
+                        self.answer_text_widget.select_all();
                         self.answer_text_widget.insert_str(wrapped_str);
 
                         //self.answer_text_widget.insert_str(prompt.value.as_str());
@@ -298,13 +360,13 @@ impl ChatUIApp<'_> {
                             FocusedInputArea::Question | FocusedInputArea::Answer => {},
                         }
                     },
-                    Event::Mouse(mouse_event) => {
-                        self.handle_mouse_event(mouse_event);
-                        match self.current_focus_area {
-                            FocusedInputArea::ProjectTree => self.handle_tree_event(Event::Mouse(mouse_event))?,
-                            FocusedInputArea::Question | FocusedInputArea::Answer => {},
-                        }
-                    }
+                        // Event::Mouse(mouse_event) => {
+                        //     self.handle_mouse_event(mouse_event);
+                        //     match self.current_focus_area {
+                        //         FocusedInputArea::ProjectTree => self.handle_tree_event(Event::Mouse(mouse_event))?,
+                        //         FocusedInputArea::Question | FocusedInputArea::Answer => {},
+                        //     }
+                        // }
                     _ => {
                         if self.answer_text_widget.lines().len() > 0 {
                             self.wrap_answer_widget()
@@ -408,18 +470,6 @@ impl ChatUIApp<'_> {
     }
     fn handle_key_event(&mut self, key: ratatui::crossterm::event::KeyEvent) -> color_eyre::Result<Option<()>> {
         match key.code {
-            KeyCode::Char('!') => {
-                // Functionality for '!' was commented out
-            }
-            KeyCode::Char('>') => {
-                // Functionality for '>' was commented out
-            }
-            KeyCode::Char('@') => {
-                self.show_commands_popup = true;
-            }
-            KeyCode::Char('$') => {
-                self.show_files_popup = true;
-            }
             KeyCode::Esc => {
                 if self.show_commands_popup {
                     self.handle_command_key(key)
@@ -427,8 +477,15 @@ impl ChatUIApp<'_> {
                     self.handle_files_key(key)
                 }
                 else {
-                    autocomplete::save_history();
-                    return Ok(Some(())); // Signal to exit
+                    self.current_focus_area = FocusedInputArea::ProjectTree;
+
+                    if self.escape_count == 5 {
+                        autocomplete::save_history();
+                        return Ok(Some(())); // Signal to exit
+                    }
+                    else {
+                        self.escape_count += 1;
+                    }
                 }
             }
             KeyCode::F(1) => {
@@ -442,28 +499,61 @@ impl ChatUIApp<'_> {
                 }
             }
             _ => {
+                self.escape_count = 0;
                 if self.show_commands_popup {
                    self.handle_command_key(key)
                 } else if self.show_files_popup {
                    self.handle_files_key(key)
                 }
                 else {
-                    self.handle_prompting_key(key)
+                    if self.current_focus_area == FocusedInputArea::Question {
+                        self.handle_prompting_key(key)
+                    }
+                    else {
+                        match key.code {
+                            KeyCode::Char('!') => {
+                                // Functionality for '!' was commented out
+                            }
+                            KeyCode::Char('>') => {
+                                // Functionality for '>' was commented out
+                            }
+                            KeyCode::Tab => {
+                                match self.current_focus_area {
+                                    FocusedInputArea::Question => {
+                                        self.current_focus_area = FocusedInputArea::Answer;
+                                    },
+                                    FocusedInputArea::Answer => {
+                                        self.current_focus_area = FocusedInputArea::ProjectTree;
+                                    },
+                                    FocusedInputArea::ProjectTree => {
+                                        self.current_focus_area = FocusedInputArea::Question;
+                                    }
+                                }
+                            }
+                            KeyCode::Char(':') => {
+                                self.show_commands_popup = true;
+                            }
+                            KeyCode::Char('$') => {
+                                self.show_files_popup = true;
+                            }
+                            _ => {}
+                        };
+                    }
                 }
             }
         }
         Ok(None) // Continue running
     }
 
-    fn handle_mouse_event(&mut self, mouse_event: ratatui::crossterm::event::MouseEvent) {
-        match mouse_event.kind {
-            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::ScrollDown | MouseEventKind::ScrollUp => {
-                let is_click = mouse_event.kind == MouseEventKind::Down(MouseButton::Left);
-                self.focus_at_mouse_pos(mouse_event.column, mouse_event.row, is_click);
-            }
-            _ => {}
-        }
-    }
+    // fn handle_mouse_event(&mut self, mouse_event: ratatui::crossterm::event::MouseEvent) {
+    //     match mouse_event.kind {
+    //         MouseEventKind::Down(MouseButton::Left) | MouseEventKind::ScrollDown | MouseEventKind::ScrollUp => {
+    //             let is_click = mouse_event.kind == MouseEventKind::Down(MouseButton::Left);
+    //             self.focus_at_mouse_pos(mouse_event.column, mouse_event.row, is_click);
+    //         }
+    //         _ => {}
+    //     }
+    // }
 
     fn execute_llm_command(&mut self) {
         let content: Vec<String> = self.question_text_widget.lines().to_vec();
@@ -471,15 +561,20 @@ impl ChatUIApp<'_> {
 
         let (enriched_input, _offline) = check_embedded_commands(content.as_str());
         if _offline {
-            self.answer_text_widget = TextArea::default();
-            self.answer_text_widget.set_block(self.create_textarea_block("LLM: [LOCAL]".to_string()));
-
+            self.answer_text_widget.select_all();
             self.answer_text_widget.insert_str(enriched_input.as_str());
             return;
         }
         self.question_prompt = Prompt::new(enriched_input.clone(), PromptType::QUESTION);
 
-        self.question_text_widget.set_block(self.create_textarea_block(format!("YOU: [ID:{}]", self.question_prompt.id)));
+        let question_text_block = self.create_textarea_block(format!("YOU: [ID:{}]", self.question_prompt.id),
+            if self.current_focus_area == FocusedInputArea::Question {
+                ratatui::style::Color::Blue
+            } else {
+                ratatui::style::Color::LightYellow
+            });
+
+        self.question_text_widget.set_block(question_text_block);
 
         let (tx, rx) = tokio::sync::oneshot::channel();
         self.llm_rx = Some(rx); // Store the receiver
