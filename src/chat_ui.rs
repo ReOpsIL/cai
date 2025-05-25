@@ -86,7 +86,7 @@ impl ChatUIApp<'_> {
             question_prompt: Prompt::default(),
             answer_prompt: Prompt::default(),
             llm_rx: None,
-            current_focus_area: FocusedInputArea::Question,
+            current_focus_area: FocusedInputArea::ProjectTree,
             state: TreeState::default(),
             project_tree_items: Vec::new(),
             project_tree_ids_map: HashMap::new(),
@@ -153,7 +153,6 @@ impl ChatUIApp<'_> {
                 self.question_text_widget.select_all();
                 self.question_text_widget.insert_str(file_content.as_str());
                 self.question_text_widget.move_cursor(CursorMove::Jump(0, 0));
-                self.current_focus_area = FocusedInputArea::Question;
             }
             Err(_) => {
 
@@ -206,7 +205,7 @@ impl ChatUIApp<'_> {
             .highlight_style(
                 Style::new()
                     .fg(ratatui::style::Color::Black)
-                    .bg(ratatui::style::Color::LightYellow)
+                    .bg(ratatui::style::Color::Blue)
                     .add_modifier(ratatui::style::Modifier::BOLD),
             )
     }
@@ -378,57 +377,64 @@ impl ChatUIApp<'_> {
         }
 
     }
+    fn handle_project_open_or_save_file(&mut self, do_save : bool) {
+        let selected_tree_item_ideas = self.state.selected();
+        if let Some(leaf_id) = selected_tree_item_ideas.last() {
+            let leaf_id_str = leaf_id.to_string();
+            let file_to_open = self.project_tree_ids_map
+                .iter()
+                .find(|item| item.1.to_string() == leaf_id_str)
+                .map(|item| item.0.to_string());
+            if let Some(file_path) = file_to_open {
+                let fp =  file_path;
+                if do_save && self.last_file_path.len() > 0 {
+                    self.save_prompt_file(self.last_file_path.clone());
+                }
+                else if fp.ends_with(".md") {
+                    self.last_file_path = fp.clone();
+                    self.open_prompt_file(fp);
+                }
+            }
+        }
+    }
     fn handle_tree_event(&mut self, event: Event) -> std::io::Result<()> {
         let update_tree = match event {
             Event::Key(key) if !matches!(key.kind, KeyEventKind::Press) => false,
             Event::Key(key) => match key.code {
-                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                    return Ok(());
-                }
-                KeyCode::Char('q') => return Ok(()),
+                // KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                //     return Ok(());
+                // }
+                //KeyCode::Char('q') => return Ok(()),
                 KeyCode::Char('\n' | ' ') => self.state.toggle_selected(),
                 KeyCode::Left => self.state.key_left(),
                 KeyCode::Right => self.state.key_right(),
                 KeyCode::Down => self.state.key_down(),
                 KeyCode::Up => self.state.key_up(),
-                KeyCode::Esc => self.state.select(Vec::new()),
+                //KeyCode::Esc => self.state.select(Vec::new()),
                 KeyCode::Home => self.state.select_first(),
                 KeyCode::End => self.state.select_last(),
                 KeyCode::PageDown => self.state.scroll_down(3),
                 KeyCode::PageUp => self.state.scroll_up(3),
+                KeyCode::Char('n') => self.create_project_file(),
+                KeyCode::Char('N') => self.create_project_dir(),
+                KeyCode::Char('d') => self.create_item(),
                 _ => false,
             },
-            Event::Mouse(mouse) => match mouse.kind {
-                MouseEventKind::ScrollDown => self.state.scroll_down(1),
-                MouseEventKind::ScrollUp => self.state.scroll_up(1),
-                MouseEventKind::Down(_button) => {
-                    let ret = self.state.click_at(Position::new(mouse.column, mouse.row));
-                    let selected_tree_item_ideas = self.state.selected();
-                    if let Some(leaf_id) = selected_tree_item_ideas.last() {
-                        let leaf_id_str = leaf_id.to_string();
-                        let file_to_open = self.project_tree_ids_map
-                            .iter()
-                            .find(|item| item.1.to_string() == leaf_id_str)
-                            .map(|item| item.0.to_string());
-                        if let Some(file_path) = file_to_open {
-                            let fp =  file_path;
-                            if self.last_file_path.len() > 0 && self.last_file_path != fp {
-                                self.save_prompt_file(self.last_file_path.clone());
-                            }
-                            if fp.ends_with(".md") {
-                                self.last_file_path = fp.clone();
-                                self.open_prompt_file(fp);     
-                            }
-                        }
-                    }
-                    ret
-                }
-                _ => false,
-            },
+            // Event::Mouse(mouse) => match mouse.kind {
+            //     MouseEventKind::ScrollDown => self.state.scroll_down(1),
+            //     MouseEventKind::ScrollUp => self.state.scroll_up(1),
+            //     MouseEventKind::Down(_button) => {
+            //         let ret = self.state.click_at(Position::new(mouse.column, mouse.row));
+            //         self.handle_tree_key_click();
+            //         ret
+            //     }
+            //     _ => false,
+            // },
             Event::Resize(_, _) => true,
             _ => false,
         };
 
+        self.handle_project_open_or_save_file(false);
         self.project_tree_do_refresh = update_tree;
         Ok(())
     }
@@ -477,6 +483,8 @@ impl ChatUIApp<'_> {
                     self.handle_files_key(key)
                 }
                 else {
+                    self.handle_project_open_or_save_file(true);
+                    
                     self.current_focus_area = FocusedInputArea::ProjectTree;
 
                     if self.escape_count == 5 {

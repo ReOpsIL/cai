@@ -1,3 +1,5 @@
+
+
 3. **Chat Templates**: Pre-defined prompts for common use cases (code review, brainstorming, etc.).
 4. **Model Switching**: Quick toggle between different AI models during a conversation.
 5. **Context Window Management**: Tools to optimize token usage by summarizing or pruning conversation history.
