@@ -1,7 +1,7 @@
 use std::collections::HashMap;
-use std::fs;
+use std::{fs, io};
 use std::io::{stdout, Write};
-use color_eyre::Result;
+use std::path::{Path, PathBuf};
 use ratatui::crossterm::execute;
 use ratatui::{crossterm::event::{Event, KeyCode}, layout::{Constraint, Layout, Direction}, widgets::{
     Block, Borders,
@@ -15,13 +15,13 @@ use crate::chat::{check_embedded_commands, Prompt, PromptType}; // Removed highl
 use crate::commands_selector::CommandSelectorState;
 use crate::files_selector::{FileSelector, FileSelectorState};
 use std::time::Duration;
-use color_eyre::owo_colors::OwoColorize;
 use ratatui::crossterm::terminal::{EnterAlternateScreen};
 use ratatui::layout::{Position, Rect};
 use ratatui::style::Style;
 use tokio::sync::oneshot;
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 use crate::tree::{generate_md_tree};
+use crate::yes_no::{YesNoPopup, YesNoState};
 
 #[derive(PartialEq)]
 pub enum FocusedInputArea {
@@ -30,8 +30,7 @@ pub enum FocusedInputArea {
     ProjectTree,
 }
 
-pub fn main_ui() -> Result<()> {
-    color_eyre::install()?;
+pub fn main_ui() -> Result<(), io::Error> {
 
     commands::register_all_commands();
     let config = configuration::load_configuration();
@@ -51,9 +50,11 @@ pub fn main_ui() -> Result<()> {
 struct ChatUIApp<'a> {
     show_commands_popup: bool,
     show_files_popup: bool,
+    show_yes_no_popup: bool,
+    show_rename_popup: bool,
     cmd_sel : CommandSelector,
     file_sel : FileSelector,
-
+    yes_no_popup: YesNoPopup,
     question_text_widget: TextArea<'a>,
     answer_text_widget: TextArea<'a>,
     question_text_rect: Rect,
@@ -69,7 +70,9 @@ struct ChatUIApp<'a> {
     project_tree_ids_map: HashMap<String,u32>,
     last_file_path: String,
     escape_count: u8,
+    yes_no_popup_callback: YesNoCallback,
 }
+type YesNoCallback = fn(&mut ChatUIApp) -> bool;
 
 impl ChatUIApp<'_> {
     pub fn new() -> Self {
@@ -78,6 +81,7 @@ impl ChatUIApp<'_> {
             show_files_popup: false,
             cmd_sel: CommandSelector::new(),
             file_sel: FileSelector::new(),
+            yes_no_popup: YesNoPopup::new(),
             question_text_widget: TextArea::default(),
             answer_text_widget: TextArea::default(),
             question_text_rect: Rect::default(),
@@ -93,12 +97,20 @@ impl ChatUIApp<'_> {
             project_tree_do_refresh: true,
             last_file_path: "".to_string(),
             escape_count: 0,
+            yes_no_popup_callback: dummy(),
+            show_yes_no_popup: false,
+            show_rename_popup: false
         };
         let style = Style::default();
         ret.question_text_widget.set_line_number_style(style);
 
         ret
     }
+}
+
+fn dummy() -> YesNoCallback {
+    fn empty_callback(_: &mut ChatUIApp) -> bool { false }
+    empty_callback
 }
 
 impl ChatUIApp<'_> {
@@ -209,7 +221,7 @@ impl ChatUIApp<'_> {
                     .add_modifier(ratatui::style::Modifier::BOLD),
             )
     }
-    fn run(&mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(&mut self, mut terminal: DefaultTerminal) -> Result<(), io::Error> {
         let mut stdout = stdout();
         ratatui::crossterm::terminal::enable_raw_mode()?;
 
@@ -312,8 +324,11 @@ impl ChatUIApp<'_> {
                 if self.show_commands_popup {
                     self.cmd_sel.render_commands_popup(frame);
                 }
-                if self.show_files_popup {
+                else if self.show_files_popup {
                     self.file_sel.render_files_popup(frame)
+                }
+                else if self.show_yes_no_popup {
+                    self.yes_no_popup.render_yes_no_popup(frame)
                 }
 
             })?;
@@ -332,7 +347,7 @@ impl ChatUIApp<'_> {
 
                         //self.answer_text_widget.insert_str(prompt.value.as_str());
                         self.llm_rx = None; // Clear the receiver once handled
-                        
+
                     }
                     Err(oneshot::error::TryRecvError::Empty) => {
                         // Not ready yet, do nothing, will check next loop iteration
@@ -353,10 +368,6 @@ impl ChatUIApp<'_> {
                     Event::Key(key) => {
                         if let Some(_) = self.handle_key_event(key)? {
                             break Ok(());
-                        }
-                        match self.current_focus_area {
-                            FocusedInputArea::ProjectTree => self.handle_tree_event(Event::Key(key))?,
-                            FocusedInputArea::Question | FocusedInputArea::Answer => {},
                         }
                     },
                         // Event::Mouse(mouse_event) => {
@@ -397,6 +408,112 @@ impl ChatUIApp<'_> {
             }
         }
     }
+
+    fn get_tree_item_path(&self, file_only: bool) -> Option<String> {
+        let current =  ".".to_string();
+        let selected_tree_item_ideas = self.state.selected();
+        if let Some(leaf_id) = selected_tree_item_ideas.last() {
+            let leaf_id_str = leaf_id.to_string();
+            let selected_path = self.project_tree_ids_map
+                .iter()
+                .find(|item| item.1.to_string() == leaf_id_str)
+                .map(|item| item.0.to_string());
+
+            if let Some(path) = selected_path {
+                if Path::new(&path).is_dir() {
+                    if file_only { None } else {  Option::from(path) }
+                } else {
+                    if file_only {
+                        Option::from(path) // This is a file
+                    }
+                    else {
+                        // If it's a file, get its parent directory
+                        let path_buf = PathBuf::from(&path);
+                        if let Some(parent) = path_buf.parent() {
+                            Option::from(parent.to_string_lossy().to_string())
+                        } else {
+                            Option::from(current)
+                        }
+                    }
+                }
+            } else {
+                Option::from(current)
+            }
+        } else {
+            Option::from(current)
+        }
+    }
+
+    fn delete_item(&mut self) -> bool {
+        match self.get_tree_item_path(true) {
+            Some(path) => {
+                fs::remove_file(path).unwrap();
+                true
+            },
+            None => false,
+        }
+    }
+    fn delete_folder(&mut self) -> bool {
+        match self.get_tree_item_path(false) {
+            Some(path) => {
+                fs::remove_dir(path).unwrap();
+                true
+            }
+            None => false, 
+        }
+    }
+
+    fn rename_item(&mut self) -> bool {
+        match self.get_tree_item_path(false) {
+            Some(path) => {
+                true
+            }
+            None => false,
+        }
+    }
+
+    fn popup_yes_no(&mut self, callback : fn(&mut ChatUIApp) -> bool) -> bool {
+        self.yes_no_popup_callback = callback;
+        self.show_yes_no_popup = true;
+        true
+    }
+    fn create_project_file(&mut self) -> bool {
+        let selected_tree_item_ideas = self.state.selected();
+        let dir_path = self.get_tree_item_path(false);
+        match self.get_tree_item_path(false) {
+            Some(dir_path) => {
+                let new_file_name = format!("{}/new_file.md", dir_path);
+                fs::write(&new_file_name, "# New File\n\nEnter your content here.").ok();
+
+                // Refresh the tree to show the new file
+                self.project_tree_do_refresh = true;
+                true
+            }
+            None => false,
+        }
+    }
+
+    fn create_project_dir(&mut self) -> bool {
+        let dir_path = self.get_tree_item_path(false);
+        match self.get_tree_item_path(false) {
+            Some(dir_path) => {
+                // Create a new directory in the selected directory
+                let new_dir_name = format!("{}/new_directory", dir_path);
+                fs::create_dir_all(&new_dir_name).ok();
+
+                // Create a README.md file in the new directory to make it visible in the tree
+                fs::write(format!("{}/README.md", new_dir_name), "# New Directory\n\nThis is a new directory.").ok();
+
+                // Refresh the tree to show the new directory
+                self.project_tree_do_refresh = true;
+                true
+            }
+            None => {
+                false
+            }
+        }
+    }
+
     fn handle_tree_event(&mut self, event: Event) -> std::io::Result<()> {
         let update_tree = match event {
             Event::Key(key) if !matches!(key.kind, KeyEventKind::Press) => false,
@@ -417,7 +534,10 @@ impl ChatUIApp<'_> {
                 KeyCode::PageUp => self.state.scroll_up(3),
                 KeyCode::Char('n') => self.create_project_file(),
                 KeyCode::Char('N') => self.create_project_dir(),
-                KeyCode::Char('d') => self.create_item(),
+                KeyCode::Char('d') => self.popup_yes_no(|app| app.delete_item()),
+                KeyCode::Char('D') => self.popup_yes_no(|app| app.delete_folder()),
+                KeyCode::Char('r') => self.rename_item(),
+
                 _ => false,
             },
             // Event::Mouse(mouse) => match mouse.kind {
@@ -474,17 +594,20 @@ impl ChatUIApp<'_> {
             FocusedInputArea::ProjectTree => {}
         }
     }
-    fn handle_key_event(&mut self, key: ratatui::crossterm::event::KeyEvent) -> color_eyre::Result<Option<()>> {
+    fn handle_key_event(&mut self, key: ratatui::crossterm::event::KeyEvent) -> Result<Option<()>, io::Error> {
         match key.code {
             KeyCode::Esc => {
                 if self.show_commands_popup {
                     self.handle_command_key(key)
                 } else if self.show_files_popup {
                     self.handle_files_key(key)
+                } else if self.show_yes_no_popup {
+                    let popup_state = self.yes_no_popup.handle_key(key);
+                    self.show_yes_no_popup = false;
                 }
                 else {
                     self.handle_project_open_or_save_file(true);
-                    
+
                     self.current_focus_area = FocusedInputArea::ProjectTree;
 
                     if self.escape_count == 5 {
@@ -512,40 +635,63 @@ impl ChatUIApp<'_> {
                    self.handle_command_key(key)
                 } else if self.show_files_popup {
                    self.handle_files_key(key)
-                }
-                else {
-                    if self.current_focus_area == FocusedInputArea::Question {
-                        self.handle_prompting_key(key)
-                    }
-                    else {
-                        match key.code {
-                            KeyCode::Char('!') => {
-                                // Functionality for '!' was commented out
-                            }
-                            KeyCode::Char('>') => {
-                                // Functionality for '>' was commented out
-                            }
-                            KeyCode::Tab => {
-                                match self.current_focus_area {
-                                    FocusedInputArea::Question => {
-                                        self.current_focus_area = FocusedInputArea::Answer;
-                                    },
-                                    FocusedInputArea::Answer => {
-                                        self.current_focus_area = FocusedInputArea::ProjectTree;
-                                    },
-                                    FocusedInputArea::ProjectTree => {
-                                        self.current_focus_area = FocusedInputArea::Question;
-                                    }
+                } else if self.show_yes_no_popup {
+                    match key.code {
+                        KeyCode::Enter => {
+                            match self.yes_no_popup.handle_key(key) {
+                                YesNoState::Yes => {
+                                    (self.yes_no_popup_callback)(self);
+                                    self.show_yes_no_popup = false;
+                                    self.project_tree_do_refresh = true
+                                },
+                                _ => {
+                                    self.show_yes_no_popup = false;
                                 }
                             }
-                            KeyCode::Char(':') => {
-                                self.show_commands_popup = true;
-                            }
-                            KeyCode::Char('$') => {
-                                self.show_files_popup = true;
-                            }
-                            _ => {}
-                        };
+                        },
+                        _ => {
+                            self.yes_no_popup.handle_key(key);
+                        }
+                    }
+                }
+                else {
+                    match self.current_focus_area {
+                        FocusedInputArea::ProjectTree => {
+                            self.handle_tree_event(Event::Key(key))?
+                        },
+                        FocusedInputArea::Question => {
+                            self.handle_prompting_key(key)
+                        }
+                        _ => {
+                            match key.code {
+                                KeyCode::Char('!') => {
+                                    // Functionality for '!' was commented out
+                                }
+                                KeyCode::Char('>') => {
+                                    // Functionality for '>' was commented out
+                                }
+                                KeyCode::Tab => {
+                                    match self.current_focus_area {
+                                        FocusedInputArea::Question => {
+                                            self.current_focus_area = FocusedInputArea::Answer;
+                                        },
+                                        FocusedInputArea::Answer => {
+                                            self.current_focus_area = FocusedInputArea::ProjectTree;
+                                        },
+                                        FocusedInputArea::ProjectTree => {
+                                            self.current_focus_area = FocusedInputArea::Question;
+                                        }
+                                    }
+                                }
+                                KeyCode::Char(':') => {
+                                    self.show_commands_popup = true;
+                                }
+                                KeyCode::Char('$') => {
+                                    self.show_files_popup = true;
+                                }
+                                _ => {}
+                            };
+                        }
                     }
                 }
             }
