@@ -53,7 +53,7 @@ impl YesNoPopup {
             return YesNoState::NotSelected;
         }
         match key.code {
-            KeyCode::Tab => {
+            KeyCode::Right | KeyCode::Left => {
                 self.select_next();
             },
             KeyCode::Esc => {

@@ -71,6 +71,7 @@ struct ChatUIApp<'a> {
     last_file_path: String,
     escape_count: u8,
     yes_no_popup_callback: YesNoCallback,
+    edit_mode: bool,
 }
 type YesNoCallback = fn(&mut ChatUIApp) -> bool;
 
@@ -99,7 +100,8 @@ impl ChatUIApp<'_> {
             escape_count: 0,
             yes_no_popup_callback: dummy(),
             show_yes_no_popup: false,
-            show_rename_popup: false
+            show_rename_popup: false,
+            edit_mode: false
         };
         let style = Style::default();
         ret.question_text_widget.set_line_number_style(style);
@@ -581,7 +583,14 @@ impl ChatUIApp<'_> {
     fn handle_prompting_key(&mut self, key: ratatui::crossterm::event::KeyEvent) {
         match self.current_focus_area {
             FocusedInputArea::Question => {
-                let _ = self.question_text_widget.input(key);
+
+                if self.edit_mode == false && key.code != KeyCode::Tab {
+                    self.edit_mode = true;
+                }
+
+                if self.edit_mode == true {
+                    let _ = self.question_text_widget.input(key);
+                }
             }
             FocusedInputArea::Answer => {
                 match key.code {
@@ -596,7 +605,32 @@ impl ChatUIApp<'_> {
     }
     fn handle_key_event(&mut self, key: ratatui::crossterm::event::KeyEvent) -> Result<Option<()>, io::Error> {
         match key.code {
-            KeyCode::Esc => {
+            KeyCode::Tab => {
+                if self.show_commands_popup ||
+                    self.show_files_popup ||
+                    self.show_yes_no_popup ||
+                    self.show_rename_popup {
+                        //nothing 
+                    } else {
+                        match self.current_focus_area {
+                            FocusedInputArea::Question => {
+                                if self.edit_mode == false {
+                                    self.current_focus_area = FocusedInputArea::Answer;
+                                } else {
+                                    self.handle_prompting_key(key)
+                                }
+                            },
+                            FocusedInputArea::Answer => {
+                                self.current_focus_area = FocusedInputArea::ProjectTree;
+                            },
+                            FocusedInputArea::ProjectTree => {
+                                self.current_focus_area = FocusedInputArea::Question;
+                            }
+                        } 
+                    }
+                
+        },
+        KeyCode::Esc => {
                 if self.show_commands_popup {
                     self.handle_command_key(key)
                 } else if self.show_files_popup {
@@ -609,6 +643,7 @@ impl ChatUIApp<'_> {
                     self.handle_project_open_or_save_file(true);
 
                     self.current_focus_area = FocusedInputArea::ProjectTree;
+                    self.edit_mode = false;
 
                     if self.escape_count == 5 {
                         autocomplete::save_history();
@@ -669,19 +704,6 @@ impl ChatUIApp<'_> {
                                 }
                                 KeyCode::Char('>') => {
                                     // Functionality for '>' was commented out
-                                }
-                                KeyCode::Tab => {
-                                    match self.current_focus_area {
-                                        FocusedInputArea::Question => {
-                                            self.current_focus_area = FocusedInputArea::Answer;
-                                        },
-                                        FocusedInputArea::Answer => {
-                                            self.current_focus_area = FocusedInputArea::ProjectTree;
-                                        },
-                                        FocusedInputArea::ProjectTree => {
-                                            self.current_focus_area = FocusedInputArea::Question;
-                                        }
-                                    }
                                 }
                                 KeyCode::Char(':') => {
                                     self.show_commands_popup = true;
