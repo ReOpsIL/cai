@@ -12,7 +12,7 @@ use ratatui::{
     },
 };
 use ratatui::layout::Alignment;
-use crate::popup_manager::{Popup, PopupManager, PopupState};
+use crate::popup_manager::{Popup, PopupWrapper, PopupState};
 use crate::popup_util::centered_rect;
 use crate::yes_no_popup::YesNoPopup;
 
@@ -135,14 +135,13 @@ impl Popup<MessageState> for MessagePopup {
 
     }
 
-    fn get_result(&self) -> MessageState {
-        self.current_state.clone()
+    fn get_result(&self) -> &MessageState {
+        &self.current_state
     }
 }
 
-
 pub fn create_message_popup(title: String)  {
-    let mut manager = PopupManager::new();
+    let mut manager = PopupWrapper::new();
     let message_popup = Box::new(MessagePopup::new(title));
     manager.show(message_popup).expect("TODO: panic message");
 }

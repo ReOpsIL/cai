@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use ratatui::crossterm::execute;
 use ratatui::{crossterm::event::{Event, KeyCode}, layout::{Constraint, Layout, Direction}, widgets::{
     Block, Borders,
-}, DefaultTerminal};
+}, DefaultTerminal, Frame};
 use ratatui::widgets::{Clear, Scrollbar, ScrollbarOrientation};
 use ratatui::crossterm::event::{EnableMouseCapture, KeyEventKind, KeyModifiers, MouseButton, MouseEventKind};
 use tui_textarea::{CursorMove, TextArea};
@@ -16,13 +16,14 @@ use crate::commands_selector::CommandSelectorState;
 use crate::files_selector::{FileSelector, FileSelectorState};
 use std::time::Duration;
 use ratatui::crossterm::terminal::{EnterAlternateScreen};
-use ratatui::layout::{Position, Rect};
+use ratatui::layout::{Rect};
 use ratatui::style::Style;
 use tokio::sync::oneshot;
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 use crate::message_popup::create_message_popup;
+use crate::popup_manager::{PopupState, PopupWrapper};
 use crate::tree::{generate_md_tree};
-use crate::yes_no_popup::{create_yes_no_popup, YesNoPopup, YesNoState};
+use crate::yes_no_popup::{YesNoPopup, YesNoState};
 
 #[derive(PartialEq)]
 pub enum FocusedInputArea {
@@ -43,7 +44,6 @@ pub fn main_ui() -> Result<(), io::Error> {
 
     let terminal = ratatui::init();
     let app_result = ChatUIApp::new().run(terminal);
-
     ratatui::restore();
     app_result
 }
@@ -70,6 +70,7 @@ struct ChatUIApp<'a> {
     escape_count: u8,
     yes_no_popup_callback: YesNoCallback,
     edit_mode: bool,
+    yes_no_popup_wrap: PopupWrapper<YesNoState>
 }
 type YesNoCallback = fn(&mut ChatUIApp) -> bool;
 
@@ -97,6 +98,7 @@ impl ChatUIApp<'_> {
             escape_count: 0,
             yes_no_popup_callback: dummy(),
             edit_mode: false,
+            yes_no_popup_wrap: PopupWrapper::new()
         };
         let style = Style::default();
         ret.question_text_widget.set_line_number_style(style);
@@ -218,6 +220,94 @@ impl ChatUIApp<'_> {
                     .add_modifier(ratatui::style::Modifier::BOLD),
             )
     }
+    fn draw_main_screen(&mut self, frame: &mut Frame) {
+        let question_text_block = self.create_textarea_block("YOU:".to_string(),
+                                                             if self.current_focus_area == FocusedInputArea::Question {
+                                                                 ratatui::style::Color::Blue
+                                                             } else {
+                                                                 ratatui::style::Color::LightYellow
+                                                             });
+
+        let answer_text_block = self.create_textarea_block("LLM:".to_string(),
+                                                           if self.current_focus_area == FocusedInputArea::Answer {
+                                                               ratatui::style::Color::Blue
+                                                           } else {
+                                                               ratatui::style::Color::LightYellow
+                                                           });
+
+        self.question_text_widget.set_block(question_text_block);
+        self.answer_text_widget.set_block(answer_text_block);
+
+        let command_and_other_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![
+                Constraint::Percentage(90),
+                Constraint::Percentage(10),
+            ])
+            .split(frame.area());
+
+        let tree_and_prompt_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![
+                Constraint::Percentage(20),
+                Constraint::Percentage(80),
+            ])
+            .split(frame.area());
+
+        let qa_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![
+                Constraint::Percentage(30),
+                Constraint::Percentage(70),
+            ])
+            .split(tree_and_prompt_layout[1]);
+
+        self.project_tree_widget_rect = tree_and_prompt_layout[0];
+        self.question_text_rect = qa_layout[0];
+        self.answer_text_rect = qa_layout[1];
+
+        self.refresh_project_tree();
+        let mut tree_widget = ChatUIApp::create_project_tree_widget(self, &self.project_tree_items);
+
+        // match self.current_focus_area {
+        //     FocusedInputArea::Answer => {
+        //         self.answer_text_widget.set_block(
+        //             self.answer_text_widget
+        //                 .block()
+        //                 .unwrap().clone()
+        //                 .border_style(Style::default().fg(ratatui::style::Color::LightYellow))
+        //         )
+        //     },
+        //     FocusedInputArea::Question => {
+        //         self.question_text_widget.set_block(
+        //             self.question_text_widget
+        //                 .block()
+        //                 .unwrap().clone()
+        //                 .border_style(Style::default().fg(ratatui::style::Color::LightYellow))
+        //         )
+        //     },
+        //     FocusedInputArea::ProjectTree => {
+        //
+        //             tree_widget
+        //                 .block(/* ratatui::widgets::Block<'_> */)
+        //                 .unwrap().clone()
+        //                 .border_style(Style::default().fg(ratatui::style::Color::LightYellow))
+        //
+        //     }
+        //
+        // }
+
+        frame.render_stateful_widget(tree_widget, self.project_tree_widget_rect, &mut self.state);
+        frame.render_widget(&self.question_text_widget, self.question_text_rect);
+        frame.render_widget(&self.answer_text_widget, self.answer_text_rect);
+        if self.show_commands_popup {
+            self.cmd_sel.render_commands_popup(frame);
+        }
+        else if self.show_files_popup {
+            self.file_sel.render_files_popup(frame)
+        }
+
+    } 
     fn run(&mut self, mut terminal: DefaultTerminal) -> Result<(), io::Error> {
         let mut stdout = stdout();
         ratatui::crossterm::terminal::enable_raw_mode()?;
@@ -232,96 +322,13 @@ impl ChatUIApp<'_> {
 
         loop {
             terminal.draw(|frame| {
-                
-                let question_text_block = self.create_textarea_block("YOU:".to_string(),
-                if self.current_focus_area == FocusedInputArea::Question {
-                        ratatui::style::Color::Blue
-                } else {
-                    ratatui::style::Color::LightYellow
-                });
 
-                let answer_text_block = self.create_textarea_block("LLM:".to_string(),
-                   if self.current_focus_area == FocusedInputArea::Answer {
-                        ratatui::style::Color::Blue
-                   } else {
-                       ratatui::style::Color::LightYellow
-                   });
-
-                self.question_text_widget.set_block(question_text_block);
-                self.answer_text_widget.set_block(answer_text_block);
-
-                let command_and_other_layout = Layout::default()
-                    .direction(Direction::Vertical)
-                    .constraints(vec![
-                        Constraint::Percentage(90),
-                        Constraint::Percentage(10),
-                    ])
-                    .split(frame.area());
-
-                let tree_and_prompt_layout = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .constraints(vec![
-                        Constraint::Percentage(20),
-                        Constraint::Percentage(80),
-                    ])
-                    .split(frame.area());
-
-                let qa_layout = Layout::default()
-                    .direction(Direction::Vertical)
-                    .constraints(vec![
-                        Constraint::Percentage(30),
-                        Constraint::Percentage(70),
-                    ])
-                    .split(tree_and_prompt_layout[1]);
-
-                frame.render_widget(Clear, frame.area());
-
-                self.project_tree_widget_rect = tree_and_prompt_layout[0];
-                self.question_text_rect = qa_layout[0];
-                self.answer_text_rect = qa_layout[1];
-
-                self.refresh_project_tree();
-                let mut tree_widget = ChatUIApp::create_project_tree_widget(self, &self.project_tree_items);
-
-                // match self.current_focus_area {
-                //     FocusedInputArea::Answer => {
-                //         self.answer_text_widget.set_block(
-                //             self.answer_text_widget
-                //                 .block()
-                //                 .unwrap().clone()
-                //                 .border_style(Style::default().fg(ratatui::style::Color::LightYellow))
-                //         )
-                //     },
-                //     FocusedInputArea::Question => {
-                //         self.question_text_widget.set_block(
-                //             self.question_text_widget
-                //                 .block()
-                //                 .unwrap().clone()
-                //                 .border_style(Style::default().fg(ratatui::style::Color::LightYellow))
-                //         )
-                //     },
-                //     FocusedInputArea::ProjectTree => {
-                //
-                //             tree_widget
-                //                 .block(/* ratatui::widgets::Block<'_> */)
-                //                 .unwrap().clone()
-                //                 .border_style(Style::default().fg(ratatui::style::Color::LightYellow))
-                //
-                //     }
-                //
-                // }
-
-                frame.render_stateful_widget(tree_widget, self.project_tree_widget_rect, &mut self.state);
-                frame.render_widget(&self.question_text_widget, self.question_text_rect);
-                frame.render_widget(&self.answer_text_widget, self.answer_text_rect);
-                if self.show_commands_popup {
-                    self.cmd_sel.render_commands_popup(frame);
+                if self.yes_no_popup_wrap.is_visible() {
+                    self.yes_no_popup_wrap.draw(frame)
                 }
-                else if self.show_files_popup {
-                    self.file_sel.render_files_popup(frame)
+                else {
+                    self.draw_main_screen(frame)
                 }
-
-
             })?;
 
             // Check for LLM response non-blockingly
@@ -357,7 +364,15 @@ impl ChatUIApp<'_> {
             if ratatui::crossterm::event::poll(Duration::from_millis(100))? {
                match ratatui::crossterm::event::read()? {
                     Event::Key(key) => {
-                        if let Some(_) = self.handle_key_event(key)? {
+                        if self.yes_no_popup_wrap.is_visible() {
+                            match self.yes_no_popup_wrap.handle_key_event(key) {
+                                PopupState::Exit => {
+                                    self.hide_popup_yes_no();
+                                },
+                                _ => {}
+                            }
+                        }
+                        else if let Some(_) = self.handle_key_event(key)? {
                             break Ok(());
                         }
                     },
@@ -477,20 +492,24 @@ impl ChatUIApp<'_> {
         }
     }
 
-    fn popup_yes_no(&mut self, callback : fn(&mut ChatUIApp) -> bool) -> bool {
+    fn show_popup_yes_no(&mut self, callback : fn(&mut ChatUIApp) -> bool) -> bool {
         self.yes_no_popup_callback = callback;
-        if let Some(res) =  create_yes_no_popup("Please approve".to_string()) {
+        self.yes_no_popup_wrap.show(Box::new(YesNoPopup::new("Please approve".to_string()))).expect("TODO: panic message");
+        true
+    }
+    fn hide_popup_yes_no(&mut self) {
+        if let Some(res) = self.yes_no_popup_wrap.get_result() {
             match res {
                 YesNoState::Yes => {
                     ( self.yes_no_popup_callback)( self );
+                    self.yes_no_popup_wrap.hide().unwrap()
                 },
-                _ => {}
+                _ => { self.yes_no_popup_wrap.hide().unwrap() }
             }
-            true
-        } else {
-            false
         }
     }
+
+
     fn create_project_file(&mut self) -> bool {
         match self.get_tree_item_path(false) {
             Some(dir_path) => {
@@ -546,8 +565,8 @@ impl ChatUIApp<'_> {
                 KeyCode::PageUp => self.state.scroll_up(3),
                 KeyCode::Char('n') => self.create_project_file(),
                 KeyCode::Char('N') => self.create_project_dir(),
-                KeyCode::Char('d') => self.popup_yes_no(|app| app.delete_item()),
-                KeyCode::Char('D') => self.popup_yes_no(|app| app.delete_folder()),
+                KeyCode::Char('d') => self.show_popup_yes_no(|app| app.delete_item()),
+                KeyCode::Char('D') => self.show_popup_yes_no(|app| app.delete_folder()),
                 KeyCode::Char('r') => self.rename_item(),
 
                 _ => false,
@@ -632,7 +651,7 @@ impl ChatUIApp<'_> {
                     }
                 }
 
-                
+
         },
         KeyCode::Esc => {
                 if self.show_commands_popup {
@@ -756,5 +775,6 @@ impl ChatUIApp<'_> {
         });
 
     }
-    
+
 }
+

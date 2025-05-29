@@ -12,7 +12,7 @@ use ratatui::{
     },
 };
 use ratatui::layout::Alignment;
-use crate::popup_manager::{Popup, PopupManager, PopupState};
+use crate::popup_manager::{Popup, PopupWrapper, PopupState};
 use crate::popup_util::centered_rect;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -151,15 +151,7 @@ impl Popup<YesNoState> for YesNoPopup {
 
     }
 
-    fn get_result(&self) -> YesNoState {
-        self.current_state.clone()
+    fn get_result(&self) -> &YesNoState {
+        &self.current_state
     }
-}
-
-
-pub fn create_yes_no_popup(title: String) -> Option<YesNoState> {
-    let mut manager = PopupManager::new();
-    let yes_no_popup = Box::new(YesNoPopup::new(title));
-    manager.show(yes_no_popup).expect("TODO: panic message");
-    manager.get_result()
 }
