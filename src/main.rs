@@ -12,7 +12,10 @@ mod chat_ui;
 mod commands_selector;
 mod files_selector;
 mod tree;
-mod yes_no;
+mod yes_no_popup;
+mod popup_manager;
+mod message_popup;
+mod popup_util;
 
 use chat_ui::main_ui;
 //use editor::run_editor;

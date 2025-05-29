@@ -20,8 +20,9 @@ use ratatui::layout::{Position, Rect};
 use ratatui::style::Style;
 use tokio::sync::oneshot;
 use tui_tree_widget::{Tree, TreeItem, TreeState};
+use crate::message_popup::create_message_popup;
 use crate::tree::{generate_md_tree};
-use crate::yes_no::{YesNoPopup, YesNoState};
+use crate::yes_no_popup::{create_yes_no_popup, YesNoPopup, YesNoState};
 
 #[derive(PartialEq)]
 pub enum FocusedInputArea {
@@ -50,11 +51,8 @@ pub fn main_ui() -> Result<(), io::Error> {
 struct ChatUIApp<'a> {
     show_commands_popup: bool,
     show_files_popup: bool,
-    show_yes_no_popup: bool,
-    show_rename_popup: bool,
     cmd_sel : CommandSelector,
     file_sel : FileSelector,
-    yes_no_popup: YesNoPopup,
     question_text_widget: TextArea<'a>,
     answer_text_widget: TextArea<'a>,
     question_text_rect: Rect,
@@ -82,7 +80,6 @@ impl ChatUIApp<'_> {
             show_files_popup: false,
             cmd_sel: CommandSelector::new(),
             file_sel: FileSelector::new(),
-            yes_no_popup: YesNoPopup::new(),
             question_text_widget: TextArea::default(),
             answer_text_widget: TextArea::default(),
             question_text_rect: Rect::default(),
@@ -99,9 +96,7 @@ impl ChatUIApp<'_> {
             last_file_path: "".to_string(),
             escape_count: 0,
             yes_no_popup_callback: dummy(),
-            show_yes_no_popup: false,
-            show_rename_popup: false,
-            edit_mode: false
+            edit_mode: false,
         };
         let style = Style::default();
         ret.question_text_widget.set_line_number_style(style);
@@ -227,8 +222,6 @@ impl ChatUIApp<'_> {
         let mut stdout = stdout();
         ratatui::crossterm::terminal::enable_raw_mode()?;
 
-        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-
         execute!(
             stdout,
             EnterAlternateScreen, EnableMouseCapture,
@@ -237,11 +230,9 @@ impl ChatUIApp<'_> {
         )?;
         stdout.flush()?;
 
-
-
         loop {
             terminal.draw(|frame| {
-
+                
                 let question_text_block = self.create_textarea_block("YOU:".to_string(),
                 if self.current_focus_area == FocusedInputArea::Question {
                         ratatui::style::Color::Blue
@@ -329,9 +320,7 @@ impl ChatUIApp<'_> {
                 else if self.show_files_popup {
                     self.file_sel.render_files_popup(frame)
                 }
-                else if self.show_yes_no_popup {
-                    self.yes_no_popup.render_yes_no_popup(frame)
-                }
+
 
             })?;
 
@@ -449,7 +438,14 @@ impl ChatUIApp<'_> {
     fn delete_item(&mut self) -> bool {
         match self.get_tree_item_path(true) {
             Some(path) => {
-                fs::remove_file(path).unwrap();
+                match fs::remove_file(path) {
+                    Ok(_) => {
+                        create_message_popup("File removed!".to_string());
+                    },
+                    Err(e) => {
+                        create_message_popup( e.to_string() );
+                    }
+                }
                 true
             },
             None => false,
@@ -458,7 +454,14 @@ impl ChatUIApp<'_> {
     fn delete_folder(&mut self) -> bool {
         match self.get_tree_item_path(false) {
             Some(path) => {
-                fs::remove_dir(path).unwrap();
+                 match fs::remove_dir_all(path ) {
+                     Ok(..) => {
+                         create_message_popup("Folder removed!".to_string() );
+                     },
+                     Err(e) => {
+                         create_message_popup(e.to_string());
+                     }
+                 }
                 true
             }
             None => false, 
@@ -476,12 +479,19 @@ impl ChatUIApp<'_> {
 
     fn popup_yes_no(&mut self, callback : fn(&mut ChatUIApp) -> bool) -> bool {
         self.yes_no_popup_callback = callback;
-        self.show_yes_no_popup = true;
-        true
+        if let Some(res) =  create_yes_no_popup("Please approve".to_string()) {
+            match res {
+                YesNoState::Yes => {
+                    ( self.yes_no_popup_callback)( self );
+                },
+                _ => {}
+            }
+            true
+        } else {
+            false
+        }
     }
     fn create_project_file(&mut self) -> bool {
-        let selected_tree_item_ideas = self.state.selected();
-        let dir_path = self.get_tree_item_path(false);
         match self.get_tree_item_path(false) {
             Some(dir_path) => {
                 let new_file_name = format!("{}/new_file.md", dir_path);
@@ -606,28 +616,22 @@ impl ChatUIApp<'_> {
     fn handle_key_event(&mut self, key: ratatui::crossterm::event::KeyEvent) -> Result<Option<()>, io::Error> {
         match key.code {
             KeyCode::Tab => {
-                if self.show_commands_popup ||
-                    self.show_files_popup ||
-                    self.show_yes_no_popup ||
-                    self.show_rename_popup {
-                        //nothing 
-                    } else {
-                        match self.current_focus_area {
-                            FocusedInputArea::Question => {
-                                if self.edit_mode == false {
-                                    self.current_focus_area = FocusedInputArea::Answer;
-                                } else {
-                                    self.handle_prompting_key(key)
-                                }
-                            },
-                            FocusedInputArea::Answer => {
-                                self.current_focus_area = FocusedInputArea::ProjectTree;
-                            },
-                            FocusedInputArea::ProjectTree => {
-                                self.current_focus_area = FocusedInputArea::Question;
-                            }
-                        } 
+                match self.current_focus_area {
+                    FocusedInputArea::Question => {
+                        if self.edit_mode == false {
+                            self.current_focus_area = FocusedInputArea::Answer;
+                        } else {
+                            self.handle_prompting_key(key)
+                        }
+                    },
+                    FocusedInputArea::Answer => {
+                        self.current_focus_area = FocusedInputArea::ProjectTree;
+                    },
+                    FocusedInputArea::ProjectTree => {
+                        self.current_focus_area = FocusedInputArea::Question;
                     }
+                }
+
                 
         },
         KeyCode::Esc => {
@@ -635,9 +639,6 @@ impl ChatUIApp<'_> {
                     self.handle_command_key(key)
                 } else if self.show_files_popup {
                     self.handle_files_key(key)
-                } else if self.show_yes_no_popup {
-                    let popup_state = self.yes_no_popup.handle_key(key);
-                    self.show_yes_no_popup = false;
                 }
                 else {
                     self.handle_project_open_or_save_file(true);
@@ -670,24 +671,6 @@ impl ChatUIApp<'_> {
                    self.handle_command_key(key)
                 } else if self.show_files_popup {
                    self.handle_files_key(key)
-                } else if self.show_yes_no_popup {
-                    match key.code {
-                        KeyCode::Enter => {
-                            match self.yes_no_popup.handle_key(key) {
-                                YesNoState::Yes => {
-                                    (self.yes_no_popup_callback)(self);
-                                    self.show_yes_no_popup = false;
-                                    self.project_tree_do_refresh = true
-                                },
-                                _ => {
-                                    self.show_yes_no_popup = false;
-                                }
-                            }
-                        },
-                        _ => {
-                            self.yes_no_popup.handle_key(key);
-                        }
-                    }
                 }
                 else {
                     match self.current_focus_area {
@@ -773,6 +756,5 @@ impl ChatUIApp<'_> {
         });
 
     }
-
-
+    
 }

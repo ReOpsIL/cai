@@ -1,20 +1,20 @@
-use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
+use std::collections::HashMap;
+use std::io;
+use std::time::Duration;
+use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::widgets::{Borders, Clear, List, ListDirection, ListItem, Paragraph, Wrap};
-use ratatui::{
-    Frame,
-    layout::{Constraint, Flex, Layout, Rect, Direction},
-    widgets::{Block},
-};
+use ratatui::{Frame, layout::{Constraint, Flex, Layout, Rect, Direction}, widgets::{Block}, DefaultTerminal};
 
 use ratatui::{
     prelude::*,
     style::{
         palette::tailwind::{SKY}, Style, Stylize,
     },
-
 };
 use ratatui::layout::Alignment;
-use crate::files::files::{list_files, read_file};
+use crate::popup_manager::{Popup, PopupManager, PopupState};
+use crate::popup_util::centered_rect;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum YesNoState {
     Yes,
@@ -24,13 +24,16 @@ pub enum YesNoState {
 }
 
 pub struct YesNoPopup {
-    current_state : YesNoState
+    title: String,
+    current_state : YesNoState,
 }
+
 
 impl YesNoPopup {
 
-    pub fn new() -> Self {
+    pub fn new(title: String) -> Self {
         Self {
+            title,
             current_state: YesNoState::No,
         }
     }
@@ -47,62 +50,42 @@ impl YesNoPopup {
         }
     }
 
-    pub fn handle_key(&mut self, key: ratatui::crossterm::event::KeyEvent) -> YesNoState {
+}
 
-        if key.kind != KeyEventKind::Press {
-            return YesNoState::NotSelected;
-        }
+impl Popup<YesNoState> for YesNoPopup {
+
+
+    fn handle_key_event(&mut self, key: KeyEvent) -> PopupState {
         match key.code {
             KeyCode::Right | KeyCode::Left => {
                 self.select_next();
+                PopupState::Continue
             },
             KeyCode::Esc => {
-                return YesNoState::Exit;
+                self.current_state = YesNoState::Exit;
+                PopupState::Exit
             }
             KeyCode::Enter => {
-                return self.current_state.clone()
+                PopupState::Exit
             }
             _ => {
-
+                PopupState::Continue
             }
         }
-        YesNoState::NotSelected
     }
-
-    fn centered_rect(&self, percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-        let popup_layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Percentage((100 - percent_y) / 2),
-                Constraint::Percentage(percent_y),
-                Constraint::Percentage((100 - percent_y) / 2),
-            ])
-            .split(r);
-
-        Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage((100 - percent_x) / 2),
-                Constraint::Percentage(percent_x),
-                Constraint::Percentage((100 - percent_x) / 2),
-            ])
-            .split(popup_layout[1])[1]
-    }
-    
-    pub fn render_yes_no_popup(&mut self, f: &mut Frame) {
+    fn render_popup(&mut self, f: &mut Frame) {
         let size = f.size();
 
-        let popup_title = "Confirmation";
         let popup_text = "Are you sure you want to proceed?";
         let yes_text = " Yes ";
         let no_text = " No ";
 
         // Calculate popup area (e.g., 60% width, 25% height, centered)
-        let popup_area = self.centered_rect(60, 25, size);
+        let popup_area = centered_rect(60, 25, size);
         f.render_widget(Clear, popup_area); // Clear the area under the popup
 
         let popup_block = Block::default()
-            .title(popup_title)
+            .title( self.title.as_str() )
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::Yellow));
 
@@ -132,12 +115,12 @@ impl YesNoPopup {
         // Layout for buttons (horizontal)
         // Give a bit of spacing around buttons
         let button_chunks = Layout::horizontal([
-                Constraint::Percentage(20), // Spacer
-                Constraint::Length(yes_text.len() as u16 + 2), // Yes button + padding
-                Constraint::Percentage(10), // Spacer
-                Constraint::Length(no_text.len() as u16 + 2),  // No button + padding
-                Constraint::Percentage(20), // Spacer
-            ])
+            Constraint::Percentage(20), // Spacer
+            Constraint::Length(yes_text.len() as u16 + 2), // Yes button + padding
+            Constraint::Percentage(10), // Spacer
+            Constraint::Length(no_text.len() as u16 + 2),  // No button + padding
+            Constraint::Percentage(20), // Spacer
+        ])
             .flex(Flex::Center)
             .split(buttons_area);
 
@@ -168,4 +151,15 @@ impl YesNoPopup {
 
     }
 
+    fn get_result(&self) -> YesNoState {
+        self.current_state.clone()
+    }
+}
+
+
+pub fn create_yes_no_popup(title: String) -> Option<YesNoState> {
+    let mut manager = PopupManager::new();
+    let yes_no_popup = Box::new(YesNoPopup::new(title));
+    manager.show(yes_no_popup).expect("TODO: panic message");
+    manager.get_result()
 }
