@@ -13,7 +13,7 @@ use ratatui::{
 
 };
 
-use crate::files::files::{list_files, read_file};
+use crate::services::file_service::FileService;
 #[derive(Debug, Clone, PartialEq)]
 pub enum FileSelectorState {
     Selected,
@@ -70,7 +70,8 @@ impl FileSelector {
 
     pub fn render_files_popup(&mut self, frame: &mut Frame) {
 
-        self.list_source =  list_files(&"./**/*.md").expect("REASON");
+        let file_service = FileService::new();
+        self.list_source = file_service.list_files("./**/*.md").expect("Failed to list files");
 
         let items: Vec<ListItem> = self.list_source
             .iter()
@@ -125,7 +126,8 @@ impl FileSelector {
         if self.current_index < self.list_source.len() {
             let value = &self.list_source[self.current_index];
 
-            match read_file(value) {
+            let file_service = FileService::new();
+            match file_service.read_file(value) {
                 Ok(contents) => {
                     let details_widget = Paragraph::new(contents)
                         .block(Block::bordered().title("Content:"))

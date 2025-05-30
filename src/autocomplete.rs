@@ -1,5 +1,5 @@
 use crate::chat::get_memory;
-use crate::openrouter::list_openrouter_models;
+use crate::services::llm_client::LLMClient;
 use rustyline::completion::Pair as Completion;
 use rustyline::error::ReadlineError;
 use std::fs;
@@ -352,13 +352,18 @@ pub fn autocomplete_model_id(
             param_text.trim_matches(|c: char| c == '"' || c == '\'' || c.is_whitespace());
 
         // Get models from OpenRouter
-        let models = match tokio::runtime::Runtime::new() {
-            Ok(rt) => rt.block_on(async {
-                match list_openrouter_models().await {
-                    Ok(models) => models,
+        let models = match LLMClient::new() {
+            Ok(client) => {
+                match tokio::runtime::Runtime::new() {
+                    Ok(rt) => rt.block_on(async {
+                        match client.list_models().await {
+                            Ok(models) => models,
+                            Err(_) => Vec::new(),
+                        }
+                    }),
                     Err(_) => Vec::new(),
                 }
-            }),
+            },
             Err(_) => Vec::new(),
         };
 

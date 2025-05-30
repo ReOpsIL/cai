@@ -3,7 +3,7 @@ use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style, ThemeSet};
 use syntect::parsing::SyntaxSet;
 use syntect::util::{LinesWithEndings, as_24_bit_terminal_escaped};
-use crate::terminal;
+use crate::utils::terminal;
 
 lazy_static! {
     pub static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();

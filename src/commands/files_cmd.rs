@@ -1,6 +1,6 @@
 use regex::Regex;
 use crate::commands_registry::{register_command, Command, CommandType};
-use crate::files::files as file_module; // Import autocomplete handlers
+use crate::services::file_service; // Import autocomplete handlers
 use crate::autocomplete::{autocomplete_file_path, autocomplete_memory_id};
 use crate::chat;
 
@@ -16,7 +16,8 @@ pub fn register_files_cmd() {
                 return Ok(None);
             }
             let pattern = &params[0];
-            let files = file_module::list_files(pattern)?;
+            let file_service = file_service::FileService::new();
+            let files = file_service.list_files(pattern)?;
             Ok(Some(format!("\n{}\n", files.join("\n"))))
         },
         section: "file".to_string(),
@@ -36,7 +37,8 @@ pub fn register_files_cmd() {
                 return Ok(None);
             }
             let pattern = &params[0];
-            let folders = file_module::list_folders(pattern)?;
+            let file_service = file_service::FileService::new();
+            let folders = file_service.list_folders(pattern)?;
             Ok(Some(folders.join("\n")))
         },
         section: "folder".to_string(),
@@ -56,7 +58,8 @@ pub fn register_files_cmd() {
                 return Ok(None);
             }
             let pattern = &params[0];
-            let files_map = file_module::read_files(pattern)?;
+            let file_service = file_service::FileService::new();
+            let files_map = file_service.read_files(pattern)?;
 
             // Concatenate all file contents into one string
             let mut combined_content = String::new();
@@ -84,7 +87,8 @@ pub fn register_files_cmd() {
                 return Ok(None);
             }
             let pattern = &params[0];
-            let files_map = file_module::read_folder(pattern)?;
+            let file_service = file_service::FileService::new();
+            let files_map = file_service.read_folder(pattern)?;
 
             // Concatenate all file contents into one string
             let mut combined_content = String::new();
@@ -113,7 +117,8 @@ pub fn register_files_cmd() {
                 return Ok(None);
             }
             let filename = &params[0];
-            let contents = file_module::read_file(filename)?;
+            let file_service = file_service::FileService::new();
+            let contents = file_service.read_file(filename)?;
 
             Ok(Some(format!("File: {}\n{}", filename, contents)))
         },

@@ -1,13 +1,11 @@
-use crate::configuration;
-use crate::openrouter;
-use crate::terminal;
+use crate::app::config::{Config, ConfigService};
+use crate::services::llm_client::{LLMClient, Model};
+use crate::utils::terminal;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::io::{self, Write};
 use std::sync::Mutex;
 
-// Use OpenRouter's Model directly
-use crate::openrouter::Model;
 
 lazy_static! {
     static ref MODELS: Mutex<Vec<Model>> = Mutex::new(Vec::new());
@@ -15,7 +13,8 @@ lazy_static! {
 
 #[allow(dead_code)]
 pub async fn initialize_models() -> Result<(), Box<dyn std::error::Error>> {
-    let models = openrouter::list_openrouter_models().await?;
+    let client = LLMClient::new()?;
+    let models = client.list_models().await?;
 
     let mut models_store = MODELS.lock().unwrap();
     *models_store = models;
@@ -66,9 +65,9 @@ pub fn handle_set_model(command: &str) -> Result<(), Box<dyn std::error::Error>>
                 println!("{}", terminal::format_success(&format!("Selected model: {}", selected_model.name)));
 
                 // Update config
-                let mut config = configuration::load_configuration()?;
+                let mut config = Config::load()?;
                 config.model = selected_model.id.clone();
-                configuration::save_configuration(&config)?;
+                config.save()?;
 
                 println!("{}", terminal::format_success("Model saved to config file."));
             } else {
