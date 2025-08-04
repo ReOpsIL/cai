@@ -1,0 +1,71 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-v",
+        "/Users/dovcaspi:/workspace",
+        "mcp/filesystem",
+        "/workspace"
+      ],
+      "env": {},
+      "cwd": null
+    },
+    "database": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "DATABASE_URL=postgresql://user:password@host:5432/database",
+        "mcp/postgres"
+      ],
+      "env": {
+        "PGPASSWORD": "password"
+      },
+      "cwd": null
+    },
+    "web": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--cap-add=SYS_ADMIN",
+        "--shm-size=2gb",
+        "mcp/puppeteer"
+      ],
+      "env": {},
+      "cwd": null
+    },
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_TOKEN",
+        "mcp/github"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "cwd": null
+    },
+    "local-tool": {
+      "command": "python",
+      "args": [
+        "/path/to/mcp-server.py"
+      ],
+      "env": {
+        "PYTHONPATH": "/path/to/mcp-libraries"
+      },
+      "cwd": "/path/to/working/directory"
+    }
+  }
+}

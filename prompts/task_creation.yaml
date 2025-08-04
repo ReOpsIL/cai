@@ -1,0 +1,25 @@
+name: "Task Creation"
+description: "Prompts for project planning and task management"
+subjects:
+  - name: "Project Planning"
+    prompts:
+      - title: "Break down feature requirements"
+        content: "Break down this feature request into smaller, manageable tasks. Create a prioritized list with time estimates and dependencies."
+      - title: "Sprint planning assistant"
+        content: "Help plan the next sprint by analyzing user stories, estimating effort, and identifying potential blockers."
+      - title: "Technical debt assessment"
+        content: "Assess the technical debt in this codebase and create a prioritized plan for addressing it."
+
+  - name: "Documentation Tasks"
+    prompts:
+      - title: "API documentation generator"
+        content: "Generate comprehensive API documentation for these endpoints, including examples, error codes, and usage patterns."
+      - title: "Code documentation review"
+        content: "Review this code and suggest improvements to comments, docstrings, and inline documentation."
+
+  - name: "Testing Strategy"
+    prompts:
+      - title: "Test plan creation"
+        content: "Create a comprehensive test plan for this feature, including unit tests, integration tests, and edge cases."
+      - title: "Test coverage analysis"
+        content: "Analyze test coverage for this module and suggest additional test cases to improve coverage and quality."

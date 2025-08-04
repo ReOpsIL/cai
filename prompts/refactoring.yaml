@@ -1,0 +1,25 @@
+name: "Refactoring"
+description: "Prompts for code refactoring and improvement"
+subjects:
+  - name: "Clean Code"
+    prompts:
+      - title: "Extract method refactoring"
+        content: "Identify long methods in this code and suggest how to extract smaller, focused methods with clear responsibilities."
+      - title: "Remove code duplication"
+        content: "Find duplicated code patterns and suggest refactoring strategies to eliminate redundancy while maintaining functionality."
+      - title: "Simplify conditional logic"
+        content: "Analyze complex conditional statements and suggest ways to simplify them using guard clauses, polymorphism, or other patterns."
+
+  - name: "Performance Optimization"
+    prompts:
+      - title: "Algorithm optimization"
+        content: "Review the algorithms used in this code and suggest more efficient alternatives with better time/space complexity."
+      - title: "Memory usage optimization"
+        content: "Analyze memory usage patterns and suggest optimizations to reduce memory footprint and improve garbage collection."
+
+  - name: "Modernization"
+    prompts:
+      - title: "Legacy code modernization"
+        content: "Suggest modern language features and patterns to replace legacy code while maintaining backward compatibility."
+      - title: "Framework migration strategy"
+        content: "Create a step-by-step strategy for migrating this code to a newer framework or library version."

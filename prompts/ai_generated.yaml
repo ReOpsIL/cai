@@ -1,0 +1,162 @@
+name: AI Generated
+description: Prompts automatically generated through chat interactions
+subjects:
+- name: Testing
+  prompts:
+  - title: Plan comprehensive testing strategy for the
+    content: Plan comprehensive testing strategy for the application
+    score: 0
+    id: 0eb2578f-983f-41f8-be62-979ee8a24eda
+- name: Analysis
+  prompts:
+  - title: Analyze code structure and architectural patterns
+    content: Analyze code structure and architectural patterns
+    score: 0
+    id: 46d25868-ed47-49d7-803c-24e780d79a24
+- name: General Tasks
+  prompts:
+  - title: Identify the core purpose and objectives
+    content: Identify the core purpose and objectives of the project.
+    score: 0
+    id: 5c8b3724-2fa8-4bdd-83ca-dd10b3e78ec9
+  - title: Determine the key stakeholders involved in
+    content: Determine the key stakeholders involved in the project.
+    score: 0
+    id: 4a0d0543-89e2-43ae-95d2-b35af385575b
+  - title: Outline the main deliverables or outcomes
+    content: Outline the main deliverables or outcomes expected from the project.
+    score: 0
+    id: 8a6ef29c-d137-4733-af1e-2b4ddfd798a3
+  - title: Summarize the current status or phase
+    content: Summarize the current status or phase of the project.
+    score: 1
+    id: 0b7108ca-b68a-4112-b771-98695aed736b
+  - title: List any major challenges or risks
+    content: List any major challenges or risks associated with the project.
+    score: 0
+    id: b5998e69-61ff-4fe7-8b82-548a3aef05cb
+  - title: Specify the expected timeline or duration
+    content: |-
+      Improved Prompt:
+
+      **Clearly define the project's expected timeline, including key milestones and overall duration, and articulate the anticipated outcomes, impacts, and how success will be measured.**
+    score: 0
+    id: 67ba5985-25d0-47a3-9955-c38466529fe2
+  - title: Describe the resources (e.g., budget, personnel)
+    content: Describe the resources (e.g., budget, personnel) allocated to the project.
+    score: 0
+    id: f4a924d5-faad-4461-958e-e6d3fcbb68ac
+  - title: Explain how the project's success will
+    content: Explain how the project's success will be measured.
+    score: 0
+    id: 149e2c04-50cf-4855-8dda-f1b9ae3be1c8
+  - title: Provide a brief historical context or
+    content: Provide a brief historical context or background for the project, if applicable.
+    score: 0
+    id: 2ef80673-3d1f-4764-acec-623807e51356
+  - title: Identify the project's primary goal.
+    content: Identify the project's primary goal.
+    score: 0
+    id: d9e446fa-9603-4cb1-b72a-e54bada79e21
+  - title: Determine the project's key objectives.
+    content: Determine the project's key objectives.
+    score: 0
+    id: 8dc50b28-7522-4196-9bdc-f919b6af96fc
+  - title: List the main deliverables of the
+    content: List the main deliverables of the project.
+    score: 0
+    id: 77ad4573-cbec-49c8-ae44-432236d850da
+  - title: Outline the project's scope and boundaries.
+    content: Outline the project's scope and boundaries.
+    score: 0
+    id: e1d694ff-2551-4e3a-882c-20c1e2078748
+  - title: Identify the primary stakeholders and their
+    content: Identify the primary stakeholders and their roles.
+    score: 0
+    id: c24ebfa6-1496-4438-b57a-f25f58cb2b7b
+  - title: Note any significant challenges or risks.
+    content: Note any significant challenges or risks.
+    score: 0
+    id: 9b05daff-2c7e-44f6-a1da-6484302a0c3d
+  - title: Specify the estimated timeline or key
+    content: Specify the estimated timeline or key milestones.
+    score: 0
+    id: f9a5be94-9e2f-4501-af0b-5a6894e29b49
+  - title: Indicate the resources allocated or required.
+    content: Indicate the resources allocated or required.
+    score: 0
+    id: d6b3e5f6-2332-49be-b35d-cad1ec614347
+  - title: List all files and directories in
+    content: List all files and directories in the current project to get an overview of the project structure.
+    score: 0
+    id: 84b86009-93b3-4264-a10b-f7236996a9f9
+  - title: For each file identified in the
+    content: For each file and directory identified, list the first 10 lines of each file and the contents of each directory to understand their respective purposes.
+    score: 0
+    id: aba56298-88b2-4703-b769-b408808913ea
+  - title: Summarize the project's purpose and main
+    content: Summarize the project's purpose and main components based on the file and directory overview.
+    score: 0
+    id: 26ea1373-2a13-472d-a743-70e475e69e57
+  - title: Determine if the prompt is a
+    content: Determine if the prompt is a request for information, a command, a question, or a statement.
+    score: 0
+    id: 842fc43b-3712-45bb-8677-6e53df0c4444
+  - title: Based on the analysis, formulate a
+    content: Based on the analysis, formulate a relevant and helpful response.
+    score: 0
+    id: 16e2f590-d28f-448d-8a9b-c98fb8e936dc
+  - title: If the prompt is a question,
+    content: If the prompt is a question, provide a direct and accurate answer.
+    score: 0
+    id: 815ff7e3-1d4a-42ea-99a4-c0ca3a7780bc
+  - title: If the prompt is a command,
+    content: |-
+      Here's the improved prompt:
+
+      **Acknowledge the user's input. If the input is a command, confirm understanding and readiness to proceed. If the input is a statement, confirm receipt and offer relevant follow-up questions or actions.**
+    score: 0
+    id: 490ee070-9636-4d88-9eeb-06ca32fedd5c
+  - title: If the prompt is ambiguous, request
+    content: If the prompt is ambiguous, request clarification from the user.
+    score: 0
+    id: 74e965df-bc5b-4e58-ace9-f4a5bb252d69
+  - title: Use the `filesystem` tool to list
+    content: Use the `filesystem` tool to list the content of the current directory.
+    score: 0
+    id: 0d8e43ba-b081-4a1c-8b75-a999af3c331b
+  - title: List all available MCP tools in
+    content: List all available MCP tools in a structured format, including their names, descriptions, and any relevant usage information.
+    score: 0
+    id: e464fca1-f939-4b6d-b3ea-72c1cc962501
+  - title: List all files and folders in
+    content: |-
+      Improved prompt:
+
+      List all files and folders in the current working directory using the `filesystem.list_files_and_directories` MCP tool. This tool is a more robust and programmatic alternative to the `ls -F` command for obtaining directory contents. Ensure the output clearly distinguishes between files and directories.
+    score: 0
+    id: 42fa99d1-b9a8-49d0-856f-415f00be68f1
+  - title: List all files and directories in
+    content: List all files and directories in the current working directory using the `filesystem.list_files` tool.
+    score: 1
+    id: 6052e4ec-53f9-4ede-a44b-048a0dd2199b
+  - title: Call the `filesystem.list_files` tool with no
+    content: Call the `filesystem.list_files` tool with no arguments to list all files and directories in the current working directory.
+    score: 0
+    id: 7a526316-0f1d-4f12-9216-2bb3749ec54c
+- name: Task Creation
+  prompts:
+  - title: State the next immediate steps or
+    content: State the next immediate steps or actions planned for the project.
+    score: 0
+    id: 053b1fe9-6c15-4767-b43e-06deb8cadb6c
+- name: Code Analysis
+  prompts:
+  - title: Analyze the user's prompt to understand
+    content: Analyze the user's prompt to understand its intent and identify any specific requirements or constraints.
+    score: 0
+    id: c014cb7b-4511-4cbc-b750-98d0dcad35dd
+  - title: Review the generated response for clarity,
+    content: Review the generated response for clarity, accuracy, and completeness before presenting it.
+    score: 0
+    id: ada2714a-da38-4705-b8cb-fad0b0b454af

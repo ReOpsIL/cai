@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# CAI - Simple launcher script
+# This script automatically uses the run.sh script for convenience
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if run.sh exists in the same directory
+if [ -f "$SCRIPT_DIR/run.sh" ]; then
+    exec "$SCRIPT_DIR/run.sh" "$@"
+else
+    echo "Error: run.sh not found in $SCRIPT_DIR"
+    exit 1
+fi

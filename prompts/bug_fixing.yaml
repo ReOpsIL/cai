@@ -1,0 +1,27 @@
+name: "Bug Fixing"
+description: "Prompts for debugging and fixing code issues"
+subjects:
+  - name: "General Debugging"
+    prompts:
+      - title: "Analyze error logs"
+        content: "Analyze the following error logs and identify the root cause of the issue. Provide a step-by-step debugging approach and suggest potential fixes."
+      - title: "Code review for bugs"
+        content: "Review this code for potential bugs, security vulnerabilities, and edge cases. Highlight specific issues and provide corrected versions."
+      - title: "Memory leak detection"
+        content: "Examine this code for potential memory leaks. Identify problematic patterns and suggest memory management improvements."
+
+  - name: "Performance Issues"
+    prompts:
+      - title: "Performance bottleneck analysis"
+        content: "Analyze this code for performance bottlenecks. Identify inefficient algorithms, unnecessary computations, and suggest optimizations."
+      - title: "Database query optimization"
+        content: "Review these database queries for performance issues. Suggest index optimizations, query restructuring, and caching strategies."
+
+  - name: "Concurrency Bugs"
+    prompts:
+      - title: "Race condition detection"
+        content: "Examine this concurrent code for race conditions. Identify shared state issues and suggest synchronization mechanisms."
+      - title: "Deadlock analysis"
+        content: "file://prompts/deadlock_analysis.md"
+      - title: "Deadlock analysis web"
+        content: "https://raw.githubusercontent.com/anthropics/claude-code/main/README.md"
