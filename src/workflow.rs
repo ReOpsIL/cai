@@ -168,7 +168,7 @@ impl WorkflowEngine {
         // Store the plan in memory as a workflow prompt
         let workflow_prompt = Prompt::new(
             format!("Workflow Plan: {}\nGoal: {}", plan_id, goal),
-            PromptType::QUESTION, // We'll use QUESTION type for workflow plans
+            PromptType::WORKFLOW,
         );
 
         // Store the plan in active workflows
@@ -338,6 +338,7 @@ impl WorkflowEngine {
     }
 
     async fn execute_command(&self, command: &str) -> Result<Option<String>, WorkflowError> {
+
         // Use existing command execution system
         match chat::execute_command(command) {
             Ok(Some(result)) => {
