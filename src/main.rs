@@ -7,6 +7,9 @@ mod configuration;
 mod files;
 mod input_handler;
 mod openrouter;
+mod session;
+#[cfg(test)]
+mod session_test;
 mod terminal;
 mod autocomplete;
 mod chat_ui;
