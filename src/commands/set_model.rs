@@ -66,7 +66,7 @@ pub fn handle_set_model(command: &str) -> Result<(), Box<dyn std::error::Error>>
 
                 // Update config
                 let mut config = configuration::load_configuration()?;
-                config.model = selected_model.id.clone();
+                config.llm.model = selected_model.id.clone();
                 configuration::save_configuration(&config)?;
 
                 println!("{}", terminal::format_success("Model saved to config file."));
