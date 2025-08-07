@@ -190,13 +190,13 @@ pub fn register_all_commands() {
         name: "export".to_string(),
         pattern: Regex::new(r"@export\(\s*(\S+)\s*,\s*(\S+)\s*\)").unwrap(),
         description: "Export memory content into file.".to_string(),
-        usage_example: "@export(45dge64 or ? or _ or @, ./output.md)".to_string(),
+        usage_example: "@export(45dge64 or ? or _ or @ or ~, ./output.md)".to_string(),
         handler: |params| {
             let mut content = String::new();
             let memory = chat::get_memory().lock().unwrap();
 
             if params.len() < 2 {
-                println!("Usage: @export([id or ? or _ or @],[file-name])");
+                println!("Usage: @export([id or ? or _ or @ or ~],[file-name])");
                 return Ok(None);
             }
             let id = &params[0];
@@ -215,6 +215,7 @@ pub fn register_all_commands() {
                     || (prompt.ptype == PromptType::QUESTION && id == "?")
                     || (prompt.ptype == PromptType::ANSWER && id == "_")
                     || (prompt.ptype == PromptType::ALIAS && id == "^")
+                    || (prompt.ptype == PromptType::WORKFLOW && id == "~")
                 {
                     content.push_str(&format!("{}:\n{}\n", prompt.id, prompt.value));
                 }

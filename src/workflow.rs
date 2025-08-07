@@ -338,9 +338,19 @@ impl WorkflowEngine {
     }
 
     async fn execute_command(&self, command: &str) -> Result<Option<String>, WorkflowError> {
-        // For now, return a placeholder implementation
-        // In the real implementation, this would use the existing command execution system
-        Ok(Some(format!("Executed command: {}", command)))
+
+        // Use existing command execution system
+        match chat::execute_command(command) {
+            Ok(Some(result)) => {
+                if let Ok(Some(output)) = result.command_output {
+                    Ok(Some(output))
+                } else {
+                    Ok(Some("Command executed successfully".to_string()))
+                }
+            },
+            Ok(None) => Ok(None),
+            Err(e) => Err(WorkflowError::ExecutionFailed(e.to_string())),
+        }
     }
 
     async fn execute_inferred_command(&self, description: &str) -> Result<Option<String>, WorkflowError> {

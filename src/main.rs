@@ -18,6 +18,8 @@ mod autocomplete;
 mod chat_ui;
 mod commands_selector;
 mod files_selector;
+mod workflow;
+mod workflow_test;
 
 use chat_ui::main_ui;
 //use editor::run_editor;
