@@ -157,6 +157,21 @@ pub mod ops {
             &format!("{} {} {}: {} → {} → {}", icon, operation, status, file, subject, prompt));
     }
 
+    /// Log feedback loop operations
+    pub fn feedback_operation(operation: &str, feedback_type: &str) {
+        let icon = match operation {
+            "ADD_FEEDBACK" => "📝",
+            "CONTEXT_GATHER" => "🔍",
+            "PLAN_CREATE" => "📋",
+            "PLAN_VALIDATE" => "✅",
+            "ITERATE" => "🔄",
+            "ACCUMULATE" => "🏗️",
+            _ => "🔁",
+        };
+        log_internal(LogLevel::Info, "feedback", 
+            &format!("{} {} - {}", icon, operation, feedback_type));
+    }
+
     /// Log chat operations
     pub fn chat_operation(operation: &str, details: &str) {
         let icon = match operation {

@@ -6,6 +6,7 @@ mod mcp_config;
 mod mcp_client;
 mod mcp_manager;
 mod task_executor;
+mod feedback_loop;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};

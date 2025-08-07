@@ -6,6 +6,7 @@ pub mod mcp_config;
 pub mod mcp_client;
 pub mod mcp_manager;
 pub mod task_executor;
+pub mod feedback_loop;
 
 pub use prompt_loader::*;
 pub use openrouter_client::*;

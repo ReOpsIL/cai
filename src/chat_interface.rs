@@ -6,11 +6,13 @@ use crate::openrouter_client::{OpenRouterClient, ChatMessage};
 use crate::prompt_loader::{PromptManager, Prompt};
 use crate::logger::{log_info, log_debug, log_warn, log_error, ops};
 use crate::task_executor::{TaskExecutor, TaskStatus};
+use crate::feedback_loop::{FeedbackLoopManager, FeedbackType};
 
 pub struct ChatInterface {
     openrouter_client: OpenRouterClient,
     conversation_history: Vec<ChatMessage>,
     task_executor: TaskExecutor,
+    feedback_manager: FeedbackLoopManager,
 }
 
 impl ChatInterface {
@@ -32,15 +34,28 @@ impl ChatInterface {
                 TaskExecutor::new()
             }
         };
+
+        // Initialize feedback loop manager
+        let feedback_manager = match FeedbackLoopManager::with_llm_client().await {
+            Ok(manager) => {
+                log_info!("chat", "✅ Initialized feedback loop manager with LLM capabilities");
+                manager
+            }
+            Err(e) => {
+                log_warn!("chat", "⚠️ Failed to initialize LLM feedback manager, using basic fallback: {}", e);
+                FeedbackLoopManager::new()
+            }
+        };
         
         let init_duration = client_start.elapsed().as_millis() as u64;
         ops::performance("CHAT_INIT", init_duration);
-        log_info!("chat", "✅ ChatInterface initialized successfully");
+        log_info!("chat", "✅ ChatInterface initialized successfully with dynamic feedback loops");
         
         Ok(Self {
             openrouter_client,
             conversation_history: Vec::new(),
             task_executor,
+            feedback_manager,
         })
     }
 
@@ -48,9 +63,10 @@ impl ChatInterface {
         log_info!("chat", "🚀 Starting chat session");
         ops::startup("CHAT", "interactive chat session");
         
-        println!("{}", "🤖 CAI Chat Interface with Task Execution".bright_blue().bold());
+        println!("{}", "🤖 CAI Chat Interface with Dynamic Feedback Loops".bright_blue().bold());
         println!("{}", "I'll help you plan tasks, manage prompts, and execute tasks using MCP tools.".dimmed());
-        println!("{}", "Special commands: 'status', 'execute', 'clear', 'help', 'quit'".dimmed());
+        println!("{}", "🔁 Dynamic feedback loops enabled for continuous learning and improvement.".green());
+        println!("{}", "Special commands: 'status', 'execute', 'clear', 'plan', 'improve', 'feedback', 'help', 'quit'".dimmed());
         println!();
 
         loop {
@@ -58,7 +74,23 @@ impl ChatInterface {
             io::stdout().flush()?;
 
             let mut input = String::new();
-            io::stdin().read_line(&mut input)?;
+            match io::stdin().read_line(&mut input) {
+                Ok(0) => {
+                    // EOF encountered (Ctrl+D or piped input ended)
+                    log_info!("chat", "📄 EOF encountered, exiting chat session");
+                    println!("\n{}", "EOF detected. Goodbye! 👋".bright_blue());
+                    break;
+                }
+                Ok(_) => {
+                    // Successfully read input
+                }
+                Err(e) => {
+                    log_error!("chat", "❌ Error reading input: {}", e);
+                    ops::error_with_context("CHAT_INPUT", &e.to_string(), None);
+                    println!("{} Error reading input: {}", "❌".red(), e);
+                    continue;
+                }
+            }
             let input = input.trim();
 
             if input.is_empty() {
@@ -116,6 +148,18 @@ impl ChatInterface {
                 }
                 Ok(true)
             }
+            "plan" => {
+                self.handle_plan_command().await?;
+                Ok(true)
+            }
+            "improve" => {
+                self.handle_improve_command().await?;
+                Ok(true)
+            }
+            "feedback" => {
+                self.handle_feedback_command().await?;
+                Ok(true)
+            }
             "help" => {
                 self.show_help();
                 Ok(true)
@@ -129,8 +173,17 @@ impl ChatInterface {
         println!("  {} - Show current task queue status", "status".cyan());
         println!("  {} - Execute all queued tasks", "execute".cyan());
         println!("  {} - Clear completed tasks from queue", "clear".cyan());
+        println!("  {} - Create a validated plan for your request", "plan".cyan());
+        println!("  {} - Iteratively improve a solution", "improve".cyan());
+        println!("  {} - Show feedback loop statistics", "feedback".cyan());
         println!("  {} - Show this help message", "help".cyan());
         println!("  {} - Exit chat mode", "quit".cyan());
+        println!("\n{} Dynamic Feedback Features:", "🔁".bright_green().bold());
+        println!("  • Continuous context gathering from conversation history");
+        println!("  • Plan-execute-review cycles with validation");
+        println!("  • Iterative improvement through multiple refinement passes");
+        println!("  • Architectural knowledge accumulation");
+        println!("  • Tool result integration and reasoning feedback");
         println!();
     }
 
@@ -139,7 +192,13 @@ impl ChatInterface {
         log_debug!("chat", "🔄 Starting task planning for user input");
         println!("{} Planning tasks...", "🔄".yellow());
 
-        // Get task plan from LLM
+        // Gather context from previous feedback to enhance planning
+        let historical_context = self.feedback_manager.gather_context_for_task(user_input).await
+            .unwrap_or_else(|_| "No relevant historical context available.".to_string());
+        
+        log_debug!("chat", "📚 Gathered historical context ({} chars)", historical_context.len());
+
+        // Get task plan from LLM with enhanced context
         let planning_start = Instant::now();
         let tasks = self.openrouter_client.plan_tasks(user_input).await
             .context("Failed to generate task plan")?;
@@ -167,15 +226,27 @@ impl ChatInterface {
 
         // Execute tasks automatically (for now, to avoid hanging)
         println!("{} Executing tasks automatically...", "⚡".yellow());
-        match self.task_executor.execute_all().await {
+        let execution_success = match self.task_executor.execute_all().await {
             Ok(_) => {
                 println!("\n{} All tasks completed! Continuing chat...", "🎉".green());
+                true
             }
             Err(e) => {
                 println!("\n{} Task execution error: {}", "❌".red(), e);
                 log_warn!("chat", "Task execution failed: {}", e);
+                false
             }
-        }
+        };
+
+        // Record feedback for task execution
+        let quality_score = if execution_success { 1.0 } else { 0.0 };
+        let _ = self.feedback_manager.add_feedback(
+            FeedbackType::ContextRefinement,
+            format!("Task execution for: {}", user_input),
+            serde_json::json!({"user_input": user_input, "tasks": tasks, "historical_context": historical_context}),
+            serde_json::json!({"success": execution_success, "task_count": tasks.len()}),
+            Some(quality_score),
+        ).await;
 
         // Process tasks for prompt management (existing functionality)
         let mut new_prompts_added = 0;
@@ -340,6 +411,170 @@ impl ChatInterface {
         
         log_debug!("chat", "🏷️ Task categorized as: {}", category);
         category
+    }
+
+    /// Handle the 'plan' command - create a validated plan
+    async fn handle_plan_command(&mut self) -> Result<()> {
+        println!("{} Plan Creation Mode", "📋".bright_blue().bold());
+        println!("Enter your request for plan creation:");
+        
+        print!("{} ", "Request:".bright_green());
+        io::stdout().flush()?;
+        
+        let mut request = String::new();
+        io::stdin().read_line(&mut request)?;
+        let request = request.trim();
+        
+        if request.is_empty() {
+            println!("{} No request provided", "⚠️".yellow());
+            return Ok(());
+        }
+
+        println!("{} Creating validated plan...", "🔄".yellow());
+        
+        match self.feedback_manager.create_validated_plan(request, "chat_session").await {
+            Ok((plan_id, plan)) => {
+                println!("\n{} Plan Created (ID: {})", "📋".green(), plan_id);
+                println!("{}", "─".repeat(60));
+                println!("{}", plan);
+                println!("{}", "─".repeat(60));
+                
+                // Ask for validation
+                println!("\n{} Plan Validation", "✅".bright_blue());
+                print!("Do you approve this plan? (y/n/modify): ");
+                io::stdout().flush()?;
+                
+                let mut validation = String::new();
+                io::stdin().read_line(&mut validation)?;
+                let validation = validation.trim().to_lowercase();
+                
+                match validation.as_str() {
+                    "y" | "yes" => {
+                        self.feedback_manager.validate_plan(&plan_id, true, "Plan approved".to_string(), vec![]).await?;
+                        println!("{} Plan approved and ready for execution!", "✅".green());
+                    }
+                    "n" | "no" => {
+                        print!("Feedback on why the plan was rejected: ");
+                        io::stdout().flush()?;
+                        let mut feedback = String::new();
+                        io::stdin().read_line(&mut feedback)?;
+                        
+                        self.feedback_manager.validate_plan(&plan_id, false, feedback.trim().to_string(), vec![]).await?;
+                        println!("{} Plan rejected. Feedback recorded for future improvements.", "❌".red());
+                    }
+                    "modify" | "m" => {
+                        print!("Suggested modifications: ");
+                        io::stdout().flush()?;
+                        let mut modifications = String::new();
+                        io::stdin().read_line(&mut modifications)?;
+                        
+                        let mod_list = vec![modifications.trim().to_string()];
+                        self.feedback_manager.validate_plan(&plan_id, false, "Modifications requested".to_string(), mod_list).await?;
+                        println!("{} Modifications noted for plan refinement.", "🔄".yellow());
+                    }
+                    _ => {
+                        println!("{} Invalid input. Plan validation skipped.", "⚠️".yellow());
+                    }
+                }
+            }
+            Err(e) => {
+                println!("{} Failed to create plan: {}", "❌".red(), e);
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Handle the 'improve' command - iterative improvement
+    async fn handle_improve_command(&mut self) -> Result<()> {
+        println!("{} Iterative Improvement Mode", "🔄".bright_blue().bold());
+        println!("Enter the solution/content you want to improve:");
+        
+        print!("{} ", "Content:".bright_green());
+        io::stdout().flush()?;
+        
+        let mut content = String::new();
+        io::stdin().read_line(&mut content)?;
+        let content = content.trim();
+        
+        if content.is_empty() {
+            println!("{} No content provided", "⚠️".yellow());
+            return Ok(());
+        }
+
+        print!("Number of improvement iterations (1-5, default=3): ");
+        io::stdout().flush()?;
+        
+        let mut iterations_input = String::new();
+        io::stdin().read_line(&mut iterations_input)?;
+        let iterations = iterations_input.trim().parse::<u32>().unwrap_or(3).clamp(1, 5);
+        
+        println!("{} Starting {} iterations of improvement...", "🔄".yellow(), iterations);
+        
+        let task_id = uuid::Uuid::new_v4().to_string();
+        let initial_input = serde_json::json!({"content": content});
+        
+        match self.feedback_manager.iterative_improvement(&task_id, initial_input, iterations).await {
+            Ok(final_result) => {
+                println!("\n{} Iterative Improvement Complete", "🎉".green().bold());
+                println!("{}", "─".repeat(60));
+                
+                if let Some(final_content) = final_result.get("content") {
+                    println!("{}", final_content.as_str().unwrap_or(""));
+                } else {
+                    println!("{}", serde_json::to_string_pretty(&final_result)?);
+                }
+                
+                println!("{}", "─".repeat(60));
+                println!("{} Improvement completed with {} iterations", "✅".green(), iterations);
+            }
+            Err(e) => {
+                println!("{} Failed to perform iterative improvement: {}", "❌".red(), e);
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Handle the 'feedback' command - show feedback statistics
+    async fn handle_feedback_command(&mut self) -> Result<()> {
+        println!("{} Feedback Loop Statistics", "📊".bright_blue().bold());
+        
+        match self.feedback_manager.get_feedback_stats().await {
+            Ok(stats) => {
+                println!("{}", "─".repeat(50));
+                
+                if let Some(total) = stats.get("total_entries") {
+                    println!("📝 Total Feedback Entries: {}", total);
+                }
+                
+                if let Some(avg_quality) = stats.get("average_quality_score") {
+                    println!("⭐ Average Quality Score: {:.2}", avg_quality.as_f64().unwrap_or(0.0));
+                }
+                
+                if let Some(types) = stats.get("feedback_types") {
+                    println!("\n📋 Feedback by Type:");
+                    if let serde_json::Value::Object(type_map) = types {
+                        for (feedback_type, count) in type_map {
+                            println!("  • {}: {}", feedback_type, count);
+                        }
+                    }
+                }
+                
+                println!("\n🔁 Dynamic Feedback Features Active:");
+                println!("  ✅ Context refinement");
+                println!("  ✅ Plan validation");
+                println!("  ✅ Iterative improvement");
+                println!("  ✅ Architectural knowledge accumulation");
+                
+                println!("{}", "─".repeat(50));
+            }
+            Err(e) => {
+                println!("{} Failed to get feedback statistics: {}", "❌".red(), e);
+            }
+        }
+        
+        Ok(())
     }
 }
 

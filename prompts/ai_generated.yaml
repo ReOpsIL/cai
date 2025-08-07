@@ -144,6 +144,38 @@ subjects:
     content: Call the `filesystem.list_files` tool with no arguments to list all files and directories in the current working directory.
     score: 0
     id: 7a526316-0f1d-4f12-9216-2bb3749ec54c
+  - title: Acknowledge and greet the user.
+    content: Acknowledge and greet the user.
+    score: 0
+    id: 4aec16c1-dc22-4184-87e9-f0028d628319
+  - title: Ask the user how you can
+    content: Ask the user how you can assist them today.
+    score: 0
+    id: 6095532c-605b-4177-84e0-48741ef6a0ef
+  - title: Read the entire content of the
+    content: Read the entire content of the `README.md` file.
+    score: 0
+    id: 7168f4b8-3db3-4e53-979b-e12805353e4a
+  - title: Read the entire content of the
+    content: Read the entire content of the `src/main.rs` file to understand the current Rust code's functionality, structure, and any new features or changes.
+    score: 0
+    id: eae0fdbb-97f6-4f08-91c2-e1f3d8147753
+  - title: Compare the information in `README.md` with
+    content: Compare the information in `README.md` with the current state of the Rust code (`src/main.rs`).
+    score: 0
+    id: a0990c89-230c-49ec-a840-74b1db9fc5d3
+  - title: Identify discrepancies, outdated information, m...
+    content: Identify discrepancies, outdated information, missing sections, or areas that need updating in `README.md` based on the Rust code analysis.
+    score: 0
+    id: 2c5daa28-0082-43bb-90e9-78befdd9bc1c
+  - title: Generate the updated content for `README.md`,
+    content: Generate the updated content for `README.md`, ensuring it accurately reflects the current Rust code, including installation instructions, usage examples, features, and any other relevant details.
+    score: 0
+    id: cd642f2d-c4a3-4ca0-8de2-e5c71fdcf683
+  - title: Write the newly generated content to
+    content: Write the newly generated content to the `README.md` file, overwriting its previous content.
+    score: 0
+    id: 56ab85f1-a672-42fd-bdc5-4fc556902757
 - name: Task Creation
   prompts:
   - title: State the next immediate steps or
