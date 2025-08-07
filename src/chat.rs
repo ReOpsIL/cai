@@ -26,6 +26,7 @@ pub enum PromptType {
     QUESTION,
     ANSWER,
     ALIAS,
+    WORKFLOW,
 }
 
 #[derive(Debug, Default, Clone, PartialEq)]
