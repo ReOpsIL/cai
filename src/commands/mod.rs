@@ -11,6 +11,7 @@ pub mod bash_cmd;
 pub mod help;
 pub mod set_model;
 pub mod session_cmd;
+pub mod workflow_cmd;
 
 // Initialize and register all commands
 pub fn register_all_commands() {
@@ -303,4 +304,5 @@ pub fn register_all_commands() {
     help::register_help_command();
     bash_cmd::register_bash_command();
     session_cmd::register_session_commands();
+    workflow_cmd::register_workflow_commands();
 }

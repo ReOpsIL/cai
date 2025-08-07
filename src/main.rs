@@ -10,6 +10,9 @@ mod openrouter;
 mod session;
 #[cfg(test)]
 mod session_test;
+mod workflow;
+#[cfg(test)]
+mod workflow_test;
 mod terminal;
 mod autocomplete;
 mod chat_ui;
