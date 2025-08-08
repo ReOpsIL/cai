@@ -56,6 +56,10 @@ impl McpClientManager {
 
         if started_count > 0 {
             eprintln!("🎉 Successfully started {}/{} MCP servers", started_count, server_names.len());
+            
+            // Perform health checks on started servers
+            eprintln!("🔍 Performing health checks on started servers...");
+            self.perform_health_checks(&server_names, &failed_servers).await;
         }
 
         if !failed_servers.is_empty() {
@@ -133,6 +137,25 @@ impl McpClientManager {
             .collect();
 
         Ok(tool_names)
+    }
+
+    /// Get detailed tool information including parameters and descriptions
+    pub async fn get_detailed_tools(&self, server_name: &str) -> Result<Vec<serde_json::Value>> {
+        let active_clients = self.active_clients.lock().await;
+        
+        let instance = active_clients.get(server_name)
+            .ok_or_else(|| anyhow!("Server '{}' is not running", server_name))?;
+
+        // Use the actual MCP client to list tools with full details
+        let tools_response = instance.client.list_all_tools().await
+            .map_err(|e| anyhow!("Failed to list tools from server '{}': {}", server_name, e))?;
+
+        // Convert tools to JSON values for easier handling
+        let detailed_tools: Vec<serde_json::Value> = tools_response.iter()
+            .map(|tool| serde_json::to_value(tool).unwrap_or(serde_json::Value::Null))
+            .collect();
+
+        Ok(detailed_tools)
     }
 
     pub async fn call_tool(&self, server_name: &str, tool_name: &str, arguments: Value) -> Result<Value> {
@@ -217,6 +240,52 @@ impl McpClientManager {
         }
 
         Ok(())
+    }
+
+    /// Perform health checks on started servers by attempting to list tools
+    async fn perform_health_checks(&self, all_servers: &[String], failed_servers: &[String]) {
+        let mut healthy_count = 0;
+        let mut unhealthy_servers = Vec::new();
+
+        for server_name in all_servers {
+            // Skip servers that failed to start
+            if failed_servers.contains(server_name) {
+                continue;
+            }
+
+            // Give the server a moment to fully initialize
+            tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+
+            match tokio::time::timeout(
+                tokio::time::Duration::from_secs(5),
+                self.list_tools(server_name)
+            ).await {
+                Ok(Ok(tools)) => {
+                    eprintln!("✅ Server '{}' is healthy ({} tools available)", server_name, tools.len());
+                    healthy_count += 1;
+                }
+                Ok(Err(e)) => {
+                    eprintln!("⚠️  Server '{}' started but not responding: {}", server_name, e);
+                    unhealthy_servers.push(server_name.clone());
+                }
+                Err(_) => {
+                    eprintln!("⚠️  Server '{}' health check timed out", server_name);
+                    unhealthy_servers.push(server_name.clone());
+                }
+            }
+        }
+
+        let started_servers = all_servers.len() - failed_servers.len();
+        if healthy_count == started_servers && started_servers > 0 {
+            eprintln!("🎉 All {} started servers are healthy and responding!", healthy_count);
+        } else if healthy_count > 0 {
+            eprintln!("✅ {}/{} started servers are healthy", healthy_count, started_servers);
+            if !unhealthy_servers.is_empty() {
+                eprintln!("⚠️  Unhealthy servers: {}", unhealthy_servers.join(", "));
+            }
+        } else if started_servers > 0 {
+            eprintln!("❌ None of the started servers are responding to health checks");
+        }
     }
 }
 

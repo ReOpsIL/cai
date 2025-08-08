@@ -6,9 +6,6 @@ use std::sync::Arc;
 use uuid::Uuid;
 use colored::*;
 use serde_json::Value;
-use std::fs;
-use std::path::Path;
-use walkdir::WalkDir;
 
 use crate::mcp_manager;
 use crate::logger::{log_info, log_debug, log_warn, ops};
@@ -263,21 +260,15 @@ impl TaskExecutor {
     async fn execute_single_task(&self, task: &mut Task) -> Result<()> {
         log_debug!("task_executor", "🔄 Starting single task execution for: {}", task.description);
         
-        // First try direct task execution for common operations
-        if let Some(result) = self.execute_direct_task(&task.description).await? {
-            task.result = Some(result);
-            log_debug!("task_executor", "✅ Direct task execution completed");
-            return Ok(());
-        }
-        
         // Try to determine what MCP tools this task might need
         let tool_suggestions = self.analyze_task_for_tools(&task.description).await?;
         
         if tool_suggestions.is_empty() {
-            // No specific MCP tools identified, try basic execution
-            let result = self.execute_basic_task(&task.description).await?;
-            task.result = Some(result);
-            log_debug!("task_executor", "✅ Basic task execution completed");
+            // No specific MCP tools identified, provide helpful error message
+            task.result = Some("No MCP tools were identified for this task. Please check MCP server configuration.".to_string());
+            println!("    {} No MCP tools available for task: {}", "⚠️".yellow(), task.description);
+            println!("    {} Consider checking your MCP server configuration in mcp-config.json", "💡".yellow());
+            log_debug!("task_executor", "⚠️ No MCP tools available for task execution");
             return Ok(());
         }
 
@@ -320,161 +311,6 @@ impl TaskExecutor {
         Ok(())
     }
 
-    /// Execute common tasks directly without MCP tools
-    async fn execute_direct_task(&self, task_description: &str) -> Result<Option<String>> {
-        let task_lower = task_description.to_lowercase();
-        
-        // Project review tasks
-        if task_lower.contains("review") && (task_lower.contains("project") || task_lower.contains("code")) {
-            return Ok(Some(self.review_project().await?));
-        }
-        
-        // List files tasks
-        if task_lower.contains("list") && task_lower.contains("file") {
-            return Ok(Some(self.list_project_files().await?));
-        }
-        
-        // Show structure tasks
-        if task_lower.contains("structure") || task_lower.contains("architecture") {
-            return Ok(Some(self.show_project_structure().await?));
-        }
-        
-        // No direct task match
-        Ok(None)
-    }
-
-    /// Execute basic task operations
-    async fn execute_basic_task(&self, task_description: &str) -> Result<String> {
-        log_debug!("task_executor", "🔄 Executing basic task: {}", task_description);
-        
-        // For now, just acknowledge the task
-        Ok(format!("Task acknowledged: {}\n\nNote: MCP tools are not currently available. Consider using direct commands like:\n- 'cargo run -- list' to see available prompts\n- 'cargo run -- show <file>' to view specific files", task_description))
-    }
-
-    /// Review the project by examining key files
-    async fn review_project(&self) -> Result<String> {
-        let mut review = String::new();
-        review.push_str("# Project Review\n\n");
-        
-        // Check if this is the CAI project
-        if Path::new("Cargo.toml").exists() {
-            review.push_str("## Rust Project Structure\n\n");
-            
-            // Read Cargo.toml
-            if let Ok(cargo_content) = fs::read_to_string("Cargo.toml") {
-                let lines: Vec<&str> = cargo_content.lines().take(10).collect();
-                review.push_str(&format!("### Cargo.toml (first 10 lines):\n```toml\n{}\n```\n\n", lines.join("\n")));
-            }
-            
-            // List source files
-            review.push_str("### Source Files:\n");
-            if let Ok(entries) = fs::read_dir("src") {
-                for entry in entries {
-                    if let Ok(entry) = entry {
-                        let path = entry.path();
-                        if path.extension().map_or(false, |ext| ext == "rs") {
-                            let filename = path.file_name().unwrap().to_string_lossy();
-                            review.push_str(&format!("- `src/{}`\n", filename));
-                        }
-                    }
-                }
-            }
-            
-            review.push_str("\n### Key Features Identified:\n");
-            
-            // Check main.rs for clues
-            if let Ok(main_content) = fs::read_to_string("src/main.rs") {
-                if main_content.contains("clap") {
-                    review.push_str("- Command-line interface (using clap)\n");
-                }
-                if main_content.contains("tokio") {
-                    review.push_str("- Asynchronous runtime (using tokio)\n");
-                }
-            }
-            
-            // Check for specific CAI features
-            if Path::new("src/chat_interface.rs").exists() {
-                review.push_str("- Interactive chat interface\n");
-            }
-            if Path::new("src/mcp_client.rs").exists() {
-                review.push_str("- MCP (Model Context Protocol) integration\n");
-            }
-            if Path::new("src/workflow_orchestrator.rs").exists() {
-                review.push_str("- Workflow orchestration system\n");
-            }
-            if Path::new("prompts").exists() {
-                review.push_str("- Prompt management system\n");
-            }
-        } else {
-            review.push_str("## General Project Structure\n\n");
-            review.push_str("This doesn't appear to be a Rust project. Examining directory structure...\n\n");
-        }
-        
-        Ok(review)
-    }
-
-    /// List key project files
-    async fn list_project_files(&self) -> Result<String> {
-        let mut files = String::new();
-        files.push_str("# Project Files\n\n");
-        
-        for entry in WalkDir::new(".").max_depth(2).into_iter().filter_map(|e| e.ok()) {
-            let path = entry.path();
-            if path.is_file() {
-                let path_str = path.to_string_lossy();
-                // Skip hidden files and common build artifacts
-                if !path_str.contains("/.") && !path_str.contains("/target/") {
-                    files.push_str(&format!("- {}\n", path_str));
-                }
-            }
-        }
-        
-        Ok(files)
-    }
-
-    /// Show project structure
-    async fn show_project_structure(&self) -> Result<String> {
-        let mut structure = String::new();
-        structure.push_str("# Project Architecture\n\n");
-        
-        if Path::new("src").exists() {
-            structure.push_str("## Source Code Structure\n");
-            self.add_directory_tree(&mut structure, "src", 0)?;
-        }
-        
-        if Path::new("prompts").exists() {
-            structure.push_str("\n## Prompts Directory\n");
-            self.add_directory_tree(&mut structure, "prompts", 0)?;
-        }
-        
-        Ok(structure)
-    }
-
-    /// Helper to add directory tree to output
-    fn add_directory_tree(&self, output: &mut String, dir: &str, depth: usize) -> Result<()> {
-        let indent = "  ".repeat(depth);
-        
-        if let Ok(entries) = fs::read_dir(dir) {
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    let path = entry.path();
-                    let name = path.file_name().unwrap().to_string_lossy();
-                    
-                    if path.is_dir() {
-                        output.push_str(&format!("{}📁 {}/\n", indent, name));
-                        if depth < 3 { // Limit recursion depth
-                            self.add_directory_tree(output, &path.to_string_lossy(), depth + 1)?;
-                        }
-                    } else {
-                        output.push_str(&format!("{}📄 {}\n", indent, name));
-                    }
-                }
-            }
-        }
-        
-        Ok(())
-    }
-
     async fn analyze_task_for_tools(&self, task_description: &str) -> Result<Vec<McpToolCall>> {
         log_debug!("task_executor", "🔍 Analyzing task for tools: '{}'", task_description);
 
@@ -495,6 +331,8 @@ impl TaskExecutor {
         
         if tool_metadata.is_empty() {
             log_warn!("task_executor", "⚠️ No MCP tools available for analysis");
+            println!("    {} No MCP tools available for LLM analysis", "⚠️".yellow());
+            println!("    {} MCP servers may not be running or configured", "💡".yellow());
             return Ok(Vec::new());
         }
 
@@ -637,12 +475,20 @@ impl TaskExecutor {
             async {
                 let guard = global_manager.lock().await;
                 let Some(manager) = guard.as_ref() else {
-                    // No MCP configured; nothing to suggest
+                    println!("    {} MCP manager is not initialized", "⚠️".yellow());
+                    println!("    {} Check if MCP servers are properly configured in mcp-config.json", "💡".yellow());
                     return Ok::<Vec<McpToolCall>, anyhow::Error>(Vec::new());
                 };
 
                 let active_servers = manager.list_active_servers().await;
                 log_debug!("task_executor", "📡 Found {} active servers", active_servers.len());
+                
+                if active_servers.is_empty() {
+                    println!("    {} No active MCP servers found", "⚠️".yellow());
+                    println!("    {} MCP servers may not be started or configured properly", "💡".yellow());
+                    println!("    {} Try running: cargo run -- mcp list", "💡".yellow());
+                    return Ok(Vec::new());
+                }
 
                 for server_name in active_servers {
                     // Get tools for this server with individual timeout

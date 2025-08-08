@@ -382,9 +382,21 @@ impl ChatInterface {
                 tasks
             }
             Err(e) => {
-                log_warn!("chat", "⚠️ LLM task planning failed: {}, creating simple fallback task", e);
-                // Create a simple fallback task when LLM planning fails
-                vec![user_input.to_string()]
+                log_error!("chat", "❌ LLM task planning failed: {}", e);
+                println!("\n{} Task planning failed: {}", "❌".red(), e);
+                
+                // Check if it's likely an API key issue
+                let error_str = e.to_string().to_lowercase();
+                if error_str.contains("api key") || error_str.contains("unauthorized") || error_str.contains("authentication") {
+                    println!("{} It appears the OpenRouter API key is not set or invalid.", "💡".yellow());
+                    println!("{} Please set the OPENROUTER_API_KEY environment variable:", "💡".yellow());
+                    println!("   export OPENROUTER_API_KEY=\"your_api_key_here\"");
+                } else {
+                    println!("{} There was an issue connecting to the LLM service.", "💡".yellow());
+                    println!("{} Please check your internet connection and try again.", "💡".yellow());
+                }
+                
+                return Err(anyhow::anyhow!("Cannot proceed without task planning. Please resolve the LLM connection issue."));
             }
         };
         let planning_duration = planning_start.elapsed().as_millis() as u64;

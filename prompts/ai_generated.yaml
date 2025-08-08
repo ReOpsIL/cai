@@ -194,7 +194,7 @@ subjects:
     id: 1c9a8159-3f36-4826-af3f-aad3efabddad
   - title: Read the `README.md` file (if present)
     content: Read the `README.md` file (if present) to understand the project's purpose, setup instructions, and any specific guidelines.
-    score: 0
+    score: 1
     id: ef4dd9c5-21fc-4bd3-a586-f355a8f05f01
   - title: List all files and directories in
     content: List all files and directories in the project, excluding common build artifacts or configuration files.
@@ -224,6 +224,30 @@ subjects:
     content: Provide a concise overview of the project, including its purpose, key technologies, and main components.
     score: 0
     id: b6f34033-ba44-4c83-a845-fab5dce82d39
+  - title: Access the project directory using the
+    content: Access the project directory using the `ls -R` command to list all files and subdirectories.
+    score: 0
+    id: 13e69103-0e33-4a20-aebb-43f418a74bc0
+  - title: Identify the main programming language(s) used
+    content: Identify the main programming language(s) used in the project by examining file extensions and common project structures.
+    score: 0
+    id: 2660774b-2ce5-474d-a99e-73fa8171d210
+  - title: Locate the primary source code directory
+    content: Locate the primary source code directory (e.g., `src/`, `lib/`, `app/`).
+    score: 0
+    id: 8c53771e-d41d-42c5-b7b4-0bbf78746139
+  - title: List the contents of the primary
+    content: List the contents of the primary source code directory to get an overview of the code structure.
+    score: 0
+    id: 56cc16e9-38ec-4fd2-a26a-6db830e8cb90
+  - title: Check for a `requirements.txt`, `package.json`,...
+    content: Check for a `requirements.txt`, `package.json`, `pom.xml`, or similar dependency file to understand external libraries used.
+    score: 0
+    id: 97029120-558f-4d63-980b-4ba164cd8219
+  - title: Look for a `Makefile`, `build.gradle`, `webpack...
+    content: Look for a `Makefile`, `build.gradle`, `webpack.config.js`, or similar build/automation script.
+    score: 0
+    id: 230e752b-ca10-41ea-97c1-82c578c51e1f
 - name: Task Creation
   prompts:
   - title: State the next immediate steps or
@@ -242,6 +266,10 @@ subjects:
     content: Look for any testing frameworks or test files and note their presence.
     score: 0
     id: 924bc82b-160f-414c-b319-f1914d50c4e6
+  - title: Search for a `tests/` or `spec/`
+    content: Search for a `tests/` or `spec/` directory to see if automated tests are present.
+    score: 0
+    id: af80f1a4-d193-44cc-8978-0ced7afa0182
 - name: Code Analysis
   prompts:
   - title: Analyze the user's prompt to understand
@@ -268,6 +296,10 @@ subjects:
     content: Analyze the current directory to understand the project structure and identify relevant files.
     score: 0
     id: aaf41f9a-7cd5-4bbe-8185-ddaf7783e575
+  - title: Summarize the project's main components, techno...
+    content: Summarize the project's main components, technologies, and overall structure based on the files reviewed.
+    score: 0
+    id: a1fa860d-896a-447f-af90-178ddfde09bc
 - name: Bug Fixing
   prompts:
   - title: Review the project's code for adherence

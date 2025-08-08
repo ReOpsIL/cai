@@ -158,7 +158,17 @@ async fn main() -> Result<()> {
     }
     ops::startup("APP", "starting CAI application");
 
-    // Do not auto-initialize MCP; initialize on-demand per command
+    // Initialize MCP servers on startup
+    println!("{} Initializing MCP servers...", "🔧".cyan());
+    match mcp_manager::initialize_mcp().await {
+        Ok(_) => {
+            println!("{} MCP initialization completed", "✅".green());
+        }
+        Err(e) => {
+            println!("{} MCP initialization failed: {}", "⚠️".yellow(), e);
+            println!("{} This is not critical - MCP features will be unavailable", "💡".blue());
+        }
+    }
 
     // Set up graceful shutdown
     let _shutdown_result = setup_shutdown_handler();
@@ -454,13 +464,38 @@ async fn handle_mcp_command(action: &McpCommands) -> Result<()> {
             let active_servers = manager.list_active_servers().await;
             
             for server_name in configured_servers {
-                let status = if active_servers.contains(server_name) {
+                let is_running = active_servers.contains(server_name);
+                let status = if is_running {
                     "🟢 Running".green()
                 } else {
                     "🔴 Stopped".red()
                 };
                 
                 println!("📁 {} - {}", server_name.bright_white().bold(), status);
+                
+                // If server is running, show detailed tool information
+                if is_running {
+                    match manager.get_detailed_tools(server_name).await {
+                        Ok(tools) => {
+                            if tools.is_empty() {
+                                println!("  {} No tools available", "💭".dimmed());
+                            } else {
+                                println!("  🔧 {} tool(s) available:", tools.len().to_string().bright_white());
+                                
+                                for tool in tools {
+                                    display_tool_details(&tool);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            println!("  {} Failed to get tool details: {}", "⚠️".yellow(), e.to_string().dimmed());
+                        }
+                    }
+                } else {
+                    println!("  {} Start server to see available tools", "💡".dimmed());
+                }
+                
+                println!(); // Add spacing between servers
             }
         },
         
@@ -704,6 +739,84 @@ async fn query_prompt(manager: &PromptManager, file: &str, subject: &str, prompt
     }
 
     Ok(())
+}
+
+/// Display detailed information about an MCP tool
+fn display_tool_details(tool: &serde_json::Value) {
+    // Extract basic tool information
+    let name = tool.get("name")
+        .and_then(|n| n.as_str())
+        .unwrap_or("unknown");
+    
+    let description = tool.get("description")
+        .and_then(|d| d.as_str())
+        .unwrap_or("No description available");
+
+    println!("    🔧 {}", name.bright_cyan().bold());
+    println!("       {}", description.dimmed());
+
+    // Display input schema if available
+    if let Some(input_schema) = tool.get("inputSchema") {
+        display_schema("Parameters", input_schema);
+    }
+}
+
+/// Display JSON schema information for tool parameters
+fn display_schema(label: &str, schema: &serde_json::Value) {
+    if let Some(schema_obj) = schema.as_object() {
+        // Check if there are properties to display
+        if let Some(properties) = schema_obj.get("properties").and_then(|p| p.as_object()) {
+            if !properties.is_empty() {
+                println!("       📋 {}:", label.bright_blue());
+                
+                // Get required fields
+                let required_fields: std::collections::HashSet<String> = schema_obj
+                    .get("required")
+                    .and_then(|r| r.as_array())
+                    .map(|arr| arr.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect())
+                    .unwrap_or_default();
+
+                for (param_name, param_schema) in properties {
+                    let is_required = required_fields.contains(param_name);
+                    let required_indicator = if is_required { 
+                        " (required)".red() 
+                    } else { 
+                        " (optional)".dimmed() 
+                    };
+
+                    let param_type = param_schema.get("type")
+                        .and_then(|t| t.as_str())
+                        .unwrap_or("unknown");
+
+                    let param_description = param_schema.get("description")
+                        .and_then(|d| d.as_str())
+                        .unwrap_or("");
+
+                    println!("         • {} ({}){}", 
+                        param_name.yellow(), 
+                        param_type.green(),
+                        required_indicator
+                    );
+
+                    if !param_description.is_empty() {
+                        println!("           {}", param_description.dimmed());
+                    }
+
+                    // Show enum values if present
+                    if let Some(enum_values) = param_schema.get("enum").and_then(|e| e.as_array()) {
+                        let values: Vec<String> = enum_values.iter()
+                            .filter_map(|v| v.as_str().map(String::from))
+                            .collect();
+                        if !values.is_empty() {
+                            println!("           Allowed values: {}", values.join(", ").bright_blue());
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn print_search_result(result: &SearchResult) {
