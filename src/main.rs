@@ -18,6 +18,7 @@ mod autocomplete;
 mod chat_ui;
 mod commands_selector;
 mod files_selector;
+mod mcp_client;
 mod workflow;
 mod workflow_test;
 
@@ -30,6 +31,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Err(e) = commands::set_model::initialize_models().await {
         println!("Warning: Failed to initialize models: {}", e);
         println!("Some commands may not work correctly");
+    }
+
+    // Initialize MCP manager
+    println!("Initializing MCP manager...");
+    if let Err(e) = mcp_client::get_mcp_manager().await {
+        println!("Warning: Failed to initialize MCP manager: {}", e);
+        println!("MCP commands may not work correctly");
     }
 
     main_ui();
