@@ -8,6 +8,7 @@ use crate::commands_registry::{Command, CommandType, register_command};
 use crate::files::files as file_module; // Import autocomplete handlers
 
 pub mod bash_cmd;
+pub mod config_cmd;
 pub mod help;
 pub mod set_model;
 pub mod session_cmd;
@@ -304,6 +305,7 @@ pub fn register_all_commands() {
     // Register help command and set model command from existing modules
     help::register_help_command();
     bash_cmd::register_bash_command();
+    config_cmd::register_config_commands();
     session_cmd::register_session_commands();
     workflow_cmd::register_workflow_commands();
 }

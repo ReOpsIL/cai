@@ -29,21 +29,32 @@ pub async fn list_openrouter_models() -> Result<Vec<Model>, Box<dyn std::error::
 
 #[allow(dead_code)]
 pub async fn call_openrouter_api(prompt: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let config = configuration::load_configuration()?;
+    let config = configuration::get_effective_config()?;
     let api_key = std::env::var("OPENROUTER_API_KEY")
         .expect("OPENROUTER_API_KEY environment variable not set");
 
     let client = Client::new();
     let endpoint = "https://openrouter.ai/api/v1/chat/completions";
 
+    let mut messages = vec![json!({
+        "role": "user",
+        "content": prompt
+    })];
+
+    // Add system prompt if configured
+    if let Some(system_prompt) = &config.llm.system_prompt {
+        messages.insert(0, json!({
+            "role": "system",
+            "content": system_prompt
+        }));
+    }
+
     let body = json!({
-        "model": &config.model,
-        "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-        ]
+        "model": &config.llm.model,
+        "messages": messages,
+        "temperature": config.llm.temperature,
+        "max_tokens": config.llm.max_tokens,
+        "top_p": config.llm.top_p
     });
 
     let resp = client
