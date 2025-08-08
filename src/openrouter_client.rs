@@ -66,14 +66,11 @@ impl OpenRouterClient {
 
         let api_key = env::var("OPENROUTER_API_KEY")
             .context("OPENROUTER_API_KEY environment variable not set")?;
-        log_debug!(
-            "openrouter",
-            "🔑 API key found, length: {} chars",
-            api_key.len()
-        );
+        // Do not log API key presence/length
 
+        let timeout_secs: u64 = env::var("CAI_HTTP_TIMEOUT").ok().and_then(|s| s.parse().ok()).unwrap_or(60);
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(60))
+            .timeout(std::time::Duration::from_secs(timeout_secs))
             .build()
             .context("Failed to create HTTP client")?;
 
@@ -84,11 +81,8 @@ impl OpenRouterClient {
             "✅ OpenRouter client initialized successfully"
         );
 
-        Ok(Self {
-            client,
-            api_key,
-            base_url: "https://openrouter.ai/api/v1".to_string(),
-        })
+        let base_url = env::var("CAI_API_BASE").unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
+        Ok(Self { client, api_key, base_url })
     }
 
     pub async fn chat_completion(&self, messages: Vec<ChatMessage>) -> Result<String> {
@@ -99,7 +93,7 @@ impl OpenRouterClient {
             messages.len()
         );
 
-        let model = "google/gemini-2.5-flash".to_string();
+        let model = env::var("CAI_MODEL").unwrap_or_else(|_| "google/gemini-2.5-flash".to_string());
         log_debug!("openrouter", "🤖 Using model: {}", model);
 
         let request = OpenRouterRequest {
@@ -128,17 +122,35 @@ impl OpenRouterClient {
         ops::network_operation("POST", &url, None);
 
         let request_start = Instant::now();
-        let response = self
-            .client
-            .post(&url)
-            .header("Authorization", format!("Bearer {}", self.api_key))
-            .header("Content-Type", "application/json")
-            .header("HTTP-Referer", "https://github.com/anthropics/claude-code")
-            .header("X-Title", "CAI Prompt Manager")
-            .json(&request)
-            .send()
-            .await
-            .context("Failed to send request to OpenRouter")?;
+        // Simple retry with backoff for transient failures
+        let mut last_err: Option<anyhow::Error> = None;
+        let mut response_opt = None;
+        for attempt in 0..3 {
+            let resp_res = self
+                .client
+                .post(&url)
+                .header("Authorization", format!("Bearer {}", self.api_key))
+                .header("Content-Type", "application/json")
+                .header("X-Title", "CAI Prompt Manager")
+                .json(&request)
+                .send()
+                .await;
+            match resp_res {
+                Ok(resp) => {
+                    response_opt = Some(resp);
+                    break;
+                }
+                Err(e) => {
+                    last_err = Some(anyhow::anyhow!(e));
+                    if attempt < 2 {
+                        let delay = 200 * (attempt + 1) as u64;
+                        tokio::time::sleep(std::time::Duration::from_millis(delay)).await;
+                    }
+                }
+            }
+        }
+
+        let response = response_opt.ok_or_else(|| last_err.unwrap_or_else(|| anyhow::anyhow!("OpenRouter request failed")))?;
 
         let request_duration = request_start.elapsed().as_millis() as u64;
         ops::performance("HTTP_REQUEST", request_duration);

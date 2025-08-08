@@ -35,7 +35,25 @@ cai show bug_fixing                    # Show specific prompt file
 cai query file subject "prompt title" # Get specific prompt
 
 # Interactive chat mode (LLM-powered)
-cai chat                              # Start chat with task planning
+cai chat                              # Start chat with task planning (auto-creates/restores session)
+cai chat --workflow-id <ID>           # Resume specific workflow session
+
+# Chat mode special commands (use @ prefix)
+@status                               # Show task queue status
+@execute                              # Execute all queued tasks
+@clear                                # Clear completed tasks
+@plan                                 # Create validated plan
+@improve                              # Iterative improvement
+@feedback                             # Show feedback statistics
+@workflow                             # Workflow orchestration menu
+@help                                 # Show available commands
+quit                                  # Exit chat mode
+
+# Workflow orchestration (NEW - LLM-driven)
+cai workflow start "Build a REST API" # Start LLM-guided workflow
+cai workflow status                    # Show active workflows
+cai workflow show <workflow-id>        # Show detailed workflow status
+cai workflow continue <workflow-id>    # Continue workflow execution
 
 # MCP server management
 cai mcp list                          # List configured servers
@@ -57,24 +75,42 @@ cai task-demo                         # Demo MCP tool integration
 - **`prompt_loader`**: YAML prompt file management, search, and similarity analysis
 - **`chat_interface`**: Interactive chat mode with LLM task planning and prompt management
 - **`task_executor`**: LLM-powered task analysis and MCP tool orchestration
+- **`workflow_orchestrator`**: **NEW** - LLM-driven multi-step workflow management with dynamic goal decomposition
+- **`session_manager`**: **NEW** - Persistent session management for workflow continuity across chat sessions
 - **`openrouter_client`**: LLM API client with tool analysis capabilities
 - **`mcp_client`**: MCP protocol client using rmcp crate
 - **`mcp_manager`**: Global MCP server lifecycle management
+- **`feedback_loop`**: Dynamic learning system with context refinement and iterative improvement
 - **`logger`**: Structured logging with performance metrics
 
 ### Data Flow Architecture
 
 1. **Command Input** → CLI parsing (clap) → Module routing
 2. **Chat Mode**: User input → LLM task planning → Task queue → MCP tool execution
-3. **Prompt Management**: YAML files → In-memory structures → Search/similarity analysis
-4. **MCP Integration**: Task analysis → Tool selection (LLM) → Tool execution → Result aggregation
+3. **Workflow Mode**: User request → LLM goal creation → Sub-goal decomposition → Task planning → MCP execution → Goal refinement
+4. **Prompt Management**: YAML files → In-memory structures → Search/similarity analysis
+5. **MCP Integration**: Task analysis → Tool selection (LLM) → Tool execution → Result aggregation
+6. **Feedback Learning**: Execution results → Context accumulation → Historical insights → Future planning
 
 ### LLM-Powered Intelligence
 
 The application uses OpenRouter API for intelligent task processing:
 - **Task Planning**: Converts user requests into structured task lists
 - **Tool Selection**: LLM analyzes tasks and selects appropriate MCP tools
+- **Workflow Orchestration**: **NEW** - Dynamic goal decomposition, sub-goal creation, and adaptive refinement
+- **Goal Management**: **NEW** - Hierarchical goal tracking with context-aware planning
+- **Session Management**: **NEW** - Persistent workflow sessions with automatic restoration
+- **Continuous Learning**: **NEW** - Feedback-driven improvement and historical context integration
 - **Prompt Management**: Automatic similarity detection, updating, and categorization
+
+### Session Management
+
+The application now provides persistent workflow sessions:
+- **Auto-Session Creation**: Chat mode automatically creates workflow sessions when none exists
+- **Session Persistence**: Last workflow ID stored in `~/.config/cai/session.json` (or local directory)
+- **Session Restoration**: Previous workflow session automatically loaded on chat startup
+- **Manual Session Selection**: Use `--workflow-id <ID>` to resume specific workflow sessions
+- **Cross-Session Continuity**: Workflow state persists across application restarts
 
 ### MCP (Model Context Protocol) Integration
 

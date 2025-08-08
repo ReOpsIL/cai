@@ -36,7 +36,7 @@ impl McpClientManager {
     pub async fn start_all_servers(&self) -> Result<()> {
         let server_names: Vec<String> = self.config.list_servers().into_iter().cloned().collect();
         
-        println!("🚀 Starting {} MCP server(s)...", server_names.len());
+        eprintln!("🚀 Starting {} MCP server(s)...", server_names.len());
         
         let mut started_count = 0;
         let mut failed_servers = Vec::new();
@@ -44,7 +44,7 @@ impl McpClientManager {
         for server_name in &server_names {
             match self.start_server(server_name).await {
                 Ok(_) => {
-                    println!("✅ Started MCP server: {}", server_name);
+                    eprintln!("✅ Started MCP server: {}", server_name);
                     started_count += 1;
                 }
                 Err(e) => {
@@ -55,7 +55,7 @@ impl McpClientManager {
         }
 
         if started_count > 0 {
-            println!("🎉 Successfully started {}/{} MCP servers", started_count, server_names.len());
+            eprintln!("🎉 Successfully started {}/{} MCP servers", started_count, server_names.len());
         }
 
         if !failed_servers.is_empty() {
@@ -74,7 +74,7 @@ impl McpClientManager {
         
         // Check if server is already running
         if active_clients.contains_key(server_name) {
-            println!("Server '{}' is already running", server_name);
+            eprintln!("Server '{}' is already running", server_name);
             return Ok(());
         }
 
@@ -95,7 +95,7 @@ impl McpClientManager {
         let client = ().serve(transport).await
             .map_err(|e| anyhow!("Failed to create MCP client service: {}", e))?;
 
-        println!("Successfully created and started MCP transport for: {}", server_name);
+        eprintln!("Successfully created and started MCP transport for: {}", server_name);
         
         let instance = McpClientInstance {
             server_name: server_name.to_string(),
@@ -111,7 +111,7 @@ impl McpClientManager {
         let mut active_clients = self.active_clients.lock().await;
         
         if let Some(_instance) = active_clients.remove(server_name) {
-            println!("Stopped MCP server: {}", server_name);
+            eprintln!("Stopped MCP server: {}", server_name);
         }
         
         Ok(())

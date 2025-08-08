@@ -88,7 +88,7 @@ subjects:
     id: d6b3e5f6-2332-49be-b35d-cad1ec614347
   - title: List all files and directories in
     content: List all files and directories in the current project to get an overview of the project structure.
-    score: 0
+    score: 1
     id: 84b86009-93b3-4264-a10b-f7236996a9f9
   - title: For each file identified in the
     content: For each file and directory identified, list the first 10 lines of each file and the contents of each directory to understand their respective purposes.
@@ -176,12 +176,72 @@ subjects:
     content: Write the newly generated content to the `README.md` file, overwriting its previous content.
     score: 0
     id: 56ab85f1-a672-42fd-bdc5-4fc556902757
+  - title: Identify the current working directory.
+    content: Identify the current working directory.
+    score: 0
+    id: 61a24c66-c199-453b-bd32-2cdec041e463
+  - title: For each file identified in the
+    content: For each file identified in the previous step, read its content.
+    score: 0
+    id: ff180edb-58d4-47b1-b608-50140ec541a9
+  - title: Summarize the overall project structure, main
+    content: Summarize the overall project structure, main components, and their interrelationships based on the file analysis.
+    score: 0
+    id: 3eb6921a-37ef-4d15-ad56-d392d76c2e9f
+  - title: Evaluate the project's architecture and design
+    content: Evaluate the project's architecture and design for scalability, maintainability, and efficiency.
+    score: 0
+    id: 1c9a8159-3f36-4826-af3f-aad3efabddad
+  - title: Read the `README.md` file (if present)
+    content: Read the `README.md` file (if present) to understand the project's purpose, setup instructions, and any specific guidelines.
+    score: 0
+    id: ef4dd9c5-21fc-4bd3-a586-f355a8f05f01
+  - title: List all files and directories in
+    content: List all files and directories in the project, excluding common build artifacts or configuration files.
+    score: 0
+    id: adc4ff9e-f433-4a8b-8d95-e9824f5a52a5
+  - title: For each identified source code file
+    content: For each identified source code file (e.g., `.py`, `.js`, `.java`, `.cpp`, `.c`, `.h`), read its content.
+    score: 0
+    id: 91d3536d-7688-4db3-9559-29c347dacbfc
+  - title: Summarize the main functionalities and components
+    content: Summarize the main functionalities and components of the project based on the file contents and structure.
+    score: 0
+    id: 25a5ed5a-81b3-45b5-99c0-9b06b1b77011
+  - title: Identify the primary programming languages used
+    content: Identify the primary programming languages used in the project.
+    score: 0
+    id: 5b0c875a-6dea-4a48-b504-9b97b821b3b0
+  - title: Check for the presence of common
+    content: Check for the presence of common configuration files (e.g., `package.json`, `requirements.txt`, `pom.xml`, `Makefile`, `Dockerfile`) and describe their purpose within the project.
+    score: 0
+    id: 8f36ec00-bc8f-4ab1-87a3-ba670f6c43dc
+  - title: Assess the overall organization and clarity
+    content: Assess the overall organization and clarity of the project structure.
+    score: 0
+    id: d294b2c8-452b-4c5c-9fc9-13863135b2a8
+  - title: Provide a concise overview of the
+    content: Provide a concise overview of the project, including its purpose, key technologies, and main components.
+    score: 0
+    id: b6f34033-ba44-4c83-a845-fab5dce82d39
 - name: Task Creation
   prompts:
   - title: State the next immediate steps or
     content: State the next immediate steps or actions planned for the project.
     score: 0
     id: 053b1fe9-6c15-4767-b43e-06deb8cadb6c
+  - title: Access the project's documentation, including r...
+    content: Access the project's documentation, including requirements, design specifications, and test plans.
+    score: 0
+    id: 1c4b0b41-979f-4781-8d8c-4fd098b3c11c
+  - title: Analyze the project's test coverage and
+    content: Analyze the project's test coverage and review test results to assess quality.
+    score: 0
+    id: cb6aa09d-7612-4080-b7bd-35803f5c7cf5
+  - title: Look for any testing frameworks or
+    content: Look for any testing frameworks or test files and note their presence.
+    score: 0
+    id: 924bc82b-160f-414c-b319-f1914d50c4e6
 - name: Code Analysis
   prompts:
   - title: Analyze the user's prompt to understand
@@ -192,3 +252,31 @@ subjects:
     content: Review the generated response for clarity, accuracy, and completeness before presenting it.
     score: 0
     id: ada2714a-da38-4705-b8cb-fad0b0b454af
+  - title: Analyze the content of each file
+    content: Analyze the content of each file to understand its purpose, programming language (if applicable), and dependencies.
+    score: 0
+    id: 37bf76fa-d3ef-4a5f-bf35-9eb4af215641
+  - title: Identify the project to be reviewed.
+    content: Identify the project to be reviewed.
+    score: 0
+    id: 8e0d51e8-23a4-4e36-9083-682ea9577701
+  - title: Compile a comprehensive review report summarizing
+    content: Compile a comprehensive review report summarizing findings, recommendations, and action items.
+    score: 0
+    id: c39f5166-bc74-4da1-9b4c-ae0e08e051a9
+  - title: Analyze the current directory to understand
+    content: Analyze the current directory to understand the project structure and identify relevant files.
+    score: 0
+    id: aaf41f9a-7cd5-4bbe-8185-ddaf7783e575
+- name: Bug Fixing
+  prompts:
+  - title: Review the project's code for adherence
+    content: Review the project's code for adherence to coding standards, best practices, and potential bugs.
+    score: 0
+    id: 1cd7cae5-5f57-409c-9847-2fab42c9ad0d
+- name: Refactoring
+  prompts:
+  - title: Identify any risks, issues, or areas
+    content: Identify any risks, issues, or areas for improvement within the project.
+    score: 0
+    id: ae0b8b48-f34d-4581-bbfb-c57254c19750

@@ -7,6 +7,19 @@ use url::Url;
 use strsim::levenshtein;
 use crate::logger::{log_debug, log_info, log_warn, log_error, ops};
 use std::time::Instant;
+use once_cell::sync::Lazy;
+use reqwest::Client;
+
+static HTTP_CLIENT: Lazy<Client> = Lazy::new(|| {
+    let timeout_secs: u64 = std::env::var("CAI_HTTP_TIMEOUT")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(60);
+    Client::builder()
+        .timeout(std::time::Duration::from_secs(timeout_secs))
+        .build()
+        .expect("failed to build HTTP client")
+});
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Prompt {
@@ -51,16 +64,7 @@ impl Prompt {
         let result = if self.content.starts_with("file://") {
             // Handle file:// URLs specially
             let file_path = &self.content[7..]; // Remove "file://" prefix
-            let full_path = if file_path.starts_with("/") {
-                file_path.to_string()
-            } else {
-                // Relative path - resolve from current working directory
-                std::env::current_dir()
-                    .with_context(|| "Failed to get current directory")?
-                    .join(file_path)
-                    .to_string_lossy()
-                    .to_string()
-            };
+            let full_path = resolve_file_url_path(file_path)?;
             
             log_debug!("url", "📁 Reading local file: {}", full_path);
             ops::file_operation("READ", &full_path, true);
@@ -75,8 +79,7 @@ impl Prompt {
                     log_debug!("url", "🌐 Making HTTP request to: {}", self.content);
                     ops::network_operation("GET", &self.content, None);
                     
-                    let client = reqwest::Client::new();
-                    let response = client.get(&self.content)
+                    let response = HTTP_CLIENT.get(&self.content)
                         .send()
                         .await
                         .with_context(|| format!("Failed to fetch URL: {}", self.content))?;
@@ -119,6 +122,41 @@ impl Prompt {
     }
 }
 
+fn resolve_file_url_path(input: &str) -> Result<String> {
+    // Determine base directory for allowed file access
+    let base_dir = std::env::var("CAI_PROMPTS_DIR").ok()
+        .and_then(|p| std::path::PathBuf::from(p).canonicalize().ok());
+    let allow_outside = std::env::var("CAI_ALLOW_FILE_OUTSIDE_PROMPTS").map(|v| v == "1" || v.eq_ignore_ascii_case("true")).unwrap_or(false);
+
+    // Build the absolute path
+    let path = if input.starts_with('/') {
+        std::path::PathBuf::from(input)
+    } else if let Some(base) = base_dir.clone() {
+        base.join(input)
+    } else {
+        std::env::current_dir()
+            .with_context(|| "Failed to get current directory")?
+            .join(input)
+    };
+
+    // Canonicalize to eliminate .. and symlinks
+    let canonical = path.canonicalize()
+        .with_context(|| format!("Failed to resolve path: {}", path.to_string_lossy()))?;
+
+    if !allow_outside {
+        if let Some(base) = base_dir {
+            if !canonical.starts_with(&base) {
+                return Err(anyhow::anyhow!(
+                    "Access to file outside prompts directory is blocked: {}",
+                    canonical.to_string_lossy()
+                ));
+            }
+        }
+    }
+
+    Ok(canonical.to_string_lossy().to_string())
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Subject {
     pub name: String,
@@ -153,14 +191,22 @@ impl PromptManager {
 
     pub fn load_from_directory<P: AsRef<Path>>(dir_path: P) -> Result<Self> {
         let load_start = Instant::now();
-        let dir_path_str = dir_path.as_ref().to_string_lossy();
+        let dir_path_ref = dir_path.as_ref();
+        let dir_path_str = dir_path_ref.to_string_lossy();
         log_info!("loader", "📂 Loading prompts from directory: {}", dir_path_str);
+        // Validate directory exists
+        if !dir_path_ref.exists() || !dir_path_ref.is_dir() {
+            return Err(anyhow::anyhow!(
+                "Prompts directory does not exist or is not a directory: {}",
+                dir_path_str
+            ));
+        }
         
         let mut manager = Self::new();
         let mut file_count = 0;
         let mut prompt_count = 0;
         
-        for entry in WalkDir::new(dir_path)
+        for entry in WalkDir::new(dir_path_ref)
             .into_iter()
             .filter_map(|e| e.ok())
             .filter(|e| e.path().extension().map_or(false, |ext| ext == "yaml" || ext == "yml"))
@@ -210,7 +256,7 @@ impl PromptManager {
         Ok(manager)
     }
 
-    pub fn search(&self, query: &str) -> Vec<SearchResult> {
+    pub fn search(&self, query: &str, resolve_urls: bool) -> Vec<SearchResult> {
         let query_lower = query.to_lowercase();
         let mut results = Vec::new();
 
@@ -266,9 +312,9 @@ impl PromptManager {
                         });
                     }
 
-                    // Search in direct content or try to search in resolved content
-                    let content_to_search = if prompt.is_url_reference() {
-                        // For URL references, search in the URL itself first
+                    // Search content
+                    if prompt.is_url_reference() {
+                        // Match against the URL string
                         if prompt.content.to_lowercase().contains(&query_lower) {
                             results.push(SearchResult {
                                 file_name: prompt_data.file_name.clone(),
@@ -279,33 +325,33 @@ impl PromptManager {
                                 prompt_content: Some(prompt.content.clone()),
                             });
                         }
-                        
-                        // Skip URL content search in sync context to avoid async issues
-                        // TODO: Consider making search async in the future for URL content
-                        None
+                        // Optionally resolve file:// and search its content synchronously
+                        if resolve_urls && prompt.content.starts_with("file://") {
+                            if let Ok(full_path) = resolve_file_url_path(&prompt.content[7..]) {
+                                if let Ok(file_content) = fs::read_to_string(&full_path) {
+                                    if file_content.to_lowercase().contains(&query_lower) {
+                                        results.push(SearchResult {
+                                            file_name: prompt_data.file_name.clone(),
+                                            file_path: prompt_data.file_path.clone(),
+                                            match_type: MatchType::PromptContent,
+                                            subject_name: Some(subject.name.clone()),
+                                            prompt_title: Some(prompt.title.clone()),
+                                            prompt_content: Some(format!("🔗 {} (file content matched)", prompt.content)),
+                                        });
+                                    }
+                                }
+                            }
+                        }
                     } else {
-                        Some(prompt.content.clone())
-                    };
-
-                    if let Some(content) = content_to_search {
-                        if content.to_lowercase().contains(&query_lower) && !prompt.is_url_reference() {
+                        let content = &prompt.content;
+                        if content.to_lowercase().contains(&query_lower) {
                             results.push(SearchResult {
                                 file_name: prompt_data.file_name.clone(),
                                 file_path: prompt_data.file_path.clone(),
                                 match_type: MatchType::PromptContent,
                                 subject_name: Some(subject.name.clone()),
                                 prompt_title: Some(prompt.title.clone()),
-                                prompt_content: Some(content),
-                            });
-                        } else if content.to_lowercase().contains(&query_lower) && prompt.is_url_reference() {
-                            // Match found in resolved content from URL
-                            results.push(SearchResult {
-                                file_name: prompt_data.file_name.clone(),
-                                file_path: prompt_data.file_path.clone(),
-                                match_type: MatchType::PromptContent,
-                                subject_name: Some(subject.name.clone()),
-                                prompt_title: Some(prompt.title.clone()),
-                                prompt_content: Some(format!("🔗 {} (resolved content matched)", prompt.content)),
+                                prompt_content: Some(content.clone()),
                             });
                         }
                     }

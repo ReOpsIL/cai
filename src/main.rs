@@ -7,6 +7,8 @@ mod mcp_client;
 mod mcp_manager;
 mod task_executor;
 mod feedback_loop;
+mod workflow_orchestrator;
+mod session_manager;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -15,8 +17,10 @@ use prompt_loader::{MatchType, PromptManager, SearchResult};
 use chat_interface::ChatInterface;
 use logger::ops;
 use task_executor::TaskExecutor;
+use workflow_orchestrator::WorkflowOrchestrator;
 use std::path::PathBuf;
 use std::time::Instant;
+use colored::control as color_control;
 
 #[derive(Parser)]
 #[command(name = "cai")]
@@ -37,6 +41,9 @@ enum Commands {
     Search {
         /// Search query
         query: String,
+        /// Resolve URL contents during search (file:// only)
+        #[arg(long, default_value_t = false)]
+        resolve_urls: bool,
     },
     /// Show details of a specific prompt file
     Show {
@@ -53,7 +60,11 @@ enum Commands {
         prompt: String,
     },
     /// Start interactive chat mode for task planning and prompt management
-    Chat,
+    Chat {
+        /// Optional workflow session ID to use/resume
+        #[arg(long)]
+        workflow_id: Option<String>,
+    },
     /// MCP (Model Context Protocol) tools management
     Mcp {
         #[command(subcommand)]
@@ -61,10 +72,17 @@ enum Commands {
     },
     /// Test task execution system with demo tasks
     TaskDemo,
+    /// Workflow orchestration commands
+    Workflow {
+        #[command(subcommand)]
+        action: WorkflowCommands,
+    },
 }
 
 #[derive(Subcommand)]
 enum McpCommands {
+    /// Initialize default MCP configuration file (mcp-config.json)
+    Init,
     /// List available MCP servers
     List,
     /// Start an MCP server
@@ -101,17 +119,46 @@ enum McpCommands {
     Status,
 }
 
+#[derive(Subcommand)]
+enum WorkflowCommands {
+    /// Start a new workflow with LLM-driven goal decomposition
+    Start {
+        /// Description of what you want to accomplish
+        description: String,
+    },
+    /// Show status of active workflows
+    Status,
+    /// Show detailed status of a specific workflow
+    Show {
+        /// Workflow ID
+        workflow_id: String,
+    },
+    /// Continue execution of a workflow
+    Continue {
+        /// Workflow ID
+        workflow_id: String,
+    },
+    /// Clean up completed workflows
+    Cleanup,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logging first
     logger::init();
+    // Disable colors if NO_COLOR set or stdout is not a TTY
+    let no_color_env = std::env::var("NO_COLOR").is_ok() || std::env::var("CAI_NO_COLOR").map(|v| v=="1" || v.eq_ignore_ascii_case("true")).unwrap_or(false);
+    #[allow(deprecated)]
+    {
+        // IsTerminal is stable; avoid adding deps. If not a terminal, disable colors.
+        use std::io::IsTerminal;
+        if no_color_env || !std::io::stdout().is_terminal() {
+            color_control::set_override(false);
+        }
+    }
     ops::startup("APP", "starting CAI application");
 
-    // Initialize MCP servers
-    if let Err(e) = mcp_manager::initialize_mcp().await {
-        eprintln!("⚠️  Failed to initialize MCP servers: {}", e);
-        eprintln!("💡 Application will continue without MCP support");
-    }
+    // Do not auto-initialize MCP; initialize on-demand per command
 
     // Set up graceful shutdown
     let _shutdown_result = setup_shutdown_handler();
@@ -119,6 +166,8 @@ async fn main() -> Result<()> {
     let start_time = Instant::now();
     
     let cli = Cli::parse();
+    // Expose selected prompts directory to URL security checks
+    std::env::set_var("CAI_PROMPTS_DIR", &cli.directory);
     log_debug!("main", "📋 Parsed CLI arguments: directory={:?}", cli.directory);
 
     // Load prompt manager with timing
@@ -141,9 +190,9 @@ async fn main() -> Result<()> {
             log_info!("main", "📋 Executing LIST command");
             list_prompts(&manager)
         },
-        Commands::Search { query } => {
+        Commands::Search { query, resolve_urls } => {
             log_info!("main", "🔍 Executing SEARCH command with query: '{}'", query);
-            search_prompts(&manager, &query)
+            search_prompts(&manager, &query, *resolve_urls)
         },
         Commands::Show { file_name } => {
             log_info!("main", "👁️ Executing SHOW command for file: '{}'", file_name);
@@ -153,9 +202,9 @@ async fn main() -> Result<()> {
             log_info!("main", "❓ Executing QUERY command: {} → {} → {}", file, subject, prompt);
             query_prompt(&manager, &file, &subject, &prompt).await
         },
-        Commands::Chat => {
-            log_info!("main", "💬 Executing CHAT command");
-            start_chat_mode(&mut manager).await
+        Commands::Chat { workflow_id } => {
+            log_info!("main", "💬 Executing CHAT command with workflow_id: {:?}", workflow_id);
+            start_chat_mode(&mut manager, workflow_id.as_deref()).await
         },
         Commands::Mcp { action } => {
             log_info!("main", "🔧 Executing MCP command");
@@ -164,6 +213,10 @@ async fn main() -> Result<()> {
         Commands::TaskDemo => {
             log_info!("main", "🚀 Running task demo");
             run_task_demo().await
+        },
+        Commands::Workflow { action } => {
+            log_info!("main", "🧠 Executing workflow command");
+            handle_workflow_command(action).await
         },
     };
 
@@ -259,9 +312,12 @@ async fn run_task_demo() -> Result<()> {
     Ok(())
 }
 
-async fn start_chat_mode(manager: &mut PromptManager) -> Result<()> {
+async fn start_chat_mode(manager: &mut PromptManager, workflow_id: Option<&str>) -> Result<()> {
     match ChatInterface::new().await {
         Ok(mut chat) => {
+            if let Some(id) = workflow_id {
+                chat.set_workflow_id(id.to_string()).await?;
+            }
             chat.start_chat(manager).await?;
         }
         Err(e) => {
@@ -273,15 +329,123 @@ async fn start_chat_mode(manager: &mut PromptManager) -> Result<()> {
     Ok(())
 }
 
+async fn handle_workflow_command(action: &WorkflowCommands) -> Result<()> {
+    // Initialize workflow orchestrator when needed
+    let orchestrator = match WorkflowOrchestrator::new().await {
+        Ok(orchestrator) => orchestrator,
+        Err(e) => {
+            println!("{} Failed to initialize workflow orchestrator: {}", "❌".red(), e);
+            println!("{} Make sure OPENROUTER_API_KEY environment variable is set.", "💡".yellow());
+            return Ok(());
+        }
+    };
+
+    match action {
+        WorkflowCommands::Start { description } => {
+            println!("{} Starting new workflow for: {}", "🧠".bright_blue().bold(), description.bright_white());
+            match orchestrator.start_workflow(description).await {
+                Ok(workflow_id) => {
+                    println!("{} Workflow created with ID: {}", "✅".green(), workflow_id.bright_white());
+                    println!("{} Initial goals planned. Use 'cai workflow continue {}' to execute.", "💡".yellow(), workflow_id);
+                    
+                    // Show initial status
+                    orchestrator.display_workflow_status(&workflow_id).await?;
+                }
+                Err(e) => {
+                    println!("{} Failed to start workflow: {}", "❌".red(), e);
+                }
+            }
+        }
+        
+        WorkflowCommands::Status => {
+            let active_workflows = orchestrator.list_active_workflows().await?;
+            
+            println!("{} Active Workflows:", "📊".bright_blue().bold());
+            if active_workflows.is_empty() {
+                println!("  {} No active workflows", "💭".dimmed());
+            } else {
+                for workflow_id in active_workflows {
+                    println!("  🧠 {}", workflow_id.bright_white());
+                }
+                println!("\n💡 Use 'cai workflow show <ID>' for detailed status");
+            }
+        }
+        
+        WorkflowCommands::Show { workflow_id } => {
+            match orchestrator.display_workflow_status(workflow_id).await {
+                Ok(_) => {},
+                Err(e) => {
+                    println!("{} Workflow '{}' not found: {}", "❌".red(), workflow_id, e);
+                }
+            }
+        }
+        
+        WorkflowCommands::Continue { workflow_id } => {
+            println!("{} Continuing workflow execution: {}", "⚡".yellow(), workflow_id.bright_white());
+            
+            // Execute workflow steps until completion or no more executable goals
+            let mut steps_executed = 0;
+            loop {
+                match orchestrator.execute_next_goal(workflow_id).await {
+                    Ok(true) => {
+                        steps_executed += 1;
+                        if steps_executed >= 10 {
+                            println!("{} Executed {} steps. Use 'continue' again to proceed further.", "⏸️".yellow(), steps_executed);
+                            break;
+                        }
+                    }
+                    Ok(false) => {
+                        println!("{} No more executable goals. Workflow may be complete.", "✅".green());
+                        break;
+                    }
+                    Err(e) => {
+                        println!("{} Error during execution: {}", "❌".red(), e);
+                        break;
+                    }
+                }
+            }
+            
+            // Show final status
+            orchestrator.display_workflow_status(workflow_id).await?;
+        }
+        
+        WorkflowCommands::Cleanup => {
+            println!("{} Cleaning up completed workflows...", "🧹".yellow());
+            // This would need implementation to identify completed workflows
+            println!("{} Cleanup functionality not yet implemented", "💡".dimmed());
+        }
+    }
+    
+    Ok(())
+}
+
 async fn handle_mcp_command(action: &McpCommands) -> Result<()> {
-    // Get the global MCP manager
+    // For any MCP command except Init, ensure manager is initialized if config exists
+    if !matches!(action, McpCommands::Init) {
+        if let Err(e) = mcp_manager::ensure_initialized().await {
+            eprintln!("⚠️  MCP not initialized: {}", e);
+        }
+    }
+
+    if let McpCommands::Init = action {
+        let path = mcp_manager::init_default_config_file()?;
+        println!("✅ Created default MCP configuration at: {}", path.display());
+        println!("💡 Edit this file and run 'cai mcp start <server>' to launch.");
+        return Ok(());
+    }
+
+    // Get the global MCP manager (may be None if no config exists)
     let global_manager = mcp_manager::get_mcp_manager();
     
     let guard = global_manager.lock().await;
     let manager = guard.as_ref()
-        .ok_or_else(|| anyhow::anyhow!("MCP manager not available - try running 'cai mcp status' to check initialization"))?;
+        .ok_or_else(|| anyhow::anyhow!("MCP manager not available (no config found). Run 'cai mcp init' or add mcp-config.json"))?;
 
     match action {
+        McpCommands::Init => {
+            // Already handled above
+            return Ok(());
+        },
         McpCommands::List => {
             println!("{}", "Available MCP Servers:".bright_blue().bold());
             println!();
@@ -382,6 +546,7 @@ fn list_prompts(manager: &PromptManager) -> Result<()> {
 
     for prompt_data in manager.list_all() {
         println!("📁 {}", prompt_data.file_name.bright_green().bold());
+        println!("   {}", prompt_data.prompt_file.name); // human-friendly collection name
         println!("   {}", prompt_data.prompt_file.description.dimmed());
         println!("   📍 {}", prompt_data.file_path.dimmed());
         
@@ -402,11 +567,11 @@ fn list_prompts(manager: &PromptManager) -> Result<()> {
     Ok(())
 }
 
-fn search_prompts(manager: &PromptManager, query: &str) -> Result<()> {
+fn search_prompts(manager: &PromptManager, query: &str, resolve_urls: bool) -> Result<()> {
     let search_start = Instant::now();
     log_debug!("search", "🔍 Starting search for query: '{}'", query);
     
-    let results = manager.search(query);
+    let results = manager.search(query, resolve_urls);
     let search_duration = search_start.elapsed().as_millis() as u64;
     ops::performance("SEARCH", search_duration);
     ops::search_operation(query, results.len());
@@ -510,6 +675,8 @@ async fn query_prompt(manager: &PromptManager, file: &str, subject: &str, prompt
             if let Some(prompt_data) = subject_data.prompts.iter().find(|p| p.title == prompt) {
                 println!("📝 {}", prompt_data.title.cyan().bold());
                 println!("📁 {} → 📂 {}", file.green(), subject.yellow());
+                // Plain line for test-friendly matching without icons/colors
+                println!("{} → {}", file, subject);
                 
                 if prompt_data.is_url_reference() {
                     println!("🔗 {}", prompt_data.content.dimmed());

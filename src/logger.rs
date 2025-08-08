@@ -1,5 +1,7 @@
 use colored::*;
 use std::fmt;
+use once_cell::sync::Lazy;
+use std::sync::RwLock;
 
 /// Log levels with corresponding icons and colors
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -42,18 +44,18 @@ impl fmt::Display for LogLevel {
 }
 
 /// Global log level configuration
-static mut LOG_LEVEL: LogLevel = LogLevel::Info;
+static LOG_LEVEL: Lazy<RwLock<LogLevel>> = Lazy::new(|| RwLock::new(LogLevel::Info));
 
 /// Set the global log level
 pub fn set_log_level(level: LogLevel) {
-    unsafe {
-        LOG_LEVEL = level;
+    if let Ok(mut guard) = LOG_LEVEL.write() {
+        *guard = level;
     }
 }
 
 /// Get the current log level
 pub fn get_log_level() -> LogLevel {
-    unsafe { LOG_LEVEL }
+    LOG_LEVEL.read().map(|g| *g).unwrap_or(LogLevel::Info)
 }
 
 /// Check if a log level should be printed
@@ -65,7 +67,7 @@ pub fn should_log(level: LogLevel) -> bool {
 pub fn log_internal(level: LogLevel, module: &str, message: &str) {
     if should_log(level) {
         let timestamp = chrono::Local::now().format("%H:%M:%S%.3f");
-        println!("{} {} [{}] {}: {}", 
+        eprintln!("{} {} [{}] {}: {}", 
             level.icon(),
             level.colored_name(),
             timestamp.to_string().dimmed(),
@@ -288,7 +290,7 @@ pub fn init() {
         set_log_level(level);
         // Print initialization message directly since the macro might not work during init
         if should_log(LogLevel::Info) {
-            println!("ℹ️ INFO [{}] logger: 🔧 Log level set to {} from environment", 
+            eprintln!("ℹ️ INFO [{}] logger: 🔧 Log level set to {} from environment", 
                 chrono::Local::now().format("%H:%M:%S%.3f"), level);
         }
     } else {
@@ -297,4 +299,3 @@ pub fn init() {
 
     ops::startup("LOGGER", "initialized");
 }
-
