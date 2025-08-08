@@ -244,7 +244,7 @@ async fn main() -> Result<()> {
 
     // Cleanup MCP servers before exit
     if let Err(e) = mcp_manager::shutdown_mcp().await {
-        eprintln!("⚠️  Error during MCP shutdown: {}", e);
+        log_error!("mcp","⚠️  Error during MCP shutdown: {}", e);
     }
 
     result
@@ -279,7 +279,7 @@ fn setup_shutdown_handler() -> Result<()> {
         
         // Shutdown MCP servers
         if let Err(e) = mcp_manager::shutdown_mcp().await {
-            eprintln!("⚠️  Error during graceful MCP shutdown: {}", e);
+            log_error!("mcp","⚠️  Error during graceful MCP shutdown: {}", e);
         }
         
         std::process::exit(0);
@@ -433,7 +433,7 @@ async fn handle_mcp_command(action: &McpCommands) -> Result<()> {
     // For any MCP command except Init, ensure manager is initialized if config exists
     if !matches!(action, McpCommands::Init) {
         if let Err(e) = mcp_manager::ensure_initialized().await {
-            eprintln!("⚠️  MCP not initialized: {}", e);
+            log_error!("mcp","⚠️  MCP not initialized: {}", e);
         }
     }
 

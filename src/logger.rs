@@ -67,7 +67,7 @@ pub fn should_log(level: LogLevel) -> bool {
 pub fn log_internal(level: LogLevel, module: &str, message: &str) {
     if should_log(level) {
         let timestamp = chrono::Local::now().format("%H:%M:%S%.3f");
-        eprintln!("{} {} [{}] {}: {}", 
+        eprint!("{} {} [{}] {}: {}",
             level.icon(),
             level.colored_name(),
             timestamp.to_string().dimmed(),
@@ -283,14 +283,14 @@ pub fn init() {
             "WARN" => LogLevel::Warn,
             "ERROR" => LogLevel::Error,
             _ => {
-                eprintln!("⚠️  Invalid log level '{}', using INFO", level_str);
-                LogLevel::Info
+                eprint!("⚠️  Invalid log level '{}', using INFO", level_str);
+                LogLevel::Error
             }
         };
         set_log_level(level);
         // Print initialization message directly since the macro might not work during init
         if should_log(LogLevel::Info) {
-            eprintln!("ℹ️ INFO [{}] logger: 🔧 Log level set to {} from environment", 
+            eprint!("ℹ️ INFO [{}] logger: 🔧 Log level set to {} from environment",
                 chrono::Local::now().format("%H:%M:%S%.3f"), level);
         }
     } else {
