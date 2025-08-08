@@ -55,6 +55,31 @@ pub struct WorkflowSettings {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct McpServerConfig {
+    pub name: String,
+    pub command: String,
+    pub args: Vec<String>,
+    #[serde(default)]
+    pub env: HashMap<String, String>,
+    #[serde(default = "default_mcp_timeout")]
+    pub timeout_seconds: u32,
+    #[serde(default = "default_mcp_enabled")]
+    pub enabled: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct McpSettings {
+    #[serde(default)]
+    pub servers: HashMap<String, McpServerConfig>,
+    #[serde(default = "default_mcp_auto_connect")]
+    pub auto_connect: bool,
+    #[serde(default = "default_mcp_global_timeout")]
+    pub global_timeout_seconds: u32,
+    #[serde(default = "default_mcp_enabled")]
+    pub enabled: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
     pub llm: LlmSettings,
     #[serde(default)]
@@ -63,6 +88,8 @@ pub struct Config {
     pub memory: MemorySettings,
     #[serde(default)]
     pub workflow: WorkflowSettings,
+    #[serde(default)]
+    pub mcp: McpSettings,
     #[serde(default)]
     pub model_presets: HashMap<String, LlmSettings>,
 }
@@ -83,6 +110,10 @@ fn default_max_iterations() -> u32 { 10 }
 fn default_timeout_seconds() -> u32 { 300 }
 fn default_verify_steps() -> bool { true }
 fn default_parallel_execution() -> bool { false }
+fn default_mcp_timeout() -> u32 { 60 }
+fn default_mcp_enabled() -> bool { true }
+fn default_mcp_auto_connect() -> bool { true }
+fn default_mcp_global_timeout() -> u32 { 120 }
 
 impl Default for LlmSettings {
     fn default() -> Self {
@@ -129,6 +160,17 @@ impl Default for WorkflowSettings {
     }
 }
 
+impl Default for McpSettings {
+    fn default() -> Self {
+        Self {
+            servers: HashMap::new(),
+            auto_connect: default_mcp_auto_connect(),
+            global_timeout_seconds: default_mcp_global_timeout(),
+            enabled: default_mcp_enabled(),
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -136,6 +178,7 @@ impl Default for Config {
             ui: UiSettings::default(),
             memory: MemorySettings::default(),
             workflow: WorkflowSettings::default(),
+            mcp: McpSettings::default(),
             model_presets: HashMap::new(),
         }
     }

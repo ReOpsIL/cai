@@ -36,7 +36,16 @@ pub enum VerificationStrategy {
     CommandSuccess,
     OutputPattern(String),
     LLMValidation,
+    McpTool(String), // MCP tool name for verification
     Combined,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum StepType {
+    Command,         // Regular command execution
+    McpTool,        // MCP tool execution  
+    Verification,   // Verification step
+    LlmQuery,       // LLM query for planning or validation
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,6 +57,9 @@ pub struct WorkflowStep {
     pub status: StepStatus,
     pub result: Option<String>,
     pub verification_criteria: Vec<String>,
+    pub step_type: StepType,
+    pub mcp_tool: Option<String>,        // Format: "server:tool"
+    pub mcp_args: Option<serde_json::Value>, // MCP tool arguments
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,6 +117,34 @@ impl WorkflowStep {
             status: StepStatus::Pending,
             result: None,
             verification_criteria: Vec::new(),
+            step_type: StepType::Command,
+            mcp_tool: None,
+            mcp_args: None,
+        }
+    }
+
+    pub fn new_mcp_step(
+        description: String, 
+        mcp_tool: String, 
+        mcp_args: Option<serde_json::Value>, 
+        expected_output: String
+    ) -> Self {
+        Self {
+            id: uuid::Uuid::new_v4()
+                .to_string()
+                .split('-')
+                .next()
+                .unwrap_or("")
+                .to_string(),
+            description,
+            command: None,
+            expected_output,
+            status: StepStatus::Pending,
+            result: None,
+            verification_criteria: Vec::new(),
+            step_type: StepType::McpTool,
+            mcp_tool: Some(mcp_tool),
+            mcp_args,
         }
     }
 }
@@ -192,9 +232,16 @@ impl WorkflowEngine {
         // Use LLM to break down the goal into steps
         let planning_prompt = format!(
             "Break down this goal into concrete, executable steps: {}\n\n\
-            Respond with a numbered list of specific steps that can be executed using commands.\n\
-            Focus on file operations, bash commands, and verification steps.\n\
-            Each step should be specific and actionable.",
+            Available execution methods:\n\
+            1. CAI Commands: @read-file(), @list-files(), @bash-cmd(), @export()\n\
+            2. MCP Tools: External tools like filesystem:read_file, database:query\n\
+            3. LLM Queries: For analysis, planning, or validation\n\
+            4. Verification: Check results or conditions\n\n\
+            Respond with a numbered list of specific steps. For each step, specify:\n\
+            - Description of what to do\n\
+            - Execution type (command/mcp/llm/verification)\n\
+            - Specific command or tool to use\n\n\
+            Focus on being specific and actionable.",
             plan.goal
         );
 
@@ -295,16 +342,32 @@ impl WorkflowEngine {
             .ok_or_else(|| WorkflowError::ExecutionFailed(format!("Step {} not found", step_id)))?;
 
         plan.steps[step_index].status = StepStatus::InProgress;
-        let command = plan.steps[step_index].command.clone();
-        let description = plan.steps[step_index].description.clone();
+        let step = plan.steps[step_index].clone();
 
         drop(workflows); // Release lock before execution
 
-        let result = if let Some(cmd) = command {
-            self.execute_command(&cmd).await
-        } else {
-            // If no specific command, try to infer from description
-            self.execute_inferred_command(&description).await
+        let result = match step.step_type {
+            StepType::McpTool => {
+                if let Some(mcp_tool) = &step.mcp_tool {
+                    self.execute_mcp_tool(mcp_tool, &step.mcp_args).await
+                } else {
+                    Err(WorkflowError::ExecutionFailed("MCP tool not specified".to_string()))
+                }
+            },
+            StepType::Command => {
+                if let Some(cmd) = &step.command {
+                    self.execute_command(cmd).await
+                } else {
+                    // If no specific command, try to infer from description
+                    self.execute_inferred_command(&step.description).await
+                }
+            },
+            StepType::LlmQuery => {
+                self.execute_llm_query(&step.description).await
+            },
+            StepType::Verification => {
+                self.execute_verification_step(&step).await
+            },
         };
 
         // Update step with result
@@ -373,6 +436,35 @@ impl WorkflowEngine {
             self.execute_command(inferred_command).await
         } else {
             Ok(Some(format!("Step completed: {}", description)))
+        }
+    }
+
+    async fn execute_mcp_tool(&self, mcp_tool: &str, args: &Option<serde_json::Value>) -> Result<Option<String>, WorkflowError> {
+        use crate::mcp_client;
+
+        let args_value = args.clone().unwrap_or_else(|| serde_json::json!({}));
+        let args_str = args_value.to_string();
+
+        match mcp_client::execute_mcp_command("mcp:call", &[mcp_tool.to_string(), args_str]).await {
+            Ok(Some(result)) => Ok(Some(result)),
+            Ok(None) => Ok(Some("MCP tool executed but returned no result".to_string())),
+            Err(e) => Err(WorkflowError::ExecutionFailed(format!("MCP tool execution failed: {}", e))),
+        }
+    }
+
+    async fn execute_llm_query(&self, query: &str) -> Result<Option<String>, WorkflowError> {
+        match self.call_llm_for_planning(query).await {
+            Ok(response) => Ok(Some(response)),
+            Err(e) => Err(WorkflowError::ExecutionFailed(format!("LLM query failed: {}", e))),
+        }
+    }
+
+    async fn execute_verification_step(&self, step: &WorkflowStep) -> Result<Option<String>, WorkflowError> {
+        // For now, just execute as a regular command or return success
+        if let Some(cmd) = &step.command {
+            self.execute_command(cmd).await
+        } else {
+            Ok(Some(format!("Verification step completed: {}", step.description)))
         }
     }
 

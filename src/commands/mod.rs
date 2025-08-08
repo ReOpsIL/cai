@@ -10,6 +10,7 @@ use crate::files::files as file_module; // Import autocomplete handlers
 pub mod bash_cmd;
 pub mod config_cmd;
 pub mod help;
+pub mod mcp_cmd;
 pub mod set_model;
 pub mod session_cmd;
 pub mod workflow_cmd;
@@ -306,6 +307,7 @@ pub fn register_all_commands() {
     help::register_help_command();
     bash_cmd::register_bash_command();
     config_cmd::register_config_commands();
+    mcp_cmd::register_mcp_commands();
     session_cmd::register_session_commands();
     workflow_cmd::register_workflow_commands();
 }
