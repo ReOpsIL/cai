@@ -10,6 +10,7 @@ use serde_json::Value;
 use crate::mcp_manager;
 use crate::logger::{log_info, log_debug, log_warn, ops};
 use crate::openrouter_client::{OpenRouterClient, ToolMetadata, ToolSelection};
+use crate::validator::ValidatorsRunner;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TaskStatus {
@@ -191,6 +192,14 @@ impl TaskExecutor {
         {
             let mut is_running = self.is_running.lock().await;
             *is_running = false;
+        }
+
+        // Optionally validate after executing all tasks
+        if result.is_ok() {
+            let validators = ValidatorsRunner::from_env();
+            if validators.when() == crate::validator::ValidateWhen::AfterAll {
+                let _ = validators.maybe_validate_project().await;
+            }
         }
 
         result

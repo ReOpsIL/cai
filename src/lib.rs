@@ -9,6 +9,8 @@ pub mod task_executor;
 pub mod feedback_loop;
 pub mod workflow_orchestrator;
 pub mod session_manager;
+pub mod validator;
+pub mod project_scanner;
 
 pub use prompt_loader::*;
 pub use openrouter_client::*;

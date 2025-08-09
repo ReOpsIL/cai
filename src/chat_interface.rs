@@ -11,6 +11,19 @@ use crate::feedback_loop::{FeedbackLoopManager, FeedbackType};
 use crate::workflow_orchestrator::WorkflowOrchestrator;
 use crate::session_manager::SessionManager;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum OperationMode { Suggest, AutoEdit, FullAuto }
+
+impl OperationMode {
+    fn from_env() -> Self {
+        match std::env::var("CAI_MODE").unwrap_or_else(|_| "auto-edit".to_string()).to_lowercase().as_str() {
+            "suggest" => OperationMode::Suggest,
+            "full-auto" | "full" => OperationMode::FullAuto,
+            _ => OperationMode::AutoEdit,
+        }
+    }
+}
+
 pub struct ChatInterface {
     openrouter_client: OpenRouterClient,
     conversation_history: Vec<ChatMessage>,
@@ -20,6 +33,7 @@ pub struct ChatInterface {
     session_manager: SessionManager,
     current_workflow_id: Option<String>,
     editor: Editor<(), rustyline::history::DefaultHistory>,
+    operation_mode: OperationMode,
 }
 
 impl ChatInterface {
@@ -122,6 +136,7 @@ impl ChatInterface {
             session_manager,
             current_workflow_id,
             editor,
+            operation_mode: OperationMode::from_env(),
         })
     }
 
@@ -172,6 +187,7 @@ impl ChatInterface {
         println!("{}", "🤖 CAI Chat Interface with Dynamic Feedback Loops & Workflow Orchestration".bright_blue().bold());
         println!("{}", "I'll help you plan tasks, manage prompts, execute tasks, and orchestrate complex workflows.".dimmed());
         println!("{}", "🔁 Dynamic feedback loops enabled for continuous learning and improvement.".green());
+        println!("{} Mode: {:?}", "⚙️".bright_cyan(), self.operation_mode);
         let workflow_status = if self.workflow_orchestrator.is_some() { "✅" } else { "⚠️" };
         println!("{} Workflow orchestration: {}", workflow_status, if self.workflow_orchestrator.is_some() { "enabled" } else { "disabled" });
         
@@ -421,17 +437,21 @@ impl ChatInterface {
         // Add tasks to the execution queue
         self.task_executor.add_tasks(tasks.clone()).await?;
 
-        // Execute tasks automatically (for now, to avoid hanging)
-        println!("{} Executing tasks automatically...", "⚡".yellow());
-        let execution_success = match self.task_executor.execute_all().await {
-            Ok(_) => {
-                println!("\n{} All tasks completed! Continuing chat...", "🎉".green());
-                true
+        // Execute according to mode
+        let execution_success = match self.operation_mode {
+            OperationMode::Suggest => {
+                let ans = self.read_input_with_history("Execute these tasks now? (y/n): ")?.to_lowercase();
+                if matches!(ans.as_str(), "y" | "yes") {
+                    println!("{} Executing tasks...", "⚡".yellow());
+                    self.execute_tasks_and_report().await
+                } else {
+                    println!("{} Skipped execution (suggest mode)", "⏭️".yellow());
+                    false
+                }
             }
-            Err(e) => {
-                println!("\n{} Task execution error: {}", "❌".red(), e);
-                log_warn!("chat", "Task execution failed: {}", e);
-                false
+            OperationMode::AutoEdit | OperationMode::FullAuto => {
+                println!("{} Executing tasks...", "⚡".yellow());
+                self.execute_tasks_and_report().await
             }
         };
 
@@ -496,6 +516,20 @@ impl ChatInterface {
         }
 
         Ok(())
+    }
+
+    async fn execute_tasks_and_report(&self) -> bool {
+        match self.task_executor.execute_all().await {
+            Ok(_) => {
+                println!("\n{} All tasks completed!", "🎉".green());
+                true
+            }
+            Err(e) => {
+                println!("\n{} Task execution error: {}", "❌".red(), e);
+                log_warn!("chat", "Task execution failed: {}", e);
+                false
+            }
+        }
     }
 
     async fn process_task(&self, task: &str, manager: &mut PromptManager) -> Result<TaskProcessingResult> {

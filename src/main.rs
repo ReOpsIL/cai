@@ -9,6 +9,8 @@ mod task_executor;
 mod feedback_loop;
 mod workflow_orchestrator;
 mod session_manager;
+mod validator;
+mod project_scanner;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -31,6 +33,10 @@ struct Cli {
 
     #[arg(short, long, default_value = "prompts")]
     directory: PathBuf,
+
+    /// Operation mode: suggest | auto-edit | full-auto
+    #[arg(long, default_value = "auto-edit")]
+    mode: String,
 }
 
 #[derive(Subcommand)]
@@ -77,6 +83,11 @@ enum Commands {
         #[command(subcommand)]
         action: WorkflowCommands,
     },
+    /// LLM-powered project scanning with hierarchical planning
+    Scan {
+        #[command(subcommand)]
+        action: ScanCommands,
+    },
 }
 
 #[derive(Subcommand)]
@@ -117,6 +128,23 @@ enum McpCommands {
     },
     /// Show server status
     Status,
+}
+
+#[derive(Subcommand)]
+enum ScanCommands {
+    /// Run LLM-powered project scanning
+    Run {
+        /// Project path to scan (defaults to current directory)
+        #[arg(short, long, default_value = ".")]
+        path: String,
+        /// Custom scanning objective
+        #[arg(short, long)]
+        objective: Option<String>,
+    },
+    /// Show current scanning plan status
+    Status,
+    /// Cancel running scan
+    Cancel,
 }
 
 #[derive(Subcommand)]
@@ -178,6 +206,8 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
     // Expose selected prompts directory to URL security checks
     std::env::set_var("CAI_PROMPTS_DIR", &cli.directory);
+    // Expose mode to subcomponents
+    std::env::set_var("CAI_MODE", &cli.mode);
     log_debug!("main", "📋 Parsed CLI arguments: directory={:?}", cli.directory);
 
     // Load prompt manager with timing
@@ -227,6 +257,10 @@ async fn main() -> Result<()> {
         Commands::Workflow { action } => {
             log_info!("main", "🧠 Executing workflow command");
             handle_workflow_command(action).await
+        },
+        Commands::Scan { action } => {
+            log_info!("main", "🔍 Executing scan command");
+            handle_scan_command(action).await
         },
     };
 
@@ -421,8 +455,97 @@ async fn handle_workflow_command(action: &WorkflowCommands) -> Result<()> {
         
         WorkflowCommands::Cleanup => {
             println!("{} Cleaning up completed workflows...", "🧹".yellow());
-            // This would need implementation to identify completed workflows
-            println!("{} Cleanup functionality not yet implemented", "💡".dimmed());
+            match orchestrator.cleanup_completed_workflows().await {
+                Ok(count) => {
+                    if count > 0 {
+                        println!("{} Removed {} completed workflow(s)", "✅".green(), count);
+                    } else {
+                        println!("{} No completed workflows to clean", "💭".dimmed());
+                    }
+                }
+                Err(e) => println!("{} Cleanup error: {}", "❌".red(), e),
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+async fn handle_scan_command(action: &ScanCommands) -> Result<()> {
+    match action {
+        ScanCommands::Run { path, objective } => {
+            println!("{} Starting LLM-powered project scan for: {}", "🔍".bright_blue().bold(), path.bright_white());
+            
+            match project_scanner::LLMProjectScanner::new().await {
+                Ok(scanner) => {
+                    let objective_str = objective.as_deref();
+                    
+                    println!("{} Generating scanning plan...", "🧠".yellow());
+                    match scanner.generate_scanning_plan(path, objective_str).await {
+                        Ok(plan) => {
+                            println!("{} Generated plan: {}", "✅".green(), plan.title.bright_white());
+                            println!("   📝 {} steps planned", plan.steps.len());
+                            
+                            if !plan.steps.is_empty() {
+                                println!("\n{} Plan Steps:", "📋".bright_cyan().bold());
+                                for (i, step) in plan.steps.iter().enumerate() {
+                                    println!("  {}. {}", i + 1, step.display_summary());
+                                }
+                            }
+                            
+                            println!("\n{} Executing scanning plan...", "🚀".green().bold());
+                            match scanner.execute_scanning_plan(plan).await {
+                                Ok(results) => {
+                                    println!("\n{} Scan completed successfully!", "🎉".green().bold());
+                                    println!("📊 Total results collected: {}", results.len());
+                                    
+                                    // Display key findings
+                                    if !results.is_empty() {
+                                        println!("\n{} Key Findings:", "🔍".bright_yellow().bold());
+                                        let mut count = 0;
+                                        for (step_id, result) in results.iter() {
+                                            if count >= 3 { break; } // Show first 3 results
+                                            println!("  📄 {}: {}", 
+                                                step_id.bright_white(),
+                                                result.to_string().chars().take(100).collect::<String>()
+                                            );
+                                            count += 1;
+                                        }
+                                        if results.len() > 3 {
+                                            println!("     ... and {} more results", results.len() - 3);
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    println!("{} Scan execution failed: {}", "❌".red(), e);
+                                    if e.to_string().contains("cancelled") {
+                                        println!("💡 Scan was cancelled by user request");
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            println!("{} Failed to generate scanning plan: {}", "❌".red(), e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("{} Failed to initialize LLM project scanner: {}", "❌".red(), e);
+                    println!("{} Make sure OPENROUTER_API_KEY environment variable is set.", "💡".yellow());
+                }
+            }
+        }
+        
+        ScanCommands::Status => {
+            println!("{} Checking scan status...", "📊".bright_blue().bold());
+            // Note: This would require a global scanner instance to check status
+            println!("💡 Scan status checking not implemented yet - this would show active scan progress");
+        }
+        
+        ScanCommands::Cancel => {
+            println!("{} Cancelling active scan...", "🚫".yellow());
+            // Note: This would require a global scanner instance to cancel
+            println!("💡 Scan cancellation not implemented yet - use Ctrl+C during scan execution");
         }
     }
     

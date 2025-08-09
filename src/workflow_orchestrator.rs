@@ -14,6 +14,7 @@ use crate::openrouter_client::{OpenRouterClient, ChatMessage};
 use crate::task_executor::TaskExecutor;
 use crate::feedback_loop::{FeedbackLoopManager, FeedbackType};
 use crate::logger::{log_info, log_debug};
+use crate::project_scanner;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowGoal {
@@ -237,6 +238,9 @@ impl WorkflowOrchestrator {
             completion_percentage: 0.0,
         };
 
+        // Add project summary to shared context to inform planning
+        let project_summary = project_scanner::summarize_project(".").await.unwrap_or(serde_json::json!({"summary": "unavailable"}));
+
         let workflow_state = WorkflowState {
             workflow_id: workflow_id.clone(),
             root_goal: root_goal_id.clone(),
@@ -248,7 +252,10 @@ impl WorkflowOrchestrator {
             },
             goal_hierarchy: vec![root_goal_id.clone()],
             execution_history: vec![],
-            shared_context: serde_json::json!({"original_request": user_request}),
+            shared_context: serde_json::json!({
+                "original_request": user_request,
+                "project_summary": project_summary
+            }),
             created_at: Utc::now(),
             last_refinement: None,
         };
@@ -1037,6 +1044,29 @@ JSON Response:"#,
         
         log_info!("workflow", "🧹 Cleaned up workflow: {}", workflow_id);
         Ok(())
+    }
+
+    /// Remove all workflows that have no goals left to execute (all Completed or Failed)
+    pub async fn cleanup_completed_workflows(&self) -> Result<usize> {
+        let ids: Vec<String> = {
+            let workflows = self.active_workflows.lock().await;
+            workflows.iter()
+                .filter_map(|(id, wf)| {
+                    let done = wf.goals.values().all(|g| matches!(g.status, GoalStatus::Completed | GoalStatus::Failed));
+                    if done { Some(id.clone()) } else { None }
+                })
+                .collect()
+        };
+
+        for id in &ids {
+            self.remove_workflow_from_disk(id).await.ok();
+        }
+
+        let mut workflows = self.active_workflows.lock().await;
+        for id in &ids {
+            workflows.remove(id);
+        }
+        Ok(ids.len())
     }
 }
 
