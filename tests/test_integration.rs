@@ -1,8 +1,8 @@
 use anyhow::Result;
 use assert_cmd::Command;
 use predicates::prelude::*;
-use tempfile::{tempdir, TempDir};
 use std::fs;
+use tempfile::{tempdir, TempDir};
 
 /// Setup integration test environment with sample prompts
 fn setup_integration_test() -> Result<TempDir> {

@@ -1,7 +1,7 @@
 use anyhow::Result;
-use tempfile::{tempdir, TempDir};
+use prompt_manager::{Prompt, PromptManager};
 use std::fs;
-use prompt_manager::{PromptManager, Prompt};
+use tempfile::{tempdir, TempDir};
 
 /// Mock OpenRouter client for testing without actual API calls
 pub struct MockOpenRouterClient {

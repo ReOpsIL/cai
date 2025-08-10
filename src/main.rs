@@ -13,16 +13,16 @@ mod validator;
 mod project_scanner;
 
 use anyhow::Result;
-use clap::{Parser, Subcommand};
-use colored::*;
-use prompt_loader::{MatchType, PromptManager, SearchResult};
 use chat_interface::ChatInterface;
+use clap::{Parser, Subcommand};
+use colored::control as color_control;
+use colored::*;
 use logger::ops;
-use task_executor::TaskExecutor;
-use workflow_orchestrator::WorkflowOrchestrator;
+use prompt_loader::{MatchType, PromptManager, SearchResult};
 use std::path::PathBuf;
 use std::time::Instant;
-use colored::control as color_control;
+use task_executor::TaskExecutor;
+use workflow_orchestrator::WorkflowOrchestrator;
 
 #[derive(Parser)]
 #[command(name = "cai")]
@@ -187,14 +187,14 @@ async fn main() -> Result<()> {
     ops::startup("APP", "starting CAI application");
 
     // Initialize MCP servers on startup
-    println!("{} Initializing MCP servers...", "🔧".cyan());
+    log_info!("main", "{} Initializing MCP servers...", "🔧".cyan());
     match mcp_manager::initialize_mcp().await {
         Ok(_) => {
-            println!("{} MCP initialization completed", "✅".green());
+            log_info!("main", "{} MCP initialization completed", "✅".green());
         }
         Err(e) => {
-            println!("{} MCP initialization failed: {}", "⚠️".yellow(), e);
-            println!("{} This is not critical - MCP features will be unavailable", "💡".blue());
+            log_error!("main", "{} MCP initialization failed: {}", "⚠️".yellow(), e);
+            log_info!("main", "{} This is critical - MCP features will not be unavailable", "💡".yellow());
         }
     }
 
@@ -304,10 +304,10 @@ fn setup_shutdown_handler() -> Result<()> {
         
         tokio::select! {
             _ = ctrl_c => {
-                println!("\n🛑 Received Ctrl+C, shutting down gracefully...");
+                log_info!("main", "🛑 Received Ctrl+C, shutting down gracefully...");
             }
             _ = terminate => {
-                println!("\n🛑 Received SIGTERM, shutting down gracefully...");
+                log_info!("main", "🛑 Received SIGTERM, shutting down gracefully...");
             }
         }
         
@@ -323,19 +323,20 @@ fn setup_shutdown_handler() -> Result<()> {
 }
 
 async fn run_task_demo() -> Result<()> {
-    println!("{}", "🚀 Task Execution Demo".bright_blue().bold());
-    println!("{}", "Demonstrating MCP tool integration with task execution".dimmed());
-    println!();
+    log_info!("main", "{}", "🚀 Task Execution Demo".bright_blue().bold());
+    log_info!("main", "{}", "Demonstrating MCP tool integration with task execution".dimmed());
+    log_debug!("main", "");
 
-    // Try to create LLM-enabled task executor, fallback to basic if it fails
+    // Initialize LLM-enabled task executor; notify and abort if unavailable
     let executor = match TaskExecutor::with_llm_analysis().await {
         Ok(executor) => {
-            println!("{} Using LLM-powered intelligent tool analysis", "🧠".bright_blue());
+            log_info!("main", "{} Using LLM-powered intelligent tool analysis", "🧠".bright_blue());
             executor
         }
         Err(e) => {
-            println!("{} LLM analysis not available ({}), using heuristic fallback", "⚠️".yellow(), e);
-            TaskExecutor::new()
+            log_error!("main", "{} LLM analysis is not available: {}", "❌".red(), e);
+            log_info!("main", "{} Set OPENROUTER_API_KEY and ensure network access", "💡".yellow());
+            return Err(e);
         }
     };
     
@@ -346,13 +347,13 @@ async fn run_task_demo() -> Result<()> {
         "Show the current working directory structure".to_string(),
     ];
 
-    println!("{} Adding demo tasks to queue...", "📝".cyan());
+    log_info!("main", "{} Adding demo tasks to queue...", "📝".cyan());
     executor.add_tasks(demo_tasks).await?;
 
-    println!("{} Executing all tasks...", "⚡".yellow());
+    log_info!("main", "{} Executing all tasks...", "⚡".yellow());
     executor.execute_all().await?;
 
-    println!("\n{} Demo completed!", "🎉".green().bold());
+    log_info!("main", "{} Demo completed!", "🎉".green().bold());
     Ok(())
 }
 
@@ -365,9 +366,9 @@ async fn start_chat_mode(manager: &mut PromptManager, workflow_id: Option<&str>)
             chat.start_chat(manager).await?;
         }
         Err(e) => {
-            println!("{} Failed to start chat mode: {}", "❌".red(), e);
-            println!("{} Make sure OPENROUTER_API_KEY environment variable is set.", "💡".yellow());
-            println!("{} Get your API key from: https://openrouter.ai/", "🔗".blue());
+            log_error!("main", "{} Failed to start chat mode: {}", "❌".red(), e);
+            log_info!("main", "{} Make sure OPENROUTER_API_KEY environment variable is set.", "💡".yellow());
+            log_info!("main", "{} Get your API key from: https://openrouter.ai/", "🔗".blue());
         }
     }
     Ok(())
@@ -378,25 +379,25 @@ async fn handle_workflow_command(action: &WorkflowCommands) -> Result<()> {
     let orchestrator = match WorkflowOrchestrator::new().await {
         Ok(orchestrator) => orchestrator,
         Err(e) => {
-            println!("{} Failed to initialize workflow orchestrator: {}", "❌".red(), e);
-            println!("{} Make sure OPENROUTER_API_KEY environment variable is set.", "💡".yellow());
+            log_error!("main", "{} Failed to initialize workflow orchestrator: {}", "❌".red(), e);
+            log_info!("main", "{} Make sure OPENROUTER_API_KEY environment variable is set.", "💡".yellow());
             return Ok(());
         }
     };
 
     match action {
         WorkflowCommands::Start { description } => {
-            println!("{} Starting new workflow for: {}", "🧠".bright_blue().bold(), description.bright_white());
+            log_info!("main", "{} Starting new workflow for: {}", "🧠".bright_blue().bold(), description.bright_white());
             match orchestrator.start_workflow(description).await {
                 Ok(workflow_id) => {
-                    println!("{} Workflow created with ID: {}", "✅".green(), workflow_id.bright_white());
-                    println!("{} Initial goals planned. Use 'cai workflow continue {}' to execute.", "💡".yellow(), workflow_id);
+                    log_info!("main", "{} Workflow created with ID: {}", "✅".green(), workflow_id.bright_white());
+                    log_info!("main", "{} Initial goals planned. Use 'cai workflow continue {}' to execute.", "💡".yellow(), workflow_id);
                     
                     // Show initial status
                     orchestrator.display_workflow_status(&workflow_id).await?;
                 }
                 Err(e) => {
-                    println!("{} Failed to start workflow: {}", "❌".red(), e);
+                    log_error!("main", "{} Failed to start workflow: {}", "❌".red(), e);
                 }
             }
         }
@@ -404,14 +405,14 @@ async fn handle_workflow_command(action: &WorkflowCommands) -> Result<()> {
         WorkflowCommands::Status => {
             let active_workflows = orchestrator.list_active_workflows().await?;
             
-            println!("{} Active Workflows:", "📊".bright_blue().bold());
+            log_info!("main", "{} Active Workflows:", "📊".bright_blue().bold());
             if active_workflows.is_empty() {
-                println!("  {} No active workflows", "💭".dimmed());
+                log_info!("main", "  {} No active workflows", "💭".dimmed());
             } else {
                 for workflow_id in active_workflows {
-                    println!("  🧠 {}", workflow_id.bright_white());
+                    log_info!("main", "  🧠 {}", workflow_id.bright_white());
                 }
-                println!("\n💡 Use 'cai workflow show <ID>' for detailed status");
+                log_info!("main", "{}", "\n💡 Use 'cai workflow show <ID>' for detailed status");
             }
         }
         
@@ -419,13 +420,13 @@ async fn handle_workflow_command(action: &WorkflowCommands) -> Result<()> {
             match orchestrator.display_workflow_status(workflow_id).await {
                 Ok(_) => {},
                 Err(e) => {
-                    println!("{} Workflow '{}' not found: {}", "❌".red(), workflow_id, e);
+                    log_error!("main", "{} Workflow '{}' not found: {}", "❌".red(), workflow_id, e);
                 }
             }
         }
         
         WorkflowCommands::Continue { workflow_id } => {
-            println!("{} Continuing workflow execution: {}", "⚡".yellow(), workflow_id.bright_white());
+            log_info!("main", "{} Continuing workflow execution: {}", "⚡".yellow(), workflow_id.bright_white());
             
             // Execute workflow steps until completion or no more executable goals
             let mut steps_executed = 0;
@@ -434,16 +435,16 @@ async fn handle_workflow_command(action: &WorkflowCommands) -> Result<()> {
                     Ok(true) => {
                         steps_executed += 1;
                         if steps_executed >= 10 {
-                            println!("{} Executed {} steps. Use 'continue' again to proceed further.", "⏸️".yellow(), steps_executed);
+                            log_info!("main", "{} Executed {} steps. Use 'continue' again to proceed further.", "⏸️".yellow(), steps_executed);
                             break;
                         }
                     }
                     Ok(false) => {
-                        println!("{} No more executable goals. Workflow may be complete.", "✅".green());
+                        log_info!("main", "{} No more executable goals. Workflow may be complete.", "✅".green());
                         break;
                     }
                     Err(e) => {
-                        println!("{} Error during execution: {}", "❌".red(), e);
+                        log_error!("main", "{} Error during execution: {}", "❌".red(), e);
                         break;
                     }
                 }

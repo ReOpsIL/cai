@@ -1,14 +1,14 @@
-use anyhow::{Result, anyhow};
-use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, VecDeque};
-use tokio::sync::Mutex;
-use std::sync::Arc;
-use uuid::Uuid;
+use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
-use serde_json::{Value, json};
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use std::collections::{HashMap, VecDeque};
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use uuid::Uuid;
 
-use crate::logger::{log_info, log_debug, log_warn, ops};
-use crate::openrouter_client::{OpenRouterClient, ChatMessage};
+use crate::logger::{log_debug, log_info, ops};
+use crate::openrouter_client::{ChatMessage, OpenRouterClient};
 
 /// Represents different types of feedback in the system
 #[derive(Debug, Clone, Serialize, Deserialize)]

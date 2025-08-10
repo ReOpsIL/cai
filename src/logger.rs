@@ -1,6 +1,6 @@
 use colored::*;
-use std::fmt;
 use once_cell::sync::Lazy;
+use std::fmt;
 use std::sync::RwLock;
 
 /// Log levels with corresponding icons and colors
@@ -113,12 +113,28 @@ macro_rules! log_error {
     };
 }
 
+/// Redirect println! to log_info! so remaining stdout prints go through the logger
+#[macro_export]
+macro_rules! println {
+    () => {
+        $crate::logger::log_internal($crate::logger::LogLevel::Info, "stdout", "\n");
+    };
+    ($($arg:tt)*) => {
+        $crate::logger::log_internal(
+            $crate::logger::LogLevel::Info,
+            "stdout",
+            &format!("{}\n", format!($($arg)*))
+        );
+    };
+}
+
 // Export macros
 pub use log_trace;
 pub use log_debug;
 pub use log_info;
 pub use log_warn;
 pub use log_error;
+pub use println;
 
 /// Specialized logging functions for different operations
 pub mod ops {

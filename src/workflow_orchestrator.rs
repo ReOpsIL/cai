@@ -1,20 +1,20 @@
-use anyhow::{Result, anyhow};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use tokio::sync::Mutex;
-use std::sync::Arc;
-use uuid::Uuid;
+use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
-use serde_json::Value;
 use colored::*;
-use std::path::PathBuf;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::HashMap;
 use std::fs;
+use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use uuid::Uuid;
 
-use crate::openrouter_client::{OpenRouterClient, ChatMessage};
-use crate::task_executor::TaskExecutor;
 use crate::feedback_loop::{FeedbackLoopManager, FeedbackType};
-use crate::logger::{log_info, log_debug};
+use crate::logger::{log_debug, log_error, log_info};
+use crate::openrouter_client::{ChatMessage, OpenRouterClient};
 use crate::project_scanner;
+use crate::task_executor::TaskExecutor;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowGoal {
@@ -99,9 +99,9 @@ impl WorkflowOrchestrator {
         
         let llm_client = OpenRouterClient::new().await?;
         let task_executor = TaskExecutor::with_llm_analysis().await
-            .unwrap_or_else(|_| TaskExecutor::new());
+            .map_err(|e| anyhow!("LLM task analysis is required but not available: {}", e))?;
         let feedback_manager = FeedbackLoopManager::with_llm_client().await
-            .unwrap_or_else(|_| FeedbackLoopManager::new());
+            .map_err(|e| anyhow!("LLM feedback manager is required but not available: {}", e))?;
         
         let orchestrator = Self {
             llm_client,
@@ -239,7 +239,13 @@ impl WorkflowOrchestrator {
         };
 
         // Add project summary to shared context to inform planning
-        let project_summary = project_scanner::summarize_project(".").await.unwrap_or(serde_json::json!({"summary": "unavailable"}));
+        let project_summary = match project_scanner::summarize_project(".").await {
+            Ok(summary) => summary,
+            Err(e) => {
+                log_error!("workflow", "❌ Project scanning is not available: {}", e);
+                return Err(anyhow!("Project scanning requires LLM and is not available: {}", e));
+            }
+        };
 
         let workflow_state = WorkflowState {
             workflow_id: workflow_id.clone(),

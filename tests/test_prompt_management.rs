@@ -1,7 +1,7 @@
 use anyhow::Result;
-use tempfile::{tempdir, TempDir};
+use prompt_manager::{Prompt, PromptManager};
 use std::fs;
-use prompt_manager::{PromptManager, Prompt};
+use tempfile::{tempdir, TempDir};
 
 /// Setup test directory for prompt management tests
 fn setup_prompt_management_test() -> Result<(TempDir, PromptManager)> {

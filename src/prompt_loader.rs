@@ -1,14 +1,14 @@
+use crate::logger::{log_debug, log_info, ops};
 use anyhow::{Context, Result};
+use once_cell::sync::Lazy;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use walkdir::WalkDir;
-use url::Url;
-use strsim::levenshtein;
-use crate::logger::{log_debug, log_info, log_warn, log_error, ops};
 use std::time::Instant;
-use once_cell::sync::Lazy;
-use reqwest::Client;
+use strsim::levenshtein;
+use url::Url;
+use walkdir::WalkDir;
 
 static HTTP_CLIENT: Lazy<Client> = Lazy::new(|| {
     let timeout_secs: u64 = std::env::var("CAI_HTTP_TIMEOUT")

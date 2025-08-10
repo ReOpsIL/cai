@@ -1,15 +1,15 @@
-use anyhow::{Result, anyhow};
-use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
-use tokio::sync::Mutex;
-use std::sync::Arc;
-use uuid::Uuid;
+use anyhow::{anyhow, Result};
 use colored::*;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::VecDeque;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use uuid::Uuid;
 
+use crate::logger::{log_debug, log_error, log_info, log_warn, ops};
 use crate::mcp_manager;
-use crate::logger::{log_info, log_debug, log_warn, ops};
-use crate::openrouter_client::{OpenRouterClient, ToolMetadata, ToolSelection};
+use crate::openrouter_client::{OpenRouterClient, ToolMetadata};
 use crate::validator::ValidatorsRunner;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -329,9 +329,11 @@ impl TaskExecutor {
             return self.llm_analyze_task_for_tools(client, task_description).await;
         }
 
-        // Fallback to heuristic-based analysis
-        log_debug!("task_executor", "⚠️ Falling back to heuristic-based tool analysis");
-        self.heuristic_analyze_task_for_tools(task_description).await
+        // No LLM client available: notify and fail instead of heuristic fallback
+        log_error!("task_executor", "❌ LLM client is not available for tool analysis");
+        println!("    {} LLM is not available for tool analysis", "❌".red());
+        println!("    {} Set OPENROUTER_API_KEY and ensure network access", "💡".yellow());
+        Err(anyhow!("LLM tool analysis required but not available"))
     }
 
     async fn llm_analyze_task_for_tools(&self, client: &OpenRouterClient, task_description: &str) -> Result<Vec<McpToolCall>> {
@@ -339,10 +341,10 @@ impl TaskExecutor {
         let tool_metadata = self.collect_tool_metadata().await?;
         
         if tool_metadata.is_empty() {
-            log_warn!("task_executor", "⚠️ No MCP tools available for analysis");
-            println!("    {} No MCP tools available for LLM analysis", "⚠️".yellow());
-            println!("    {} MCP servers may not be running or configured", "💡".yellow());
-            return Ok(Vec::new());
+            log_error!("task_executor", "❌ No MCP tools available for analysis");
+            println!("    {} No MCP tools available for LLM analysis", "❌".red());
+            println!("    {} MCP servers may not be running or configured (check mcp-config.json)", "💡".yellow());
+            return Err(anyhow!("MCP tools are required but not available"));
         }
 
         log_debug!("task_executor", "🔧 Collected metadata for {} tools", tool_metadata.len());

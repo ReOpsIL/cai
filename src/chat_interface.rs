@@ -1,15 +1,15 @@
+use crate::feedback_loop::{FeedbackLoopManager, FeedbackType};
+use crate::logger::{log_debug, log_error, log_info, log_warn, ops};
+use crate::openrouter_client::{ChatMessage, OpenRouterClient};
+use crate::prompt_loader::{Prompt, PromptManager};
+use crate::session_manager::SessionManager;
+use crate::task_executor::TaskExecutor;
+use crate::workflow_orchestrator::WorkflowOrchestrator;
 use anyhow::{Context, Result};
 use colored::*;
-use std::time::Instant;
-use rustyline::Editor;
 use rustyline::error::ReadlineError;
-use crate::openrouter_client::{OpenRouterClient, ChatMessage};
-use crate::prompt_loader::{PromptManager, Prompt};
-use crate::logger::{log_info, log_debug, log_warn, log_error, ops};
-use crate::task_executor::TaskExecutor;
-use crate::feedback_loop::{FeedbackLoopManager, FeedbackType};
-use crate::workflow_orchestrator::WorkflowOrchestrator;
-use crate::session_manager::SessionManager;
+use rustyline::Editor;
+use std::time::Instant;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum OperationMode { Suggest, AutoEdit, FullAuto }
@@ -44,39 +44,39 @@ impl ChatInterface {
         let openrouter_client = OpenRouterClient::new().await
             .context("Failed to initialize OpenRouter client")?;
         
-        // Try to create LLM-enabled task executor, fallback to basic if it fails
+        // Initialize LLM-enabled task executor; notify and fail if unavailable
         let task_executor = match TaskExecutor::with_llm_analysis().await {
             Ok(executor) => {
                 log_info!("chat", "✅ Initialized task executor with LLM analysis");
                 executor
             }
             Err(e) => {
-                log_warn!("chat", "⚠️ Failed to initialize LLM task analysis, using heuristic fallback: {}", e);
-                TaskExecutor::new()
+                log_error!("chat", "❌ LLM task analysis is not available: {}", e);
+                return Err(e.context("LLM task analysis is required and not available"));
             }
         };
 
-        // Initialize feedback loop manager
+        // Initialize feedback loop manager; notify and fail if LLM is unavailable
         let feedback_manager = match FeedbackLoopManager::with_llm_client().await {
             Ok(manager) => {
                 log_info!("chat", "✅ Initialized feedback loop manager with LLM capabilities");
                 manager
             }
             Err(e) => {
-                log_warn!("chat", "⚠️ Failed to initialize LLM feedback manager, using basic fallback: {}", e);
-                FeedbackLoopManager::new()
+                log_error!("chat", "❌ LLM feedback manager is not available: {}", e);
+                return Err(e.context("LLM feedback manager is required and not available"));
             }
         };
 
-        // Initialize workflow orchestrator
+        // Initialize workflow orchestrator; notify and fail if LLM is unavailable
         let workflow_orchestrator = match WorkflowOrchestrator::new().await {
             Ok(orchestrator) => {
                 log_info!("chat", "✅ Initialized workflow orchestrator with LLM-driven goal management");
                 Some(orchestrator)
             }
             Err(e) => {
-                log_warn!("chat", "⚠️ Failed to initialize workflow orchestrator: {}", e);
-                None
+                log_error!("chat", "❌ Failed to initialize workflow orchestrator: {}", e);
+                return Err(e.context("Workflow orchestrator is required and not available"));
             }
         };
 

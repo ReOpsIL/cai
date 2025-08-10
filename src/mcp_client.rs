@@ -1,18 +1,18 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use rmcp::{
-    transport::{ConfigureCommandExt, TokioChildProcess},
-    service::{ServiceExt, RunningService},
     model::{CallToolRequestParam, ReadResourceRequestParam},
+    service::{RunningService, ServiceExt},
+    transport::{ConfigureCommandExt, TokioChildProcess},
     RoleClient,
 };
 use serde_json::Value;
 use std::collections::HashMap;
-use tokio::sync::Mutex;
 use std::sync::Arc;
 use tokio::process::Command as TokioCommand;
+use tokio::sync::Mutex;
 
+use crate::logger::{log_error, log_info};
 use crate::mcp_config::McpConfig;
-use crate::logger::{log_info, log_debug, log_warn, log_error, ops};
 
 pub struct McpClientManager {
     config: McpConfig,
@@ -37,7 +37,7 @@ impl McpClientManager {
     pub async fn start_all_servers(&self) -> Result<()> {
         let server_names: Vec<String> = self.config.list_servers().into_iter().cloned().collect();
         
-        log_error!("mcp","🚀 Starting {} MCP server(s)...", server_names.len());
+        log_info!("mcp","🚀 Starting {} MCP server(s)...", server_names.len());
         
         let mut started_count = 0;
         let mut failed_servers = Vec::new();
@@ -45,7 +45,7 @@ impl McpClientManager {
         for server_name in &server_names {
             match self.start_server(server_name).await {
                 Ok(_) => {
-                    log_error!("mcp","✅ Started MCP server: {}", server_name);
+                    log_info!("mcp","✅ Started MCP server: {}", server_name);
                     started_count += 1;
                 }
                 Err(e) => {
@@ -56,10 +56,10 @@ impl McpClientManager {
         }
 
         if started_count > 0 {
-            log_error!("mcp","🎉 Successfully started {}/{} MCP servers", started_count, server_names.len());
+            log_info!("mcp","🎉 Successfully started {}/{} MCP servers", started_count, server_names.len());
             
             // Perform health checks on started servers
-            log_error!("mcp","🔍 Performing health checks on started servers...");
+            log_info!("mcp","🔍 Performing health checks on started servers...");
             self.perform_health_checks(&server_names, &failed_servers).await;
         }
 
@@ -79,7 +79,7 @@ impl McpClientManager {
         
         // Check if server is already running
         if active_clients.contains_key(server_name) {
-            log_error!("mcp","Server '{}' is already running", server_name);
+            log_info!("mcp","Server '{}' is already running", server_name);
             return Ok(());
         }
 
@@ -100,7 +100,7 @@ impl McpClientManager {
         let client = ().serve(transport).await
             .map_err(|e| anyhow!("Failed to create MCP client service: {}", e))?;
 
-        log_error!("mcp","Successfully created and started MCP transport for: {}", server_name);
+        log_info!("mcp","Successfully created and started MCP transport for: {}", server_name);
         
         let instance = McpClientInstance {
             server_name: server_name.to_string(),
@@ -116,7 +116,7 @@ impl McpClientManager {
         let mut active_clients = self.active_clients.lock().await;
         
         if let Some(_instance) = active_clients.remove(server_name) {
-            log_error!("mcp","Stopped MCP server: {}", server_name);
+            log_info!("mcp","Stopped MCP server: {}", server_name);
         }
         
         Ok(())
@@ -262,7 +262,7 @@ impl McpClientManager {
                 self.list_tools(server_name)
             ).await {
                 Ok(Ok(tools)) => {
-                    log_error!("mcp","✅ Server '{}' is healthy ({} tools available)", server_name, tools.len());
+                    log_info!("mcp","✅ Server '{}' is healthy ({} tools available)", server_name, tools.len());
                     healthy_count += 1;
                 }
                 Ok(Err(e)) => {
@@ -278,9 +278,9 @@ impl McpClientManager {
 
         let started_servers = all_servers.len() - failed_servers.len();
         if healthy_count == started_servers && started_servers > 0 {
-            log_error!("mcp","🎉 All {} started servers are healthy and responding!", healthy_count);
+            log_info!("mcp","🎉 All {} started servers are healthy and responding!", healthy_count);
         } else if healthy_count > 0 {
-            log_error!("mcp","✅ {}/{} started servers are healthy", healthy_count, started_servers);
+            log_info!("mcp","✅ {}/{} started servers are healthy", healthy_count, started_servers);
             if !unhealthy_servers.is_empty() {
                 log_error!("mcp","⚠️  Unhealthy servers: {}", unhealthy_servers.join(", "));
             }

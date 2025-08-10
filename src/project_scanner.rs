@@ -1,21 +1,20 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
+use colored::*;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::path::Path;
-use tokio::sync::Mutex;
 use std::sync::Arc;
-use uuid::Uuid;
-use colored::*;
 use std::time::{Duration, Instant};
-use tokio::signal;
 use tokio::select;
-use walkdir::WalkDir;
+use tokio::signal;
+use tokio::sync::Mutex;
+use uuid::Uuid;
 
-use crate::openrouter_client::OpenRouterClient;
+use crate::logger::{log_debug, log_error, log_info, log_warn};
 use crate::mcp_manager;
+use crate::openrouter_client::OpenRouterClient;
 use crate::task_executor::McpToolCall;
-use crate::logger::{log_info, log_debug, log_warn};
 
 /// Represents the status of a scanning plan or step
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -799,77 +798,20 @@ pub async fn summarize_project<P: AsRef<Path>>(root: P) -> Result<Value> {
                             Ok(summary)
                         }
                         Err(e) => {
-                            log_warn!("scanner", "⚠️ LLM scan execution failed: {}, falling back to basic scan", e);
-                            basic_project_scan(root)
+                            log_error!("scanner", "❌ LLM scan execution failed: {}", e);
+                            return Err(anyhow!("LLM project scanner is not functioning: {}", e));
                         }
                     }
                 }
                 Err(e) => {
-                    log_warn!("scanner", "⚠️ LLM plan generation failed: {}, falling back to basic scan", e);
-                    basic_project_scan(root)
+                    log_error!("scanner", "❌ LLM plan generation failed: {}", e);
+                    return Err(anyhow!("LLM project scanner is not functioning: {}", e));
                 }
             }
         }
         Err(e) => {
-            log_warn!("scanner", "⚠️ LLM scanner initialization failed: {}, falling back to basic scan", e);
-            basic_project_scan(root)
+            log_error!("scanner", "❌ LLM scanner initialization failed: {}", e);
+            return Err(anyhow!("LLM project scanner is not functioning: {}", e));
         }
     }
-}
-
-/// Basic project scan as fallback when LLM is not available
-fn basic_project_scan<P: AsRef<Path>>(root: P) -> Result<Value> {
-    use std::fs;
-    
-    let root = root.as_ref();
-    let cargo_toml = root.join("Cargo.toml");
-    let has_cargo = cargo_toml.exists();
-    let mut file_count = 0usize;
-    let mut rust_count = 0usize;
-    let mut test_count = 0usize;
-
-    if root.exists() {
-        for entry in WalkDir::new(root)
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().is_file())
-        {
-            file_count += 1;
-            let p = entry.path();
-            if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
-                if ext == "rs" { rust_count += 1; }
-                if ext == "rs" && p.to_string_lossy().contains("tests/") { test_count += 1; }
-            }
-        }
-    }
-
-    let cargo_name = if has_cargo {
-        fs::read_to_string(&cargo_toml)
-            .ok()
-            .and_then(|s| {
-                s.lines()
-                    .skip_while(|l| !l.trim().starts_with("[package]"))
-                    .skip(1)
-                    .take_while(|l| !l.trim().starts_with('['))
-                    .find_map(|l| {
-                        let t = l.trim();
-                        if let Some(rest) = t.strip_prefix("name") {
-                            let rest = rest.trim_start_matches(|c: char| c == ' ' || c == '=').trim();
-                            let name = rest.trim_matches('"').to_string();
-                            if !name.is_empty() { return Some(name); }
-                        }
-                        None
-                    })
-            })
-    } else { None };
-
-    Ok(json!({
-        "scan_type": "basic_fallback",
-        "has_cargo": has_cargo,
-        "package_name": cargo_name,
-        "file_count": file_count,
-        "rust_files": rust_count,
-        "approx_test_files": test_count,
-        "timestamp": chrono::Utc::now().to_rfc3339()
-    }))
 }

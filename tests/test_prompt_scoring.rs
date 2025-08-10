@@ -1,7 +1,7 @@
 use anyhow::Result;
-use tempfile::{tempdir, TempDir};
+use prompt_manager::{Prompt, PromptFile, PromptManager, Subject};
 use std::fs;
-use prompt_manager::{PromptManager, Prompt, Subject, PromptFile};
+use tempfile::{tempdir, TempDir};
 
 /// Helper function to create a temporary test directory with sample YAML files
 fn setup_test_directory() -> Result<(TempDir, PromptManager)> {

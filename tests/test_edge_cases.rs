@@ -1,7 +1,7 @@
 use anyhow::Result;
-use tempfile::{tempdir, TempDir};
+use prompt_manager::{calculate_text_similarity, PromptManager};
 use std::fs;
-use prompt_manager::{PromptManager, calculate_text_similarity};
+use tempfile::{tempdir, TempDir};
 
 /// Setup test directory for edge case testing
 fn setup_edge_case_test() -> Result<(TempDir, PromptManager)> {

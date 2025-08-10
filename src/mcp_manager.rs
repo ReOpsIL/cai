@@ -1,10 +1,10 @@
 use anyhow::Result;
-use tokio::sync::Mutex;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 
-use crate::mcp_config::McpConfig;
+use crate::logger::log_info;
 use crate::mcp_client::McpClientManager;
-use crate::logger::{log_info, log_debug, log_warn, log_error, ops};
+use crate::mcp_config::McpConfig;
 
 /// Global MCP manager for application lifecycle management  
 static GLOBAL_MCP_MANAGER: std::sync::LazyLock<Arc<Mutex<Option<McpClientManager>>>> = 
@@ -54,21 +54,21 @@ pub async fn shutdown_mcp() -> Result<()> {
     let mut guard = GLOBAL_MCP_MANAGER.lock().await;
     
     if let Some(manager) = guard.take() {
-        log_error!("mcp","🛑 Shutting down all MCP servers...");
+        log_info!("mcp","🛑 Shutting down all MCP servers...");
         
         let active_servers = manager.list_active_servers().await;
         if !active_servers.is_empty() {
-            log_error!("mcp","🔄 Stopping {} active MCP server(s): {}",
+            log_info!("mcp","🔄 Stopping {} active MCP server(s): {}",
                      active_servers.len(), 
                      active_servers.join(", "));
             
             manager.shutdown_all().await?;
-            log_error!("mcp","✅ All MCP servers shut down gracefully");
+            log_info!("mcp","✅ All MCP servers shut down gracefully");
         } else {
-            log_error!("mcp","ℹ️  No active MCP servers to shut down");
+            log_info!("mcp","ℹ️  No active MCP servers to shut down");
         }
     } else {
-        log_error!("mcp","ℹ️  MCP manager was not initialized");
+        log_info!("mcp","ℹ️  MCP manager was not initialized");
     }
     
     Ok(())

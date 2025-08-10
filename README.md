@@ -1,14 +1,15 @@
-# Prompt Manager CLI
+# CAI — Agentic Coder CLI
 
-A Rust CLI application for managing and searching prompt collections stored in YAML files.
+CAI is a Rust CLI that blends prompt repository management with an LLM‑driven agentic coder. It plans tasks from natural language, orchestrates tools via MCP, executes in loops, and can optionally validate results (fmt, clippy, tests).
 
 ## Features
 
-- **YAML-based prompt storage**: Organize prompts in structured YAML files
-- **Hierarchical organization**: File → Subject → Prompt structure
-- **Powerful search**: Search across file names, subjects, and prompt content
-- **CLI interface**: Easy-to-use command-line interface with colored output
-- **Flexible querying**: Query specific prompts or browse collections
+- Prompt management: YAML repository; list/search/query prompts
+- Agentic chat: LLM plans tasks, executes with MCP tools, and curates prompts
+- Workflow orchestration: LLM creates goals/sub‑goals and executes iteratively
+- MCP integration: Start/stop servers; list tools; call tools and resources
+- Operation modes: `suggest`, `auto-edit` (default), `full-auto`
+- Optional validation: Run `cargo fmt`, `clippy`, and `tests` after execution
 
 ## Installation
 
@@ -16,16 +17,16 @@ A Rust CLI application for managing and searching prompt collections stored in Y
 
 Use the provided run scripts for the easiest experience:
 
-**Linux/macOS:**
+Linux/macOS:
 ```bash
 ./run.sh --help              # Show all options
 ./run.sh --build list        # Build and list prompts
 ./run.sh chat                # Start chat mode
 ```
 
-**Windows:**
+Windows:
 ```cmd
-run.bat --help               # Show all options  
+run.bat --help               # Show all options
 run.bat --build list         # Build and list prompts
 run.bat chat                 # Start chat mode
 ```
@@ -46,56 +47,33 @@ cargo build --release
 
 ### Using the Run Scripts (Recommended)
 
-**List all prompts:**
+List all prompts:
 ```bash
-# Linux/macOS
 ./run.sh list
-
-# Windows  
-run.bat list
 ```
 
-**Search prompts:**
+Search prompts:
 ```bash
-# Linux/macOS
 ./run.sh search "performance"
 ./run.sh search "security"
-
-# Windows
-run.bat search "performance"
-run.bat search "security"
 ```
 
-**Show specific prompt file:**
+Show a prompt file:
 ```bash
-# Linux/macOS
 ./run.sh show bug_fixing
-
-# Windows
-run.bat show bug_fixing
 ```
 
-**Query specific prompt:**
+Query a specific prompt:
 ```bash
-# Linux/macOS
 ./run.sh query bug_fixing "Performance Issues" "Performance bottleneck analysis"
-
-# Windows
-run.bat query bug_fixing "Performance Issues" "Performance bottleneck analysis"
 ```
 
-**Specify custom prompts directory:**
+Specify a custom prompts directory:
 ```bash
-# Linux/macOS
 ./run.sh --directory /path/to/prompts list
-
-# Windows
-run.bat --directory C:\path\to\prompts list
 ```
 
 ### Direct Binary Usage
-
-If you prefer to use the compiled binary directly:
 
 ```bash
 ./target/release/cai list
@@ -104,6 +82,23 @@ If you prefer to use the compiled binary directly:
 ./target/release/cai query bug_fixing "Performance Issues" "Performance bottleneck analysis"
 ./target/release/cai --directory /path/to/prompts list
 ```
+
+### Operation Modes (Autonomy)
+
+Control how the agent executes planned tasks:
+
+```bash
+# Suggest (ask before executing planned tasks)
+./run.sh --mode suggest chat
+
+# Auto Edit (default): execute tasks automatically
+./run.sh --mode auto-edit chat
+
+# Full Auto (same execution behavior today; pair with validation below)
+./run.sh --mode full-auto chat
+```
+
+`--mode` is also available when calling the binary directly.
 
 ## YAML File Structure
 
@@ -129,9 +124,9 @@ subjects:
 
 The `content` field supports URL references for external prompt files:
 
-- **Local files**: `file://path/to/prompt.md` (relative to current directory)
-- **HTTP/HTTPS**: `https://example.com/prompt.md` for online prompts
-- **Absolute paths**: `file:///absolute/path/to/prompt.md`
+- Local files: `file://path/to/prompt.md` (relative to prompts dir)
+- HTTP/HTTPS: `https://example.com/prompt.md` for online prompts
+- Absolute paths: `file:///absolute/path/to/prompt.md`
 
 URL references allow you to:
 - Store large prompts in separate markdown files
@@ -141,10 +136,10 @@ URL references allow you to:
 
 ## Sample Prompts Included
 
-- **Bug Fixing**: Error analysis, performance issues, concurrency bugs
-- **Code Analysis**: Architecture review, code quality, security analysis
-- **Task Creation**: Project planning, documentation, testing strategy
-- **Refactoring**: Clean code practices, performance optimization, modernization
+- Bug Fixing: Error analysis, performance issues, concurrency bugs
+- Code Analysis: Architecture review, code quality, security analysis
+- Task Creation: Project planning, documentation, testing strategy
+- Refactoring: Clean code practices, performance optimization, modernization
 
 ## Commands
 
@@ -153,7 +148,7 @@ URL references allow you to:
 - `search <query>`: Search for prompts containing the query string
 - `show <file_name>`: Display detailed view of a specific prompt file
 - `query <file> <subject> <prompt>`: Retrieve a specific prompt
-- `chat`: Start interactive chat mode for AI-powered task planning and prompt management
+- `chat`: Start interactive chat mode for AI‑powered task planning and prompt management
 
 ### MCP (Model Context Protocol) Support
 - `mcp list`: List configured MCP servers and their status
@@ -164,35 +159,36 @@ URL references allow you to:
 - `mcp resources <server>`: List resources available from a server
 - `mcp status`: Show MCP server status overview
 
+### Workflow Orchestration (Agentic Coder)
+- `workflow start "<description>"`: Create a workflow from a high‑level request
+- `workflow status`: List active workflows
+- `workflow show <WORKFLOW_ID>`: Show detailed goal hierarchy and recent actions
+- `workflow continue <WORKFLOW_ID>`: Execute next executable goal(s)
+- `workflow cleanup`: Remove completed workflows from memory and disk
+
 ## Chat Mode Features
 
-### Interactive Task Planning
 ```bash
-# Linux/macOS
 ./run.sh chat
-
-# Windows
-run.bat chat
-
-# Or with direct binary
-./target/release/cai chat
 ```
 
 The chat mode provides:
-- **AI-powered task planning**: Input any request and get a structured task breakdown
-- **Smart prompt management**: Automatically adds, updates, or scores existing prompts
-- **Similarity detection**: Prevents duplicate prompts and improves existing ones
-- **Automatic categorization**: Tasks are intelligently sorted into appropriate subjects
+- AI‑powered task planning: Input any request and get a structured task breakdown
+- Smart prompt management: Automatically adds, updates, or scores existing prompts
+- Similarity detection: Prevents duplicate prompts and improves existing ones
+- Automatic categorization: Tasks are intelligently sorted into appropriate subjects
+- Operation modes: Choose `suggest`, `auto-edit`, or `full-auto`
+- Optional validation: Enable `CAI_VALIDATE=after_all` to run fmt/clippy/tests after tasks
 
 ### How Chat Mode Works
 
-1. **Task Planning**: Enter a request and the AI generates actionable tasks
-2. **Similarity Analysis**: Each task is compared against existing prompts
-3. **Smart Repository Management**:
-   - **New prompts**: Added if no similar prompts exist
-   - **Prompt updates**: Similar prompts are improved and merged
-   - **Score increment**: Exact matches get higher relevance scores
-4. **Self-curating repository**: High-quality prompts emerge through usage patterns
+1. Task Planning: Enter a request and the AI generates actionable tasks
+2. Similarity Analysis: Each task is compared against existing prompts
+3. Smart Repository Management:
+   - New prompts: Added if no similar prompts exist
+   - Prompt updates: Similar prompts are improved and merged
+   - Score increment: Exact matches get higher relevance scores
+4. Self‑curating repository: High‑quality prompts emerge through usage
 
 ### Setup
 
@@ -203,32 +199,47 @@ export OPENROUTER_API_KEY="your_api_key_here"
 
 Get your API key from: https://openrouter.ai/
 
+Optional validation after execution:
+```bash
+export CAI_VALIDATE=after_all
+```
+
+Set execution mode per‑invocation with `--mode`, or globally:
+```bash
+export CAI_MODE=auto-edit   # suggest | auto-edit | full-auto
+```
+
 ## Prompt Scoring System
 
-Each prompt includes a score field that tracks usage and effectiveness:
-- Prompts start with score 0
+Prompts include a `score` that tracks usage and effectiveness:
 - Score increases when the prompt is matched in chat interactions
-- High-scoring prompts indicate proven usefulness
-- Scores are displayed as ⭐ icons in listings
+- High‑scoring prompts indicate proven usefulness
+- Scores are displayed as ⭐ in listings
 
 ## Search Capabilities
 
-The search function looks for matches in:
+Search considers:
 - File names
-- File descriptions  
+- File descriptions
 - Subject names
 - Prompt titles
-- Prompt content (including URL-referenced content)
+- Prompt content (including URL‑referenced content)
 
 Results show the match type and context for easy navigation.
 
 ## MCP (Model Context Protocol) Integration
 
-CAI now supports MCP servers, enabling integration with external tools and services through Docker containers. This allows you to extend the application with capabilities like file system access, database operations, web browsing, and more.
+CAI can connect to MCP servers to extend capabilities (filesystem, etc.). MCP is optional.
 
 ### MCP Configuration
 
-MCP servers are configured via a JSON file. On first use, CAI creates a default `mcp-config.json`:
+Create a default `mcp-config.json`:
+
+```bash
+./run.sh mcp init
+```
+
+Example (filesystem server using Docker and mounting the project directory):
 
 ```json
 {
@@ -237,9 +248,9 @@ MCP servers are configured via a JSON file. On first use, CAI creates a default 
       "command": "docker",
       "args": [
         "run", "-i", "--rm",
-        "-v", "/local-directory:/local-directory",
+        "-v", "/path/to/your/project:/project",
         "mcp/filesystem",
-        "/local-directory"
+        "/project"
       ],
       "env": {},
       "cwd": null
@@ -253,41 +264,38 @@ MCP servers are configured via a JSON file. On first use, CAI creates a default 
 ```bash
 # List available MCP servers
 ./run.sh mcp list
-
-# Start the filesystem server
 ./run.sh mcp start filesystem
-
-# List tools from the server
 ./run.sh mcp tools filesystem
-
-# Call a tool with arguments
-./run.sh mcp call filesystem read_file --args '{"path": "/tmp/example.txt"}'
-
-# Check server status
+./run.sh mcp call filesystem list_directory --args '{"path":"/project"}'
 ./run.sh mcp status
 ```
 
-### Supported MCP Server Types
+## Workflow Orchestration Details
 
-The configuration supports various Docker-based MCP servers:
+The orchestrator:
+- Analyzes your request into a root goal and success criteria
+- Plans sub‑goals and per‑goal task lists (LLM)
+- Executes tasks via the `TaskExecutor` and MCP tools
+- Optionally validates the repo (`CAI_VALIDATE=after_all`)
+- Refines goals based on results and tracks progress to completion
 
-- **Filesystem**: File operations and directory management
-- **Database**: SQL queries and data operations  
-- **Web**: Browser automation and web scraping
-- **APIs**: REST API interactions and integrations
-- **Custom**: Any Docker container implementing MCP protocol
+Project context (counts, cargo package name, etc.) is summarized and provided to the planner to improve breakdowns.
 
-### Configuration Locations
+## Development
 
-CAI searches for MCP configuration in:
-1. `./mcp-config.json` (current directory)
-2. `./.mcp-config.json` (hidden file)
-3. `~/.config/cai/mcp-config.json` (user config)
+- `cargo build`: Compile in debug mode
+- `cargo run -- <args>`: Run the binary locally (passes args to the app)
+- `cargo test`: Run unit/integration tests
+- `cargo fmt --all`: Format code with rustfmt
+- `cargo clippy -- -D warnings`: Lint; treat warnings as errors
+- `./run.sh` (or `run.bat`): Project launcher with sensible defaults
 
-### Technical Implementation
+### Environment Variables
+- `OPENROUTER_API_KEY`: Required for LLM features (planning, refinement, analysis)
+- `CAI_MODE`: Execution mode for chat/workflows (`suggest` | `auto-edit` | `full-auto`)
+- `CAI_VALIDATE`: Set to `after_all` to run validators after task execution
+- `CAI_PROMPTS_DIR`: Set automatically from `--directory`; used for safe file URL resolution
 
-- Uses official Rust MCP SDK (`rmcp` crate)
-- Supports Docker-based server management
-- Async/await architecture for non-blocking operations
-- JSON-RPC communication over stdin/stdout
-- Configuration-driven server lifecycle management
+### Notes
+- MCP and Docker are optional; without MCP, tool execution may be limited
+- Validation runs external commands; enable only when appropriate for your environment
