@@ -6,6 +6,8 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::env;
 use std::time::Instant;
+use std::collections::HashSet;
+use crate::mcp_manager;
 
 #[derive(Debug, Serialize)]
 struct OpenRouterRequest {
@@ -53,6 +55,7 @@ struct ToolAnalysisResponse {
     expected_outcome: String,
 }
 
+#[derive(Debug)]
 pub struct OpenRouterClient {
     client: Client,
     api_key: String,
@@ -214,87 +217,206 @@ impl OpenRouterClient {
 
     pub async fn plan_tasks(&self, user_request: &str) -> Result<Vec<String>> {
         let planning_start = Instant::now();
-        log_info!("openrouter", "📋 Planning tasks for user request");
+        log_info!("openrouter", "📋 Planning tasks for user request (MCP-aware)");
         log_debug!("openrouter", "📥 User request: {}", user_request);
 
-        let system_prompt = r#"You are an expert task planner. Your job is to analyze user requests and create a structured plan with a list of actionable tasks that will help fulfill or solve the user's request.
+        // Discover available MCP tools dynamically via MCP Manager
+        let mut available_tool_names: Vec<String> = Vec::new();
+        let mut available_tool_set: HashSet<String> = HashSet::new();
+        {
+            let global_manager = mcp_manager::get_mcp_manager();
+            let guard = global_manager.lock().await;
+            if let Some(manager) = guard.as_ref() {
+                let servers = manager.list_active_servers().await;
+                log_debug!("openrouter", "📡 Found {} active MCP server(s)", servers.len());
+                for server in servers {
+                    match manager.list_tools(&server).await {
+                        Ok(mut tools) => {
+                            tools.sort();
+                            for t in tools {
+                                available_tool_set.insert(t.clone());
+                                available_tool_names.push(t);
+                            }
+                        }
+                        Err(e) => {
+                            log_warn!("openrouter", "⚠️ Failed to list tools from server '{}': {}", server, e);
+                        }
+                    }
+                }
+            } else {
+                log_warn!("openrouter", "⚠️ MCP manager not initialized; proceeding without tool discovery");
+            }
+        }
 
-Instructions:
-1. Carefully read the user's request or question.
-2. Break down the request into clear, specific tasks that the system or a human can execute.
-3. Ensure the tasks are precise, outcome-oriented, and logically ordered.
-4. If needed, add clarifications or assumptions for ambiguous parts.
-5. Output ONLY the tasks as a clean, numbered list, each task being a standalone prompt or instruction.
-6. Do not include any explanatory text, headers, or formatting - just the numbered list.
-7. Level of detail: Provide detailed instructions prompt for each task. The tasks should be detailed enough to be actionable but not overly specific.
-8. Ensure that the tasks are actionable and can be executed by an LLM (agentic coder) with MCP Tools integration - The MCP tools should be used to execute tasks.
+        // Build the planning instruction with strict JSON schema and the discovered tools
+        let tools_section = if available_tool_names.is_empty() {
+            "(no tools discovered; if tools are required, still produce tasks but mark mcp_tool as 'UNAVAILABLE')".to_string()
+        } else {
+            format!("Available MCP tools (use exact names): {}", available_tool_names.join(", "))
+        };
 
-Example Format:
-1. First task description
-2. Second task description
-3. Third task description
+        #[derive(Debug, Deserialize)]
+        struct PlannedTask {
+            id: String,
+            #[serde(default)]
+            title: Option<String>,
+            description: String,
+            mcp_tool: String,
+            #[serde(default)]
+            params: Option<HashMap<String, Value>>,
+            #[serde(default)]
+            depends_on: Option<Vec<String>>,
+        }
 
-Remember: Output only the numbered task list, nothing else."#;
+        // The system prompt forces a JSON array of PlannedTask objects
+        let system_prompt = format!(
+            r#"You are a coding CLI planner. Produce an execution-ready, deeply granular plan as a JSON array of task objects only. Each task must be atomic, action-oriented, and explicitly call a single MCP tool from the discovered set.
+
+Requirements:
+- Use the discovered tools exactly as named.
+- Include sufficient technical detail in 'description' and concrete 'params' for the tool call.
+- Ensure logical ordering and explicit dependencies via 'depends_on' (list of task ids).
+- IDs must be short, unique strings (e.g., t1, t2...).
+- Output ONLY raw JSON array with the following schema for each task:
+  {{
+    "id": "t1",
+    "title": "short title",
+    "description": "precise action to perform",
+    "mcp_tool": "exact_tool_name",
+    "params": {{ "k": "v" }},
+    "depends_on": ["t_prev"]
+  }}
+
+Context:
+- {tools_section}
+- User request: {user_request}
+"#
+        );
 
         let messages = vec![
-            ChatMessage {
-                role: "system".to_string(),
-                content: system_prompt.to_string(),
-            },
-            ChatMessage {
-                role: "user".to_string(),
-                content: user_request.to_string(),
-            },
+            ChatMessage { role: "system".to_string(), content: system_prompt },
         ];
 
-        log_debug!(
-            "openrouter",
-            "🚀 Sending task planning request to OpenRouter"
-        );
+        log_debug!("openrouter", "🚀 Sending MCP-aware planning request to OpenRouter");
         let response = self.chat_completion(messages).await?;
         log_debug!("openrouter", "💬 Received response for task planning");
 
-        // Parse the numbered list response
-        log_debug!("openrouter", "🔍 Parsing task list from response");
-        let tasks: Vec<String> = response
-            .lines()
-            .filter_map(|line| {
-                let line = line.trim();
-                // Look for numbered lines (1. 2. 3. etc.)
-                if let Some(pos) = line.find(". ") {
-                    let number_part = &line[..pos];
-                    if number_part.chars().all(|c| c.is_ascii_digit()) {
-                        return Some(line[pos + 2..].trim().to_string());
+        // Extract potential JSON (handle code fences)
+        let json_str = self.extract_json_from_response(&response);
+
+        // Parse as array or object with tasks field
+        let parsed_value: Value = serde_json::from_str(&json_str)
+            .unwrap_or(Value::Null);
+
+        let mut planned_tasks: Vec<PlannedTask> = Vec::new();
+        if let Value::Array(items) = parsed_value {
+            for item in items {
+                if let Ok(task) = serde_json::from_value::<PlannedTask>(item) {
+                    planned_tasks.push(task);
+                }
+            }
+        } else if let Value::Object(map) = parsed_value {
+            if let Some(tasks_val) = map.get("tasks") {
+                if let Ok(items) = serde_json::from_value::<Vec<PlannedTask>>(tasks_val.clone()) {
+                    planned_tasks = items;
+                }
+            }
+        }
+
+        // Fallback to numbered lines parsing if JSON not obtained
+        if planned_tasks.is_empty() {
+            log_warn!("openrouter", "⚠️ JSON tasks not found; falling back to numbered lines parsing");
+            let tasks: Vec<String> = response
+                .lines()
+                .filter_map(|line| {
+                    let line = line.trim();
+                    if let Some(pos) = line.find(". ") {
+                        let number_part = &line[..pos];
+                        if number_part.chars().all(|c| c.is_ascii_digit()) {
+                            return Some(line[pos + 2..].trim().to_string());
+                        }
+                    }
+                    None
+                })
+                .collect();
+            if tasks.is_empty() {
+                return Ok(vec![response.trim().to_string()]);
+            } else {
+                return Ok(tasks);
+            }
+        }
+
+        // Validate tool names; mark unavailable tools
+        for t in &mut planned_tasks {
+            if !available_tool_set.is_empty() && !available_tool_set.contains(&t.mcp_tool) {
+                t.mcp_tool = format!("{}{}", t.mcp_tool, " (UNAVAILABLE)");
+            }
+        }
+
+        // Topologically sort tasks by depends_on
+        let mut id_to_task: HashMap<String, PlannedTask> = HashMap::new();
+        for t in planned_tasks.into_iter() {
+            id_to_task.insert(t.id.clone(), t);
+        }
+        let mut incoming_count: HashMap<String, usize> = HashMap::new();
+        for (id, t) in &id_to_task {
+            let deps = t.depends_on.as_ref().map(|v| v.len()).unwrap_or(0);
+            incoming_count.insert(id.clone(), deps);
+        }
+        let mut ready: Vec<String> = incoming_count
+            .iter()
+            .filter_map(|(id, &c)| if c == 0 { Some(id.clone()) } else { None })
+            .collect();
+        ready.sort();
+        let mut ordered_ids: Vec<String> = Vec::new();
+        while let Some(id) = ready.pop() {
+            ordered_ids.push(id.clone());
+            // Decrease incoming counts for dependents
+            for (other_id, other_task) in &id_to_task {
+                if let Some(deps) = &other_task.depends_on {
+                    if deps.iter().any(|d| d == &id) {
+                        if let Some(cnt) = incoming_count.get_mut(other_id) {
+                            if *cnt > 0 { *cnt -= 1; }
+                            if *cnt == 0 && !ordered_ids.contains(other_id) && !ready.contains(other_id) {
+                                ready.push(other_id.clone());
+                            }
+                        }
                     }
                 }
-                None
-            })
-            .collect();
+            }
+        }
+        if ordered_ids.len() < id_to_task.len() {
+            log_warn!("openrouter", "⚠️ Dependency cycle or unresolved dependencies detected; preserving original order");
+            ordered_ids = id_to_task.keys().cloned().collect();
+            ordered_ids.sort();
+        }
 
-        let final_tasks = if tasks.is_empty() {
-            log_warn!(
-                "openrouter",
-                "⚠️ No numbered tasks found, using entire response as single task"
-            );
-            // Fallback: treat the entire response as a single task
-            vec![response.trim().to_string()]
-        } else {
-            log_debug!("openrouter", "📋 Successfully parsed {} tasks", tasks.len());
-            tasks
-        };
+        // Convert to execution-ready CLI strings while preserving rich detail
+        let mut final_tasks: Vec<String> = Vec::new();
+        for id in ordered_ids {
+            if let Some(t) = id_to_task.get(&id) {
+                let title = t.title.clone().unwrap_or_else(|| "".to_string());
+                let params_json = serde_json::to_string(&t.params.as_ref().cloned().unwrap_or_default()).unwrap_or("{}".to_string());
+                let deps = t.depends_on.as_ref().map(|v| v.join(", ")).unwrap_or_else(|| "".to_string());
+                let line = format!(
+                    "TASK id={id}; title=\"{title}\"; tool={tool}; params={params}; depends_on=[{deps}]; action=\"{desc}\"",
+                    id = t.id,
+                    title = title.replace('"', "'"),
+                    tool = t.mcp_tool,
+                    params = params_json,
+                    deps = deps,
+                    desc = t.description.replace('"', "'"),
+                );
+                final_tasks.push(line);
+            }
+        }
 
         let planning_duration = planning_start.elapsed().as_millis() as u64;
         ops::performance("TASK_PLANNING", planning_duration);
-
         for (i, task) in final_tasks.iter().enumerate() {
             log_debug!("openrouter", "📝 Task {}: {}", i + 1, task);
         }
-
-        log_info!(
-            "openrouter",
-            "✅ Task planning completed: {} tasks generated",
-            final_tasks.len()
-        );
+        log_info!("openrouter", "✅ Task planning completed: {} tasks generated", final_tasks.len());
         Ok(final_tasks)
     }
 
@@ -483,16 +605,26 @@ JSON Response:"#,
                 let json_end = start + 3 + end;
                 if json_start < json_end {
                     let potential_json = response[json_start..json_end].trim();
-                    if potential_json.starts_with('{') && potential_json.ends_with('}') {
+                    if (potential_json.starts_with('{') && potential_json.ends_with('}')) ||
+                       (potential_json.starts_with('[') && potential_json.ends_with(']')) {
                         return potential_json.to_string();
                     }
                 }
             }
         }
 
-        // Try to find JSON by looking for { } boundaries
+        // Try to find JSON by looking for { } or [ ] boundaries
         if let Some(start) = response.find('{') {
             if let Some(end) = response.rfind('}') {
+                if start < end {
+                    return response[start..=end].trim().to_string();
+                }
+            }
+        }
+        
+        // Try to find JSON array by looking for [ ] boundaries
+        if let Some(start) = response.find('[') {
+            if let Some(end) = response.rfind(']') {
                 if start < end {
                     return response[start..=end].trim().to_string();
                 }

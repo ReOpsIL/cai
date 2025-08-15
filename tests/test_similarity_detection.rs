@@ -72,13 +72,13 @@ fn test_text_similarity_calculation() {
     assert_eq!(similarity, 0.0);
 }
 
-#[test]
-fn test_find_similar_prompts_high_threshold() -> Result<()> {
+#[tokio::test]
+async fn test_find_similar_prompts_high_threshold() -> Result<()> {
     let (_temp_dir, manager) = setup_similarity_test_directory()?;
 
     // Search for a prompt very similar to existing one
     let task = "Review this code for potential bugs, errors, and issues";
-    let similar_prompts = manager.find_similar_prompts(task, 0.8);
+    let similar_prompts = manager.find_similar_prompts(task, 0.8).await;
 
     // Should find the highly similar prompt
     assert!(!similar_prompts.is_empty());
@@ -90,13 +90,13 @@ fn test_find_similar_prompts_high_threshold() -> Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_find_similar_prompts_medium_threshold() -> Result<()> {
+#[tokio::test]
+async fn test_find_similar_prompts_medium_threshold() -> Result<()> {
     let (_temp_dir, manager) = setup_similarity_test_directory()?;
 
     // Search for a moderately similar prompt
     let task = "Examine code for problems and defects";
-    let similar_prompts = manager.find_similar_prompts(task, 0.5);
+    let similar_prompts = manager.find_similar_prompts(task, 0.5).await;
 
     // Should find multiple similar prompts
     assert!(similar_prompts.len() >= 2);
@@ -216,13 +216,13 @@ subjects:
     Ok(())
 }
 
-#[test]
-fn test_similarity_scoring_accuracy() -> Result<()> {
+#[tokio::test]
+async fn test_similarity_scoring_accuracy() -> Result<()> {
     let (_temp_dir, manager) = setup_similarity_test_directory()?;
 
     // Test exact match
     let task = "Review this code for potential bugs, errors, and issues";
-    let similar_prompts = manager.find_similar_prompts(task, 0.0);
+    let similar_prompts = manager.find_similar_prompts(task, 0.0).await;
     
     let exact_match = similar_prompts.iter()
         .find(|p| p.prompt.id == "analyze-bugs-001");
@@ -231,7 +231,7 @@ fn test_similarity_scoring_accuracy() -> Result<()> {
 
     // Test partial match
     let task = "Check code for bugs";
-    let similar_prompts = manager.find_similar_prompts(task, 0.0);
+    let similar_prompts = manager.find_similar_prompts(task, 0.0).await;
     
     let partial_match = similar_prompts.iter()
         .find(|p| p.prompt.id == "analyze-bugs-001");

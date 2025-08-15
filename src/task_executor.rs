@@ -326,14 +326,36 @@ impl TaskExecutor {
         // If LLM client is available, use intelligent analysis
         if let Some(ref client) = self.openrouter_client {
             log_debug!("task_executor", "🧠 Using LLM-based tool analysis");
-            return self.llm_analyze_task_for_tools(client, task_description).await;
+            
+            // Try LLM analysis with timeout and fallback
+            match tokio::time::timeout(
+                std::time::Duration::from_secs(15),
+                self.llm_analyze_task_for_tools(client, task_description)
+            ).await {
+                Ok(Ok(result)) => {
+                    log_info!("task_executor", "✅ LLM analysis successful with {} tools", result.len());
+                    return Ok(result);
+                }
+                Ok(Err(e)) => {
+                    log_warn!("task_executor", "⚠️ LLM analysis failed: {}", e);
+                    println!("    {} LLM analysis failed: {}", "⚠️".yellow(), e);
+                    println!("    {} Falling back to heuristic analysis", "💡".yellow());
+                }
+                Err(_) => {
+                    log_warn!("task_executor", "⏰ LLM analysis timed out");
+                    println!("    {} LLM analysis timed out", "⏰".yellow());
+                    println!("    {} Falling back to heuristic analysis", "💡".yellow());
+                }
+            }
+        } else {
+            log_info!("task_executor", "💡 LLM client not available, using heuristic analysis");
+            println!("    {} LLM not available, using heuristic analysis", "💡".yellow());
+            println!("    {} Set OPENROUTER_API_KEY for intelligent tool selection", "💡".cyan());
         }
 
-        // No LLM client available: notify and fail instead of heuristic fallback
-        log_error!("task_executor", "❌ LLM client is not available for tool analysis");
-        println!("    {} LLM is not available for tool analysis", "❌".red());
-        println!("    {} Set OPENROUTER_API_KEY and ensure network access", "💡".yellow());
-        Err(anyhow!("LLM tool analysis required but not available"))
+        // Use heuristic fallback
+        log_debug!("task_executor", "🧮 Using heuristic-based tool analysis");
+        self.heuristic_analyze_task_for_tools(task_description).await
     }
 
     async fn llm_analyze_task_for_tools(&self, client: &OpenRouterClient, task_description: &str) -> Result<Vec<McpToolCall>> {
@@ -383,6 +405,21 @@ impl TaskExecutor {
 
     async fn collect_tool_metadata(&self) -> Result<Vec<ToolMetadata>> {
         let mut metadata = Vec::new();
+        
+        // First, collect local tools
+        log_debug!("task_executor", "🏠 Collecting local tools");
+        let local_tools = crate::local_tools::list_local_tools();
+        for tool_name in local_tools {
+            let tool_metadata = ToolMetadata {
+                name: tool_name.clone(),
+                description: self.get_tool_description(&tool_name),
+                parameters: self.get_tool_parameters(&tool_name),
+            };
+            metadata.push(tool_metadata);
+        }
+        log_debug!("task_executor", "🔧 Added {} local tools", metadata.len());
+        
+        // Then, collect MCP tools
         let global_manager = mcp_manager::get_mcp_manager();
         
         let analysis_result = tokio::time::timeout(
@@ -390,12 +427,12 @@ impl TaskExecutor {
             async {
                 let guard = global_manager.lock().await;
                 let Some(manager) = guard.as_ref() else {
-                    // No MCP configured; return empty tool metadata gracefully
-                    return Ok::<Vec<ToolMetadata>, anyhow::Error>(Vec::new());
+                    // No MCP configured; return local tools only
+                    return Ok::<Vec<ToolMetadata>, anyhow::Error>(metadata);
                 };
 
                 let active_servers = manager.list_active_servers().await;
-                log_debug!("task_executor", "📡 Collecting tools from {} active servers", active_servers.len());
+                log_debug!("task_executor", "📡 Collecting tools from {} active MCP servers", active_servers.len());
 
                 for server_name in active_servers {
                     match tokio::time::timeout(
@@ -436,6 +473,13 @@ impl TaskExecutor {
     }
 
     async fn find_tool_server(&self, tool_name: &str) -> Result<Option<(String, Vec<String>)>> {
+        // First check local tools
+        let local_tools = crate::local_tools::list_local_tools();
+        if local_tools.contains(&tool_name.to_string()) {
+            return Ok(Some((crate::local_tools::LOCAL_SERVER_NAME.to_string(), local_tools)));
+        }
+        
+        // Then check MCP servers
         let global_manager = mcp_manager::get_mcp_manager();
         let guard = global_manager.lock().await;
         let Some(manager) = guard.as_ref() else {
@@ -457,22 +501,67 @@ impl TaskExecutor {
 
     fn get_tool_description(&self, tool_name: &str) -> String {
         match tool_name {
-            "list_directory" => "List files and directories in a specified path".to_string(),
-            "read_file" => "Read the contents of a file".to_string(),
-            "write_file" => "Write content to a file".to_string(),
+            // File operations
+            "list_directory" => "List files and directories in a specified path with detailed information".to_string(),
+            "read_file" => "Read the contents of a file with optional line range support".to_string(),
+            "write_file" => "Write content to a file, creating directories if needed".to_string(),
+            "edit_file" => "Edit file content by replacing old text with new text, with validation".to_string(),
+            "delete_path" => "Delete files or directories with optional recursive deletion".to_string(),
+            
+            // Search operations
+            "search_files" => "Search for text patterns in files with regex, fuzzy search, and context".to_string(),
+            "glob_files" => "Find files using glob patterns with advanced filtering".to_string(),
+            
+            // Command execution
+            "execute_command" => "Execute shell commands with timeout, safety checks, and output capture".to_string(),
+            
+            // Web operations
+            "web_fetch" => "Fetch content from URLs with timeout and size limits".to_string(),
+            "download_file" => "Download files from URLs to local filesystem".to_string(),
+            
+            // Task management
+            "create_tasks" => "Create structured task lists for workflow management".to_string(),
+            "update_tasks" => "Update task status and add notes to existing tasks".to_string(),
+            
+            // Multi-file operations
+            "multiedit_file" => "Apply multiple atomic edits to a single file in one operation".to_string(),
+            
             _ => format!("MCP tool: {}", tool_name),
         }
     }
 
     fn get_tool_parameters(&self, tool_name: &str) -> Vec<String> {
         match tool_name {
-            "list_directory" => vec!["path".to_string()],
-            "read_file" => vec!["path".to_string()],
+            // File operations
+            "list_directory" => vec!["path".to_string(), "recursive".to_string(), "show_hidden".to_string()],
+            "read_file" => vec!["path".to_string(), "start_line".to_string(), "end_line".to_string()],
             "write_file" => vec!["path".to_string(), "content".to_string()],
+            "edit_file" => vec!["path".to_string(), "old_text".to_string(), "new_text".to_string(), "replace_all".to_string()],
+            "delete_path" => vec!["path".to_string(), "recursive".to_string()],
+            
+            // Search operations
+            "search_files" => vec!["pattern".to_string(), "directory".to_string(), "pattern_type".to_string(), "file_pattern".to_string()],
+            "glob_files" => vec!["pattern".to_string(), "directory".to_string(), "max_results".to_string()],
+            
+            // Command execution
+            "execute_command" => vec!["command".to_string(), "working_directory".to_string(), "timeout".to_string(), "command_type".to_string()],
+            
+            // Web operations
+            "web_fetch" => vec!["url".to_string(), "timeout".to_string()],
+            "download_file" => vec!["url".to_string(), "file_path".to_string(), "timeout".to_string()],
+            
+            // Task management
+            "create_tasks" => vec!["user_query".to_string(), "tasks".to_string()],
+            "update_tasks" => vec!["task_updates".to_string()],
+            
+            // Multi-file operations
+            "multiedit_file" => vec!["file_path".to_string(), "edits".to_string()],
+            
             _ => vec!["args".to_string()],
         }
     }
 
+    /// Heuristic-based task analysis as fallback when LLM is unavailable
     async fn heuristic_analyze_task_for_tools(&self, task_description: &str) -> Result<Vec<McpToolCall>> {
         let mut suggestions = Vec::new();
         let task_lower = task_description.to_lowercase();
@@ -569,6 +658,7 @@ impl TaskExecutor {
         }
     }
 
+    /// Generate default tool arguments when LLM analysis is unavailable
     fn generate_tool_arguments(&self, tool_name: &str, task_description: &str) -> Value {
         // Generate reasonable default arguments based on tool type and task description
         match tool_name {
@@ -594,14 +684,28 @@ impl TaskExecutor {
     }
 
     async fn execute_mcp_tool_call(&self, tool_call: &McpToolCall) -> Result<Value> {
-        log_debug!("task_executor", "🔧 Calling MCP tool: {} with args: {}", 
-                  tool_call.tool_name, tool_call.arguments);
+        log_debug!("task_executor", "🔧 Calling tool: {} on server {} with args: {}", 
+                  tool_call.tool_name, tool_call.server_name, tool_call.arguments);
         
         ops::mcp_operation("TOOL_CALL", &format!("{}:{}", tool_call.server_name, tool_call.tool_name));
         
-        // Add timeout to prevent hanging
+        // SAFETY: Check tool permissions before execution
+        let safety_validator = crate::tool_safety::get_global_safety_validator();
+        if let Err(safety_error) = safety_validator.check_tool_permission(&tool_call.tool_name, &tool_call.arguments).await {
+            log_warn!("task_executor", "🛡️ Tool execution blocked by safety validator: {}", safety_error);
+            return Err(anyhow!("Tool execution blocked by safety policy: {}", safety_error));
+        }
+        
+        // Check if this is a local tool
+        if tool_call.server_name == crate::local_tools::LOCAL_SERVER_NAME {
+            log_debug!("task_executor", "🏠 Executing local tool: {}", tool_call.tool_name);
+            return crate::local_tools::execute_local_tool(&tool_call.tool_name, tool_call.arguments.clone())
+                .map_err(|e| anyhow!("Local tool execution failed: {}", e));
+        }
+        
+        // Execute MCP tool with timeout
         let call_result = tokio::time::timeout(
-            std::time::Duration::from_secs(10),
+            std::time::Duration::from_secs(30), // Increased timeout for complex operations
             async {
                 let global_manager = mcp_manager::get_mcp_manager();
                 let guard = global_manager.lock().await;
@@ -622,7 +726,7 @@ impl TaskExecutor {
                 result
             }
             Err(_) => {
-                log_warn!("task_executor", "⏰ MCP tool call timed out after 10 seconds");
+                log_warn!("task_executor", "⏰ MCP tool call timed out after 30 seconds");
                 Err(anyhow!("MCP tool call timed out"))
             }
         }

@@ -67,7 +67,7 @@ pub fn should_log(level: LogLevel) -> bool {
 pub fn log_internal(level: LogLevel, module: &str, message: &str) {
     if should_log(level) {
         let timestamp = chrono::Local::now().format("%H:%M:%S%.3f");
-        eprint!("{} {} [{}] {}: {}",
+        eprint!("{} {} [{}] {}: {}\n",
             level.icon(),
             level.colored_name(),
             timestamp.to_string().dimmed(),

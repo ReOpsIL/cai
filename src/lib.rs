@@ -1,16 +1,24 @@
 pub mod prompt_loader;
 pub mod openrouter_client;
-pub mod chat_interface;
 pub mod logger;
 pub mod mcp_config;
 pub mod mcp_client;
 pub mod mcp_manager;
+pub mod task_state;
+pub mod tool_safety;
+pub mod scan_manager;
+pub mod local_tools;
 pub mod task_executor;
+pub mod chat_interface;
 pub mod feedback_loop;
 pub mod workflow_orchestrator;
 pub mod session_manager;
 pub mod validator;
 pub mod project_scanner;
+pub mod multi_agent;
+pub mod declarative_tools;
+pub mod pub_sub;
+pub mod enhanced_session;
 
 pub use chat_interface::*;
 pub use logger::*;

@@ -1,16 +1,24 @@
 mod prompt_loader;
 mod openrouter_client;
-mod chat_interface;
 mod logger;
 mod mcp_config;
 mod mcp_client;
 mod mcp_manager;
+mod task_state;
+mod tool_safety;
+mod scan_manager;
+mod local_tools;
 mod task_executor;
+mod chat_interface;
 mod feedback_loop;
 mod workflow_orchestrator;
 mod session_manager;
 mod validator;
 mod project_scanner;
+mod multi_agent;
+mod declarative_tools;
+mod pub_sub;
+mod enhanced_session;
 
 use anyhow::Result;
 use chat_interface::ChatInterface;
@@ -539,14 +547,55 @@ async fn handle_scan_command(action: &ScanCommands) -> Result<()> {
         
         ScanCommands::Status => {
             println!("{} Checking scan status...", "📊".bright_blue().bold());
-            // Note: This would require a global scanner instance to check status
-            println!("💡 Scan status checking not implemented yet - this would show active scan progress");
+            
+            let scan_manager = scan_manager::get_global_scan_manager();
+            match scan_manager.get_status() {
+                Ok(status) => {
+                    println!("📊 Scan Status: {}", status.display_string());
+                    
+                    // Show progress percentage if available
+                    if let Ok(Some(percentage)) = scan_manager.get_progress_percentage() {
+                        println!("📈 Progress: {}%", percentage);
+                    }
+                    
+                    // Show running status details
+                    if let Ok(true) = scan_manager.is_running() {
+                        println!("🟢 Scan is currently active");
+                        println!("💡 Use 'cai scan cancel' to stop the current scan");
+                    } else {
+                        println!("🔴 No active scan running");
+                    }
+                }
+                Err(e) => {
+                    println!("❌ Failed to get scan status: {}", e);
+                }
+            }
         }
         
         ScanCommands::Cancel => {
             println!("{} Cancelling active scan...", "🚫".yellow());
-            // Note: This would require a global scanner instance to cancel
-            println!("💡 Scan cancellation not implemented yet - use Ctrl+C during scan execution");
+            
+            let scan_manager = scan_manager::get_global_scan_manager();
+            match scan_manager.cancel_scan() {
+                Ok(true) => {
+                    println!("✅ Cancellation signal sent to active scan");
+                    println!("⏳ Scan should stop within a few seconds...");
+                    
+                    // Wait a moment and check status
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    if let Ok(status) = scan_manager.get_status() {
+                        println!("📊 Updated Status: {}", status.display_string());
+                    }
+                }
+                Ok(false) => {
+                    println!("⚠️ No active scan to cancel");
+                    println!("💡 Use 'cai scan status' to check current scan state");
+                }
+                Err(e) => {
+                    println!("❌ Failed to cancel scan: {}", e);
+                    println!("💡 You can still use Ctrl+C to forcefully stop a scan");
+                }
+            }
         }
     }
     

@@ -160,6 +160,11 @@ impl ChatInterface {
         Ok(())
     }
 
+    /// Get access to the task executor for testing purposes
+    pub fn get_task_executor(&self) -> &TaskExecutor {
+        &self.task_executor
+    }
+
     pub async fn start_chat(&mut self, manager: &mut PromptManager) -> Result<()> {
         log_info!("chat", "🚀 Starting chat session");
         ops::startup("CHAT", "interactive chat session");
@@ -379,7 +384,7 @@ impl ChatInterface {
         println!();
     }
 
-    async fn process_user_input(&mut self, user_input: &str, manager: &mut PromptManager) -> Result<()> {
+    pub async fn process_user_input(&mut self, user_input: &str, manager: &mut PromptManager) -> Result<()> {
         let process_start = Instant::now();
         log_debug!("chat", "🔄 Starting task planning for user input");
         println!("{} Planning tasks...", "🔄".yellow());

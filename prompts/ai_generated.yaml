@@ -248,6 +248,80 @@ subjects:
     content: Look for a `Makefile`, `build.gradle`, `webpack.config.js`, or similar build/automation script.
     score: 0
     id: 230e752b-ca10-41ea-97c1-82c578c51e1f
+  - title: '```json [ { "id": "t1", "title":'
+    content: |-
+      ```json
+      [
+        {
+          "id": "t1",
+          "title": "List allowed directories",
+          "description": "Determine the available directories for file operations.",
+          "mcp_tool": "list_allowed_directories",
+          "params": {},
+          "depends_on": []
+        },
+        {
+          "id": "t2",
+          "title": "Create dov.md",
+          "description": "Create a new file named 'dov.md' in the current working directory.",
+          "mcp_tool": "write_file",
+          "params": {
+            "path": "dov.md",
+            "content": ""
+          },
+          "depends_on": ["t1"]
+        },
+        {
+          "id": "t3",
+          "title": "Insert text into dov.md",
+          "description": "Insert the text 'aaaaa' into the 'dov.md' file.",
+          "mcp_tool": "edit_file",
+          "params": {
+            "path": "dov.md",
+            "content": "aaaaa"
+          },
+          "depends_on": ["t2"]
+        },
+        {
+          "id": "t4",
+          "title": "Verify dov.md content",
+          "description": "Read the content of 'dov.md' to verify the text was successfully inserted.",
+          "mcp_tool": "read_file",
+          "params": {
+            "path": "dov.md"
+          },
+          "depends_on": ["t3"]
+        }
+      ]
+      ```
+    score: 2
+    id: 9cebf707-0e23-49a4-82a6-03f34e8b3e00
+  - title: '```json [ { "id": "t1", "title":'
+    content: |-
+      ```json
+      [
+        {
+          "id": "t1",
+          "title": "List Allowed Directories",
+          "description": "Determine the directories that are accessible for operations.",
+          "mcp_tool": "list_allowed_directories",
+          "params": {},
+          "depends_on": []
+        },
+        {
+          "id": "t2",
+          "title": "List Current Directory Files",
+          "description": "List all files and subdirectories within the current working directory.",
+          "mcp_tool": "list_directory",
+          "params": {
+            "path": "."
+          },
+          "depends_on": ["t1"]
+        }
+      ]
+      ```
+    score: 0
+    id: 6d3fd9c1-ea32-4092-bf11-6dada35bd226
 - name: Task Creation
   prompts:
   - title: State the next immediate steps or
@@ -270,6 +344,107 @@ subjects:
     content: Search for a `tests/` or `spec/` directory to see if automated tests are present.
     score: 0
     id: af80f1a4-d193-44cc-8978-0ced7afa0182
+  - title: '```json [ { "id": "t1", "title":'
+    content: |-
+      ```json
+      [
+        {
+          "id": "t1",
+          "title": "List allowed directories",
+          "description": "Discover which directories are accessible for listing and reading.",
+          "mcp_tool": "list_allowed_directories",
+          "params": {},
+          "depends_on": []
+        },
+        {
+          "id": "t2",
+          "title": "List current directory",
+          "description": "Get an initial understanding of the project's top-level structure.",
+          "mcp_tool": "list_directory",
+          "params": {
+            "path": "."
+          },
+          "depends_on": ["t1"]
+        },
+        {
+          "id": "t3",
+          "title": "Generate directory tree",
+          "description": "Create a comprehensive visual representation of the entire project's file and directory structure for better navigation.",
+          "mcp_tool": "directory_tree",
+          "params": {
+            "path": "."
+          },
+          "depends_on": ["t2"]
+        },
+        {
+          "id": "t4",
+          "title": "Search for common source files",
+          "description": "Identify common source code files (e.g., .py, .js, .java, .c, .cpp, .h, .hpp) across the project to prioritize review.",
+          "mcp_tool": "search_files",
+          "params": {
+            "root_dir": ".",
+            "file_patterns": [
+              "*.py",
+              "*.js",
+              "*.ts",
+              "*.java",
+              "*.c",
+              "*.cpp",
+              "*.h",
+              "*.hpp",
+              "*.go",
+              "*.rb",
+              "*.php",
+              "*.cs"
+            ]
+          },
+          "depends_on": ["t3"]
+        },
+        {
+          "id": "t5",
+          "title": "Search for documentation/config files",
+          "description": "Locate READMEs, configuration files (e.g., package.json, pom.xml, requirements.txt, Dockerfile), and test files to understand project setup and testing.",
+          "mcp_tool": "search_files",
+          "params": {
+            "root_dir": ".",
+            "file_patterns": [
+              "README*",
+              "LICENSE*",
+              "package.json",
+              "pom.xml",
+              "requirements.txt",
+              "Dockerfile",
+              "Makefile",
+              "*.yaml",
+              "*.yml",
+              "*.json",
+              "*test*",
+              "*.spec.*"
+            ]
+          },
+          "depends_on": ["t3"]
+        },
+        {
+          "id": "t6",
+          "title": "Search for build/CI files",
+          "description": "Identify files related to build processes and continuous integration/delivery pipelines.",
+          "mcp_tool": "search_files",
+          "params": {
+            "root_dir": ".",
+            "file_patterns": [
+              ".gitlab-ci.yml",
+              ".github/workflows/*.yml",
+              "Jenkinsfile",
+              "build.gradle",
+              "webpack.config.js"
+            ]
+          },
+          "depends_on": ["t3"]
+        }
+      ]
+      ```
+    score: 0
+    id: cbdef8a8-8ee6-4010-b2aa-bafaea06402c
 - name: Code Analysis
   prompts:
   - title: Analyze the user's prompt to understand
@@ -300,12 +475,168 @@ subjects:
     content: Summarize the project's main components, technologies, and overall structure based on the files reviewed.
     score: 0
     id: a1fa860d-896a-447f-af90-178ddfde09bc
+  - title: '```json [ { "id": "t1", "title":'
+    content: |-
+      ```json
+      [
+        {
+          "id": "t1",
+          "title": "Identify Accessible Directories",
+          "description": "Identify and list all directories that are accessible for review within the current environment. This establishes the scope of the project.",
+          "mcp_tool": "list_allowed_directories",
+          "params": {},
+          "depends_on": []
+        },
+        {
+          "id": "t2",
+          "title": "Analyze Project Structure and Key Files",
+          "description": "Generate a comprehensive directory tree to visualize the project's structure. Concurrently, search for and read critical project files including general source code, configuration files, documentation (READMEs), and common entry points or test files.",
+          "mcp_tool": "composite_analysis",
+          "params": {
+            "directory_tree_path": "/",
+            "search_queries": [
+              {
+                "name": "project_files",
+                "query": ".(py|js|ts|java|c|cpp|go|rb|php|html|css|json|yaml|xml|md|toml|ini|sh|Dockerfile|Makefile|gitignore|env|conf|properties|txt)$",
+                "regex": true
+              },
+              {
+                "name": "readme_files",
+                "query": "README(\\.md)?$",
+                "regex": true
+              },
+              {
+                "name": "config_files",
+                "query": "(package\\.json|pom\\.xml|requirements\\.txt|\\.env|config\\.(json|yaml|xml|toml)|\\.ini|appsettings\\.json|web\\.config)$",
+                "regex": true
+              },
+              {
+                "name": "test_files",
+                "query": "(test_.*\\.py|.*\\.test\\.js|.*Spec\\.java|.*_test\\.go|.*\\.spec\\.ts)$",
+                "regex": true
+              },
+              {
+                "name": "main_app_files",
+                "query": "(app\\.py|index\\.js|Main\\.java|main\\.go|program\\.cs)$",
+                "regex": true
+              }
+            ],
+            "read_files_from_search_results": true
+          },
+          "depends_on": ["t1"]
+        }
+      ]
+      ```
+    score: 0
+    id: ffd00c71-81ea-4261-8153-eac99f3549df
+  - title: '```json [ { "id": "t1", "title":'
+    content: |-
+      ```json
+      [
+        {
+          "id": "t1",
+          "title": "List allowed directories",
+          "description": "Identify all directories accessible for review to understand the scope of the project.",
+          "mcp_tool": "list_allowed_directories",
+          "params": {},
+          "depends_on": []
+        },
+        {
+          "id": "t2",
+          "title": "Generate comprehensive project directory tree",
+          "description": "Create a detailed tree structure of the project's files and directories from the root ('/') to thoroughly understand its layout and hierarchy.",
+          "mcp_tool": "directory_tree",
+          "params": {
+            "path": "/"
+          },
+          "depends_on": ["t1"]
+        },
+        {
+          "id": "t3",
+          "title": "Search for key project files",
+          "description": "Locate all common source code files and critical configuration files to prioritize for review. This includes common programming languages, build configurations, and project metadata.",
+          "mcp_tool": "search_files",
+          "params": {
+            "path": "/",
+            "patterns": [
+              "*.py", "*.js", "*.java", "*.c", "*.cpp", "*.h", "*.hpp", "*.go", "*.rs", "*.ts",
+              "*.html", "*.css", "*.sh", "*.md", "*.txt",
+              "Dockerfile", "Makefile", "requirements.txt", "package.json", "pom.xml",
+              "Cargo.toml", "pyproject.toml", "*.json", "*.yaml", "*.yml", "*.toml", "*.env",
+              "README*", "LICENSE*", ".gitignore"
+            ]
+          },
+          "depends_on": ["t2"]
+        },
+        {
+          "id": "t4",
+          "title": "Read all identified key project files",
+          "description": "Read the content of all source code, configuration, and documentation files identified in the previous step for a comprehensive project review and understanding.",
+          "mcp_tool": "read_multiple_files",
+          "params": {
+            "paths_from_task": "t3",
+            "paths_jsonpath": "$.found_files[*].path"
+          },
+          "depends_on": ["t3"]
+        }
+      ]
+      ```
+    score: 0
+    id: 81be7d98-2850-4c81-9df4-acc2d881ca0a
 - name: Bug Fixing
   prompts:
   - title: Review the project's code for adherence
     content: Review the project's code for adherence to coding standards, best practices, and potential bugs.
     score: 0
     id: 1cd7cae5-5f57-409c-9847-2fab42c9ad0d
+  - title: '```json [ { "id": "t1", "title":'
+    content: |-
+      ```json
+      [
+        {
+          "id": "t1",
+          "title": "Identify Writable Directory",
+          "description": "Determine the optimal writable directory for file operations within the allowed system paths. This step ensures that subsequent file operations are performed in a permissible location.",
+          "mcp_tool": "list_allowed_directories",
+          "params": {},
+          "depends_on": []
+        },
+        {
+          "id": "t2",
+          "title": "Prepare or Create dov.md",
+          "description": "Check if 'dov.md' exists in the current working directory. If it exists, ensure it's empty by clearing its content. If it does not exist, create a new empty file. This step prevents unintentional data overwriting and provides a clean slate for new content.",
+          "mcp_tool": "write_file",
+          "params": {
+            "path": "dov.md",
+            "content": ""
+          },
+          "depends_on": ["t1"]
+        },
+        {
+          "id": "t3",
+          "title": "Write Specified Content to dov.md",
+          "description": "Write the provided content ('ddddd' or 'aaaaa') into the 'dov.md' file. This operation will replace any existing content in the file, ensuring the file contains only the specified string.",
+          "mcp_tool": "write_file",
+          "params": {
+            "path": "dov.md",
+            "content": "REPLACE_WITH_DESIRED_CONTENT"
+          },
+          "depends_on": ["t2"]
+        },
+        {
+          "id": "t4",
+          "title": "Verify Written Content of dov.md",
+          "description": "Read the content of 'dov.md' to confirm that the specified content was successfully written and the file's content precisely matches the expected string.",
+          "mcp_tool": "read_file",
+          "params": {
+            "path": "dov.md"
+          },
+          "depends_on": ["t3"]
+        }
+      ]
+      ```
+    score: 0
+    id: 58f67eed-90b8-45dc-a604-bbe1dd584211
 - name: Refactoring
   prompts:
   - title: Identify any risks, issues, or areas

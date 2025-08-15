@@ -23,6 +23,9 @@ pub struct McpClientManager {
 struct McpClientInstance {
     server_name: String,
     client: RunningService<RoleClient, ()>,
+    // For filesystem servers, store the host->container path mapping
+    host_root: Option<String>,
+    container_root: String,
 }
 
 impl McpClientManager {
@@ -31,6 +34,67 @@ impl McpClientManager {
             config,
             active_clients: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+
+    /// Transform host file paths to container paths for MCP tools
+    fn transform_path_for_container(&self, host_path: &str, host_root: Option<&str>, container_root: &str) -> String {
+        if let Some(host_root) = host_root {
+            if host_path.starts_with(host_root) {
+                // Replace the host root with the container root
+                let relative_path = &host_path[host_root.len()..];
+                format!("{}{}", container_root, relative_path)
+            } else if host_path.starts_with('/') && !host_path.starts_with(container_root) {
+                // For absolute paths outside the mount, assume they're relative to host root
+                format!("{}/{}", container_root.trim_end_matches('/'), host_path.trim_start_matches('/'))
+            } else {
+                host_path.to_string()
+            }
+        } else {
+            host_path.to_string()
+        }
+    }
+
+    /// Transform arguments containing file paths for container execution
+    fn transform_arguments(&self, instance: &McpClientInstance, mut arguments: Value) -> Value {
+        if let Some(obj) = arguments.as_object_mut() {
+            // Transform common path parameters
+            let path_keys = ["path", "file_path", "file1", "file2", "directory"];
+            
+            for &key in &path_keys {
+                if let Some(value) = obj.get(key) {
+                    if let Some(path_str) = value.as_str() {
+                        let transformed_path = self.transform_path_for_container(
+                            path_str,
+                            instance.host_root.as_deref(),
+                            &instance.container_root
+                        );
+                        obj.insert(key.to_string(), Value::String(transformed_path));
+                    }
+                }
+            }
+
+            // Handle arrays of paths (like file_paths)
+            if let Some(file_paths) = obj.get("file_paths") {
+                if let Some(array) = file_paths.as_array() {
+                    let transformed_paths: Vec<Value> = array.iter()
+                        .map(|path_value| {
+                            if let Some(path_str) = path_value.as_str() {
+                                let transformed = self.transform_path_for_container(
+                                    path_str,
+                                    instance.host_root.as_deref(),
+                                    &instance.container_root
+                                );
+                                Value::String(transformed)
+                            } else {
+                                path_value.clone()
+                            }
+                        })
+                        .collect();
+                    obj.insert("file_paths".to_string(), Value::Array(transformed_paths));
+                }
+            }
+        }
+        arguments
     }
 
     /// Start all configured MCP servers
@@ -102,9 +166,34 @@ impl McpClientManager {
 
         log_info!("mcp","Successfully created and started MCP transport for: {}", server_name);
         
+        // Detect path mappings for filesystem servers
+        let (host_root, container_root) = if server_name == "filesystem" {
+            // Parse Docker volume mount arguments to extract path mapping
+            let mut host_root = None;
+            let mut container_root = "/project".to_string(); // default
+            
+            let args = &server_config.args;
+            for i in 0..args.len() {
+                if args[i] == "-v" && i + 1 < args.len() {
+                    // Parse volume mount: host_path:container_path
+                    if let Some((host_path, container_path)) = args[i + 1].split_once(':') {
+                        host_root = Some(host_path.to_string());
+                        container_root = container_path.to_string();
+                        break;
+                    }
+                }
+            }
+            
+            (host_root, container_root)
+        } else {
+            (None, "/".to_string())
+        };
+
         let instance = McpClientInstance {
             server_name: server_name.to_string(),
             client,
+            host_root,
+            container_root,
         };
 
         active_clients.insert(server_name.to_string(), instance);
@@ -165,8 +254,11 @@ impl McpClientManager {
         let instance = active_clients.get(server_name)
             .ok_or_else(|| anyhow!("Server '{}' is not running", server_name))?;
 
+        // Transform paths in arguments for container execution
+        let transformed_arguments = self.transform_arguments(instance, arguments);
+
         // Convert JSON Value to Map for arguments
-        let arguments_map = arguments.as_object().cloned();
+        let arguments_map = transformed_arguments.as_object().cloned();
 
         // Use the actual MCP client to call the tool
         let call_param = CallToolRequestParam {
