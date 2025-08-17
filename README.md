@@ -1,15 +1,70 @@
-# CAI — Agentic Coder CLI
+# CAI — Conversational AI Interface
 
-CAI is a Rust CLI that blends prompt repository management with an LLM‑driven agentic coder. It plans tasks from natural language, orchestrates tools via MCP, executes in loops, and can optionally validate results (fmt, clippy, tests).
+CAI is a powerful Rust CLI application that combines intelligent prompt management with LLM-driven agentic coding. It transforms natural language requests into executable tasks, integrates with external tools via Model Context Protocol (MCP), and maintains context across conversations for multi-step project development.
 
-## Features
+## 🚀 Key Features
 
-- Prompt management: YAML repository; list/search/query prompts
-- Agentic chat: LLM plans tasks, executes with MCP tools, and curates prompts
-- Workflow orchestration: LLM creates goals/sub‑goals and executes iteratively
-- MCP integration: Start/stop servers; list tools; call tools and resources
-- Operation modes: `suggest`, `auto-edit` (default), `full-auto`
-- Optional validation: Run `cargo fmt`, `clippy`, and `tests` after execution
+- **📋 Smart Prompt Management**: YAML-based repository with search, similarity detection, and auto-curation
+- **🤖 Agentic Chat Mode**: LLM plans and executes tasks automatically with context awareness
+- **🔄 Workflow Orchestration**: Break down complex projects into manageable goals and sub-goals
+- **🛠️ MCP Integration**: Connects to external tools (filesystem, web, etc.) via Model Context Protocol
+- **💡 Context-Aware Planning**: Builds upon previous work rather than starting from scratch
+- **⚙️ Flexible Execution Modes**: From suggestions to full automation
+- **✅ Built-in Validation**: Optional code formatting, linting, and testing after execution
+- **📂 Session Management**: Persistent workflow sessions that restore context across chat sessions
+
+## 🎯 Getting Started
+
+### Prerequisites
+
+1. **Rust**: Install from [rustup.rs](https://rustup.rs/)
+2. **OpenRouter API Key**: Get from [openrouter.ai](https://openrouter.ai/) for LLM features
+3. **Docker** (Optional): For MCP server integration
+
+### Quick Setup
+
+1. **Clone and Build**:
+```bash
+git clone <repository-url>
+cd cai
+cargo build --release
+```
+
+2. **Set API Key**:
+```bash
+export OPENROUTER_API_KEY="your_api_key_here"
+```
+
+3. **Start Using CAI**:
+```bash
+# List available prompts
+./run.sh list
+
+# Start interactive chat mode
+./run.sh chat
+
+# Get help
+./run.sh --help
+```
+
+### First Steps with Chat Mode
+
+The most powerful way to use CAI is through its interactive chat mode:
+
+```bash
+./run.sh chat
+```
+
+Try these example requests:
+- `"create a Python web API for task management"`
+- `"add authentication to the existing API"`
+- `"create a React frontend for the task management API"`
+
+CAI will automatically:
+- Plan the necessary tasks
+- Create files and directories
+- Build upon previous work in the same session
+- Maintain context between requests
 
 ## Installation
 
@@ -151,13 +206,14 @@ URL references allow you to:
 - `chat`: Start interactive chat mode for AI‑powered task planning and prompt management
 
 ### MCP (Model Context Protocol) Support
-- `mcp list`: List configured MCP servers and their status
-- `mcp start <server>`: Start an MCP server
-- `mcp stop <server>`: Stop an MCP server
+- `mcp status`: Show MCP server status overview (servers auto-start)
+- `mcp list`: List configured MCP servers and their status  
 - `mcp tools <server>`: List tools available from a server
 - `mcp call <server> <tool> --args <json>`: Call a tool with arguments
 - `mcp resources <server>`: List resources available from a server
-- `mcp status`: Show MCP server status overview
+- `mcp init`: Create default MCP configuration file
+
+**Note**: MCP servers now auto-start when CAI launches, so manual start/stop commands are rarely needed.
 
 ### Workflow Orchestration (Agentic Coder)
 - `workflow start "<description>"`: Create a workflow from a high‑level request
@@ -166,29 +222,56 @@ URL references allow you to:
 - `workflow continue <WORKFLOW_ID>`: Execute next executable goal(s)
 - `workflow cleanup`: Remove completed workflows from memory and disk
 
-## Chat Mode Features
+## 🤖 Chat Mode Features
 
 ```bash
 ./run.sh chat
 ```
 
-The chat mode provides:
-- AI‑powered task planning: Input any request and get a structured task breakdown
-- Smart prompt management: Automatically adds, updates, or scores existing prompts
-- Similarity detection: Prevents duplicate prompts and improves existing ones
-- Automatic categorization: Tasks are intelligently sorted into appropriate subjects
-- Operation modes: Choose `suggest`, `auto-edit`, or `full-auto`
-- Optional validation: Enable `CAI_VALIDATE=after_all` to run fmt/clippy/tests after tasks
+The chat mode is CAI's most powerful feature, providing an intelligent coding assistant that maintains context across conversations:
 
-### How Chat Mode Works
+### Core Capabilities
+- **🧠 Context-Aware Planning**: Remembers previous work and builds upon it
+- **📝 Intelligent Task Breakdown**: Converts natural language into executable tasks
+- **🔗 Session Continuity**: Persistent workflows that resume across chat sessions
+- **🛠️ Tool Integration**: Automatically selects and uses appropriate tools
+- **📋 Smart Prompt Management**: Auto-curates prompt repository based on usage
+- **⚙️ Flexible Execution**: Choose from suggestion, auto-edit, or full-auto modes
 
-1. Task Planning: Enter a request and the AI generates actionable tasks
-2. Similarity Analysis: Each task is compared against existing prompts
-3. Smart Repository Management:
-   - New prompts: Added if no similar prompts exist
-   - Prompt updates: Similar prompts are improved and merged
-   - Score increment: Exact matches get higher relevance scores
-4. Self‑curating repository: High‑quality prompts emerge through usage
+### Special Commands in Chat Mode
+
+- `@status` - Show current task queue status
+- `@execute` - Execute all queued tasks  
+- `@clear` - Clear completed tasks
+- `@plan` - Create a validated execution plan
+- `@improve` - Run iterative improvement on current work
+- `@feedback` - Show feedback statistics and learning insights
+- `@workflow` - Access workflow orchestration menu
+- `@help` - Show all available commands
+- `quit` - Exit chat mode
+
+### Context-Aware Multi-Step Development
+
+CAI excels at multi-step project development. For example:
+
+**Step 1**: `"create a Python backend API for medical assessments"`
+- Creates structured project with FastAPI
+- Sets up models, routes, services
+- Includes tests and documentation
+
+**Step 2**: `"create a web interface for the medical assessment backend"`  
+- **NEW**: References existing backend project
+- Integrates with actual API endpoints
+- Uses specific models from backend
+- Creates complementary frontend structure
+
+### How Context Awareness Works
+
+1. **Session Management**: Each workflow session is persistent and restorable
+2. **Historical Context**: Previous tasks and outputs inform new planning
+3. **Path Resolution**: References existing files and directories correctly
+4. **Integration Planning**: Builds upon existing functionality rather than duplicating
+5. **Incremental Development**: Each prompt enhances the previous work
 
 ### Setup
 
@@ -227,19 +310,28 @@ Search considers:
 
 Results show the match type and context for easy navigation.
 
-## MCP (Model Context Protocol) Integration
+## 🛠️ MCP (Model Context Protocol) Integration
 
-CAI can connect to MCP servers to extend capabilities (filesystem, etc.). MCP is optional.
+CAI automatically connects to MCP servers on startup to extend its capabilities with external tools (filesystem operations, web access, databases, etc.). MCP integration is optional but highly recommended.
+
+### Automatic Server Management
+
+**🚀 New**: MCP servers automatically start when CAI launches - no manual start commands needed!
+
+- All configured servers start automatically
+- Health checks ensure servers are ready
+- Graceful shutdown when CAI exits
+- Optimized for Docker environments
 
 ### MCP Configuration
 
-Create a default `mcp-config.json`:
+Create a default configuration:
 
 ```bash
 ./run.sh mcp init
 ```
 
-Example (filesystem server using Docker and mounting the project directory):
+Example `mcp-config.json` (filesystem server using Docker):
 
 ```json
 {
@@ -248,9 +340,9 @@ Example (filesystem server using Docker and mounting the project directory):
       "command": "docker",
       "args": [
         "run", "-i", "--rm",
-        "-v", "/path/to/your/project:/project",
+        "-v", "/path/to/your/project:/workspace",
         "mcp/filesystem",
-        "/project"
+        "/workspace"
       ],
       "env": {},
       "cwd": null
@@ -262,13 +354,20 @@ Example (filesystem server using Docker and mounting the project directory):
 ### MCP Usage Examples
 
 ```bash
-# List available MCP servers
-./run.sh mcp list
-./run.sh mcp start filesystem
-./run.sh mcp tools filesystem
-./run.sh mcp call filesystem list_directory --args '{"path":"/project"}'
+# Check server status (servers auto-start)
 ./run.sh mcp status
+
+# List available tools  
+./run.sh mcp tools filesystem
+
+# Call a tool directly
+./run.sh mcp call filesystem list_directory --args '{"path":"/workspace"}'
+
+# View all configured servers
+./run.sh mcp list
 ```
+
+**💡 Tip**: In chat mode, CAI automatically selects and uses appropriate MCP tools based on your requests - no need to call them manually!
 
 ## Workflow Orchestration Details
 
@@ -291,11 +390,70 @@ Project context (counts, cargo package name, etc.) is summarized and provided to
 - `./run.sh` (or `run.bat`): Project launcher with sensible defaults
 
 ### Environment Variables
-- `OPENROUTER_API_KEY`: Required for LLM features (planning, refinement, analysis)
+- `OPENROUTER_API_KEY`: **Required** for LLM features (planning, refinement, analysis)
 - `CAI_MODE`: Execution mode for chat/workflows (`suggest` | `auto-edit` | `full-auto`)
 - `CAI_VALIDATE`: Set to `after_all` to run validators after task execution
 - `CAI_PROMPTS_DIR`: Set automatically from `--directory`; used for safe file URL resolution
+- `CAI_LOG_LEVEL`: Logging level (`TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`)
 
-### Notes
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**1. "OpenRouter API key is not set"**
+```bash
+export OPENROUTER_API_KEY="your_api_key_here"
+# Verify it's set
+echo $OPENROUTER_API_KEY
+```
+
+**2. MCP servers not starting**
+```bash
+# Check Docker is running
+docker ps
+
+# Initialize MCP configuration
+./run.sh mcp init
+
+# Check MCP status
+./run.sh mcp status
+```
+
+**3. Context not preserved between prompts**
+- Ensure you're using the same chat session
+- Check that workflow session is active: look for session ID in chat startup
+- Historical context is gathered automatically - no action needed
+
+**4. Files created but remain empty**
+- This was a known issue that has been fixed
+- Upgrade to the latest version
+- Files should now contain proper content after LLM generation
+
+**5. Tasks fail with "read-before-edit violation"**
+- This issue has been resolved with automatic file reading
+- Safety system now auto-handles read requirements
+
+### Debug Mode
+
+Enable detailed logging:
+```bash
+CAI_LOG_LEVEL=DEBUG ./run.sh chat
+```
+
+Enable trace-level logging for maximum detail:
+```bash  
+CAI_LOG_LEVEL=TRACE ./run.sh chat
+```
+
+### Getting Help
+
+- Use `./run.sh --help` for command options
+- Use `@help` in chat mode for special commands  
+- Check logs for detailed error information
+- Ensure Docker is running if using MCP servers
+
+## Notes
 - MCP and Docker are optional; without MCP, tool execution may be limited
 - Validation runs external commands; enable only when appropriate for your environment
+- Context awareness works best within the same workflow session
+- Session files are stored in `~/.config/cai/` or local directory if home is unavailable
