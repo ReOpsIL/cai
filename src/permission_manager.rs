@@ -11,11 +11,11 @@ pub type PermissionId = String;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PermissionManager {
-    /// Session-based permissions (from crush pattern)
+    /// Session-based permissions
     session_permissions: HashMap<SessionId, Vec<Permission>>,
-    /// Tool allowlists (from Claude Code pattern)
+    /// Tool allowlists
     allowed_tools: HashSet<String>,
-    /// Path-based access control (from crush pattern)
+    /// Path-based access control
     trusted_paths: Vec<PathBuf>,
     /// Persistent permission storage
     permission_storage: PermissionStorage,

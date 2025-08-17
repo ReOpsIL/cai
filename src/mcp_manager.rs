@@ -6,6 +6,7 @@ use crate::logger::{log_info, log_warn};
 use crate::mcp_client::McpClientManager;
 use crate::mcp_config::McpConfig;
 use crate::docker_detection::{DockerDetector, initialize_docker_optimization};
+use crate::mcp_path_manager::{initialize_mcp_path_manager, auto_configure_mcp_paths};
 
 /// Global MCP manager for application lifecycle management  
 static GLOBAL_MCP_MANAGER: std::sync::LazyLock<Arc<Mutex<Option<McpClientManager>>>> = 
@@ -13,9 +14,19 @@ static GLOBAL_MCP_MANAGER: std::sync::LazyLock<Arc<Mutex<Option<McpClientManager
 
 /// Initialize the global MCP manager and start configured servers if a config exists
 pub async fn initialize_mcp() -> Result<()> {
-    log_info!("mcp", "🚀 Initializing MCP with Docker optimization...");
+    log_info!("mcp", "🚀 Initializing MCP with Docker optimization and path management...");
     
-    // First, optimize Docker configuration before loading MCP config
+    // Initialize MCP path manager first
+    if let Err(e) = initialize_mcp_path_manager() {
+        log_warn!("mcp", "⚠️ MCP path manager initialization failed: {}", e);
+    }
+    
+    // Auto-configure project-specific path mappings
+    if let Err(e) = auto_configure_mcp_paths().await {
+        log_warn!("mcp", "⚠️ Auto-configuration of MCP paths failed: {}", e);
+    }
+    
+    // Optimize Docker configuration before loading MCP config
     if let Err(e) = initialize_docker_optimization().await {
         log_warn!("mcp", "⚠️ Docker optimization failed (continuing with existing config): {}", e);
     }

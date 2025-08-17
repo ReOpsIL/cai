@@ -6,6 +6,8 @@ use crate::session_manager::SessionManager;
 use crate::task_executor::TaskExecutor;
 use crate::workflow_orchestrator::WorkflowOrchestrator;
 use crate::continuous_executor::ContinuousExecutor;
+use crate::project_recovery;
+use crate::workflow_continuity::{start_global_workflow_session, create_global_checkpoint};
 use anyhow::{Context, Result};
 use colored::*;
 use std::sync::Arc;
@@ -176,6 +178,16 @@ impl ChatInterface {
     pub async fn start_chat(&mut self, manager: &mut PromptManager) -> Result<()> {
         log_info!("chat", "🚀 Starting chat session");
         ops::startup("CHAT", "interactive chat session");
+        
+        // Validate and recover project context before starting
+        if let Err(e) = project_recovery::validate_and_recover_project_context().await {
+            log_warn!("chat", "⚠️ Project context recovery failed: {}", e);
+        }
+
+        // Restore project context from session if available
+        if let Err(e) = self.session_manager.restore_project_context() {
+            log_warn!("chat", "⚠️ Failed to restore project context from session: {}", e);
+        }
         
         // Create a new workflow session if we don't have one and orchestrator is available
         if self.current_workflow_id.is_none() && self.workflow_orchestrator.is_some() {

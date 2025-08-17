@@ -220,9 +220,10 @@ impl OpenRouterClient {
         log_info!("openrouter", "📋 Planning tasks for user request (MCP-aware)");
         log_debug!("openrouter", "📥 User request: {}", user_request);
 
-        // Discover available MCP tools dynamically via MCP Manager
+        // Discover available MCP tools with detailed schemas via MCP Manager
         let mut available_tool_names: Vec<String> = Vec::new();
         let mut available_tool_set: HashSet<String> = HashSet::new();
+        let mut tool_schemas: Vec<String> = Vec::new();
         {
             let global_manager = mcp_manager::get_mcp_manager();
             let guard = global_manager.lock().await;
@@ -230,16 +231,47 @@ impl OpenRouterClient {
                 let servers = manager.list_active_servers().await;
                 log_debug!("openrouter", "📡 Found {} active MCP server(s)", servers.len());
                 for server in servers {
-                    match manager.list_tools(&server).await {
-                        Ok(mut tools) => {
-                            tools.sort();
-                            for t in tools {
-                                available_tool_set.insert(t.clone());
-                                available_tool_names.push(t);
+                    match manager.get_detailed_tools(&server).await {
+                        Ok(tools) => {
+                            log_debug!("openrouter", "📋 Discovered {} tools with schemas from server '{}'", tools.len(), server);
+                            for tool in tools {
+                                if let Some(name) = tool.get("name").and_then(|n| n.as_str()) {
+                                    available_tool_names.push(name.to_string());
+                                    available_tool_set.insert(name.to_string());
+                                    
+                                    // Build tool schema documentation for LLM
+                                    let mut tool_info = format!("• {}", name);
+                                    if let Some(description) = tool.get("description").and_then(|d| d.as_str()) {
+                                        tool_info.push_str(&format!(": {}", description));
+                                    }
+                                    if let Some(input_schema) = tool.get("inputSchema").and_then(|s| s.get("properties")) {
+                                        let params: Vec<String> = input_schema.as_object()
+                                            .map(|obj| obj.keys().map(|k| k.clone()).collect())
+                                            .unwrap_or_default();
+                                        if !params.is_empty() {
+                                            tool_info.push_str(&format!(" (params: {})", params.join(", ")));
+                                        }
+                                    }
+                                    tool_schemas.push(tool_info);
+                                }
                             }
                         }
                         Err(e) => {
-                            log_warn!("openrouter", "⚠️ Failed to list tools from server '{}': {}", server, e);
+                            log_warn!("openrouter", "⚠️ Failed to get detailed tools from server '{}': {}", server, e);
+                            // Fallback to simple tool names
+                            match manager.list_tools(&server).await {
+                                Ok(mut tools) => {
+                                    tools.sort();
+                                    for t in tools {
+                                        available_tool_set.insert(t.clone());
+                                        available_tool_names.push(t.clone());
+                                        tool_schemas.push(format!("• {} (schema unavailable)", t));
+                                    }
+                                }
+                                Err(_) => {
+                                    log_warn!("openrouter", "⚠️ Failed to list tools from server '{}'", server);
+                                }
+                            }
                         }
                     }
                 }
@@ -248,11 +280,11 @@ impl OpenRouterClient {
             }
         }
 
-        // Build the planning instruction with strict JSON schema and the discovered tools
-        let tools_section = if available_tool_names.is_empty() {
+        // Build the planning instruction with detailed tool schemas
+        let tools_section = if tool_schemas.is_empty() {
             "(no tools discovered; if tools are required, still produce tasks but mark mcp_tool as 'UNAVAILABLE')".to_string()
         } else {
-            format!("Available MCP tools (use exact names): {}", available_tool_names.join(", "))
+            format!("Available MCP tools with parameter schemas:\n{}", tool_schemas.join("\n"))
         };
 
         #[derive(Debug, Deserialize)]
@@ -284,6 +316,16 @@ impl OpenRouterClient {
             r#"You are a coding CLI planner. Produce an execution-ready, deeply granular plan as a JSON array of task objects only. Each task must be atomic, action-oriented, and explicitly call a single MCP tool from the discovered set.
 
 IMPORTANT: Consider the previous work and context when planning. Build upon existing projects rather than creating separate ones. Reference existing files, directories, and functionality from previous tasks.
+
+CRITICAL Parameter Requirements:
+- Use ONLY the parameter names listed for each tool in the tool schemas below
+- For edit_file tool, use: {{"path": "file.txt", "old_string": "text to replace", "new_string": "replacement text"}}
+- For write_file tool, use: {{"path": "file.txt", "content": "file content"}}
+- For read_file tool, use: {{"path": "file.txt"}}
+- For create_directory tool, use: {{"path": "dir/name"}}
+- For list_directory tool, use: {{"path": "dir/name"}}
+- Do NOT use: "replacements", "modifications", "search", "replace", or other non-standard parameters
+- Parameters must be simple key-value pairs, not nested objects
 
 Requirements:
 - Use the discovered tools exactly as named.

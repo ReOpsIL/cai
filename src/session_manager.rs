@@ -1,4 +1,5 @@
-use crate::logger::{log_debug, log_info};
+use crate::logger::{log_debug, log_info, log_warn};
+use crate::path_manager::{ProjectContext, get_path_manager};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -8,6 +9,7 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionConfig {
     pub last_workflow_id: Option<String>,
+    pub project_context: Option<ProjectContext>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -17,6 +19,7 @@ impl Default for SessionConfig {
         let now = chrono::Utc::now();
         Self {
             last_workflow_id: None,
+            project_context: None,
             created_at: now,
             updated_at: now,
         }
@@ -134,5 +137,81 @@ impl SessionManager {
     /// Check if there is a stored workflow ID
     pub fn has_last_workflow(&self) -> bool {
         self.config.last_workflow_id.is_some()
+    }
+
+    /// Get the stored project context, if any
+    pub fn get_project_context(&self) -> Option<&ProjectContext> {
+        self.config.project_context.as_ref()
+    }
+
+    /// Set the project context and save to disk
+    pub fn set_project_context(&mut self, project_context: ProjectContext) -> Result<()> {
+        log_info!("session", "🗂️ Setting project context: {} at {}", 
+                 project_context.project_name, project_context.project_root.display());
+        
+        // Also update the global path manager
+        {
+            let mut path_manager = get_path_manager();
+            if let Err(e) = path_manager.set_project_context(
+                project_context.project_root.clone(), 
+                project_context.project_name.clone()
+            ) {
+                log_warn!("session", "⚠️ Failed to update global path manager: {}", e);
+            }
+        }
+
+        self.config.project_context = Some(project_context);
+        self.save_config()
+            .context("Failed to save session config with new project context")?;
+        
+        Ok(())
+    }
+
+    /// Clear the project context and save to disk
+    pub fn clear_project_context(&mut self) -> Result<()> {
+        log_info!("session", "🗑️ Clearing project context");
+        self.config.project_context = None;
+        self.save_config()
+            .context("Failed to save session config after clearing project context")?;
+        
+        Ok(())
+    }
+
+    /// Check if there is a stored project context
+    pub fn has_project_context(&self) -> bool {
+        self.config.project_context.is_some()
+    }
+
+    /// Restore project context to the global path manager
+    pub fn restore_project_context(&self) -> Result<()> {
+        if let Some(ref project_ctx) = self.config.project_context {
+            log_info!("session", "🔄 Restoring project context: {}", project_ctx.project_name);
+            
+            let mut path_manager = get_path_manager();
+            path_manager.set_project_context(
+                project_ctx.project_root.clone(),
+                project_ctx.project_name.clone()
+            ).context("Failed to restore project context to path manager")?;
+            
+            log_info!("session", "✅ Project context restored successfully");
+        } else {
+            log_debug!("session", "No project context to restore");
+        }
+        
+        Ok(())
+    }
+
+    /// Update project context from current path manager state
+    pub fn sync_project_context(&mut self) -> Result<()> {
+        let path_manager = get_path_manager();
+        if let Some(current_ctx) = path_manager.get_project_context() {
+            log_debug!("session", "🔄 Syncing project context from path manager");
+            self.config.project_context = Some(current_ctx.clone());
+            self.save_config()
+                .context("Failed to save session config after syncing project context")?;
+            log_debug!("session", "✅ Project context synced");
+        }
+        
+        Ok(())
     }
 }

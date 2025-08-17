@@ -30,6 +30,7 @@ futures = "0.3"
 # Strategic enhancement dependencies
 toml = "0.8"
 sha2 = "0.10"
+md5 = "0.7"
 glob-match = "0.2"
 rand = "0.8"
 sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "sqlite", "chrono", "uuid"] }

@@ -1,7 +1,6 @@
 //! Enhanced tools for CAI - addressing the 57% failure rate in complex scenarios
 //! 
 //! This module implements sophisticated multi-file project generation, automated testing,
-//! documentation generation, and quality validation based on patterns from crush and gemini-cli.
 
 pub mod project_generator;
 pub mod test_generator;

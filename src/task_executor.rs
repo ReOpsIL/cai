@@ -11,6 +11,8 @@ use crate::logger::{log_debug, log_error, log_info, log_warn, ops};
 use crate::mcp_manager;
 use crate::openrouter_client::{OpenRouterClient, ToolMetadata};
 use crate::validator::ValidatorsRunner;
+use crate::mcp_path_manager::{transform_host_to_container, transform_container_to_host};
+use crate::project_state_manager::{add_global_active_task, complete_global_task, fail_global_task, record_global_file_operation};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TaskStatus {
@@ -208,6 +210,12 @@ impl TaskExecutor {
                     println!("\n{} Executing: {}", "🔄".blue(), task.description.bright_white());
                     log_info!("task_executor", "🔄 Executing task: {}", task.description);
                     
+                    // Record task start in project state
+                    let start_time = std::time::Instant::now();
+                    if let Err(e) = add_global_active_task(task.id.clone()).await {
+                        log_warn!("task_executor", "⚠️ Failed to record task start in project state: {}", e);
+                    }
+                    
                     match self.execute_single_task(&mut task).await {
                         Ok(_) => {
                             task.status = TaskStatus::Done;
@@ -220,12 +228,24 @@ impl TaskExecutor {
                                 println!(); // Add spacing
                             }
                             
+                            // Record task completion in project state
+                            let execution_time = start_time.elapsed().as_millis() as f64;
+                            if let Err(e) = complete_global_task(task.id.clone(), execution_time).await {
+                                log_warn!("task_executor", "⚠️ Failed to record task completion in project state: {}", e);
+                            }
+                            
                             log_info!("task_executor", "✅ Task completed: {}", task.description);
                         }
                         Err(e) => {
                             task.status = TaskStatus::Failed;
                             task.error = Some(e.to_string());
                             println!("{} Failed: {} - {}", "❌".red(), task.description, e);
+                            
+                            // Record task failure in project state
+                            if let Err(err) = fail_global_task(task.id.clone(), e.to_string()).await {
+                                log_warn!("task_executor", "⚠️ Failed to record task failure in project state: {}", err);
+                            }
+                            
                             log_warn!("task_executor", "❌ Task failed: {} - {}", task.description, e);
                         }
                     }
@@ -554,10 +574,38 @@ impl TaskExecutor {
             return Err(anyhow!("Tool execution blocked by safety policy: {}", safety_error));
         }
         
+        // Transform paths for MCP tools that operate on files
+        let mut transformed_args = tool_call.arguments.clone();
+        if self.is_file_operation_tool(&tool_call.tool_name) {
+            if let Err(e) = self.transform_paths_for_mcp(&mut transformed_args).await {
+                log_warn!("task_executor", "⚠️ Path transformation failed, using original paths: {}", e);
+            }
+        }
+
+        // Record file operation in project state for file-based tools
+        if self.is_file_operation_tool(&tool_call.tool_name) {
+            if let Some(path_str) = self.extract_path_from_args(&tool_call.arguments) {
+                let file_path = std::path::PathBuf::from(path_str);
+                let operation_type = format!("mcp_{}", tool_call.tool_name);
+                // We'll record success/failure after execution
+                use crate::project_state_manager::{FileOperation, FileOperationType};
+                let operation = FileOperation {
+                    path: file_path.clone(),
+                    operation_type: FileOperationType::Write, // Default to Write for MCP operations
+                    timestamp: chrono::Utc::now(),
+                    size_bytes: 0, // Unknown for MCP operations
+                    content_hash: "unknown".to_string(),
+                };
+                if let Err(e) = record_global_file_operation(operation).await {
+                    log_warn!("task_executor", "⚠️ Failed to record file operation in project state: {}", e);
+                }
+            }
+        }
+        
         // Check if this is a local tool
         if tool_call.server_name == crate::local_tools::LOCAL_SERVER_NAME {
             log_debug!("task_executor", "🏠 Executing local tool: {}", tool_call.tool_name);
-            return crate::local_tools::execute_local_tool(&tool_call.tool_name, tool_call.arguments.clone())
+            return crate::local_tools::execute_local_tool(&tool_call.tool_name, transformed_args)
                 .map_err(|e| anyhow!("Local tool execution failed: {}", e));
         }
         
@@ -573,7 +621,7 @@ impl TaskExecutor {
                 manager.call_tool(
                     &tool_call.server_name,
                     &tool_call.tool_name,
-                    tool_call.arguments.clone()
+                    transformed_args
                 ).await
             }
         ).await;
@@ -581,12 +629,96 @@ impl TaskExecutor {
         match call_result {
             Ok(result) => {
                 log_debug!("task_executor", "✅ MCP tool call completed successfully");
-                result
+                // Transform any paths in the result back to host paths
+                match result {
+                    Ok(value) => {
+                        let transformed_result = self.transform_result_paths_from_mcp(&value).unwrap_or(value);
+                        Ok(transformed_result)
+                    }
+                    Err(e) => Err(e)
+                }
             }
             Err(_) => {
                 log_warn!("task_executor", "⏰ MCP tool call timed out after 30 seconds");
                 Err(anyhow!("MCP tool call timed out"))
             }
+        }
+    }
+
+    /// Check if a tool operates on file system paths
+    fn is_file_operation_tool(&self, tool_name: &str) -> bool {
+        matches!(tool_name, 
+            "read_file" | "write_file" | "edit_file" | "delete_path" | 
+            "list_directory" | "search_files" | "glob_files" | 
+            "copy_file" | "move_file" | "create_directory"
+        )
+    }
+
+    /// Transform host paths to container paths in MCP tool arguments
+    async fn transform_paths_for_mcp(&self, args: &mut Value) -> Result<()> {
+        if let Value::Object(obj) = args {
+            // Common path parameters in MCP tools
+            let path_keys = ["path", "file_path", "source", "destination", "directory", "target"];
+            
+            for &key in &path_keys {
+                if let Some(path_value) = obj.get(key) {
+                    if let Some(path_str) = path_value.as_str() {
+                        let host_path = std::path::Path::new(path_str);
+                        match transform_host_to_container(host_path) {
+                            Ok(container_path) => {
+                                log_debug!("task_executor", "🔄 Transformed path '{}': {} → {}", 
+                                          key, host_path.display(), container_path.display());
+                                obj.insert(key.to_string(), Value::String(container_path.to_string_lossy().to_string()));
+                            }
+                            Err(e) => {
+                                log_warn!("task_executor", "⚠️ Failed to transform path '{}' ({}): {}", key, path_str, e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Transform container paths back to host paths in MCP tool results
+    fn transform_result_paths_from_mcp(&self, result: &Value) -> Result<Value> {
+        match result {
+            Value::Object(obj) => {
+                let mut transformed_obj = obj.clone();
+                
+                // Transform common result fields that might contain paths
+                let path_keys = ["path", "file_path", "absolute_path", "full_path"];
+                
+                for &key in &path_keys {
+                    if let Some(path_value) = obj.get(key) {
+                        if let Some(path_str) = path_value.as_str() {
+                            let container_path = std::path::Path::new(path_str);
+                            match transform_container_to_host(container_path) {
+                                Ok(host_path) => {
+                                    log_debug!("task_executor", "🔄 Transformed result path '{}': {} → {}", 
+                                              key, container_path.display(), host_path.display());
+                                    transformed_obj.insert(key.to_string(), Value::String(host_path.to_string_lossy().to_string()));
+                                }
+                                Err(e) => {
+                                    log_debug!("task_executor", "⚠️ Could not transform result path '{}' ({}): {}", key, path_str, e);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                Ok(Value::Object(transformed_obj))
+            }
+            Value::Array(arr) => {
+                // Handle arrays of results
+                let mut transformed_arr = Vec::new();
+                for item in arr {
+                    transformed_arr.push(self.transform_result_paths_from_mcp(item).unwrap_or_else(|_| item.clone()));
+                }
+                Ok(Value::Array(transformed_arr))
+            }
+            _ => Ok(result.clone())
         }
     }
 
@@ -609,5 +741,15 @@ impl TaskExecutor {
         }
         
         cleared_count
+    }
+
+    /// Helper function to extract file path from tool arguments
+    fn extract_path_from_args(&self, args: &Value) -> Option<String> {
+        args.get("path")
+            .or_else(|| args.get("file_path"))
+            .or_else(|| args.get("source"))
+            .or_else(|| args.get("destination"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
     }
 }

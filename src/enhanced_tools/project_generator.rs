@@ -1,8 +1,6 @@
 //! Enhanced project generator addressing the 74% project organization failure rate
 //! 
 //! This module implements sophisticated project scaffolding based on:
-//! - crush's multi-file editing patterns
-//! - gemini-cli's project structure analysis
 //! - Real-world project templates and best practices
 
 use super::*;

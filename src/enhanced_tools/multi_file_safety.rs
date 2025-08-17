@@ -1,4 +1,4 @@
-//! Multi-file safety system based on crush's permission patterns
+//! Multi-file safety system
 //! 
 //! This module implements enhanced safety validation for multi-file operations:
 //! - Permission validation for file creation/modification

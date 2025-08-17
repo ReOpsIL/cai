@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use colored::*;
 use crate::logger::{log_debug, log_info, log_warn};
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ToolSafetyLevel {
@@ -14,6 +15,18 @@ pub enum ToolSafetyLevel {
     RequiresApproval,
     /// Dangerous tools that always require explicit confirmation
     Dangerous,
+}
+
+#[derive(Debug, Clone)]
+pub enum OperationType {
+    ReadFile(PathBuf),
+    WriteFile(PathBuf),
+    EditFile(PathBuf),
+    DeleteFile(PathBuf),
+    CreateDirectory(PathBuf),
+    ShellCommand(String),
+    GitOperation(String),
+    NetworkRequest(String),
 }
 
 #[derive(Debug)]
@@ -64,10 +77,14 @@ pub struct ToolSafetyValidator {
     session_permissions: Arc<Mutex<HashMap<String, PermissionLevel>>>,
     /// Global permission settings (persisted)
     global_permissions: Arc<Mutex<HashMap<String, PermissionLevel>>>,
+    /// Workflow-aware permission grants with expiration
+    workflow_permissions: Arc<Mutex<HashMap<String, (PermissionLevel, Instant)>>>,
     /// Whether to prompt for permissions (can be disabled for automation)
     interactive_mode: bool,
     /// Brave mode - disables all security checks (use with caution)
     brave_mode: bool,
+    /// Current workflow context for intelligent permission batching
+    current_workflow: Arc<Mutex<Option<String>>>,
 }
 
 impl Default for ToolSafetyValidator {
@@ -82,8 +99,10 @@ impl ToolSafetyValidator {
             read_files: Arc::new(Mutex::new(HashSet::new())),
             session_permissions: Arc::new(Mutex::new(HashMap::new())),
             global_permissions: Arc::new(Mutex::new(HashMap::new())),
+            workflow_permissions: Arc::new(Mutex::new(HashMap::new())),
             interactive_mode,
             brave_mode,
+            current_workflow: Arc::new(Mutex::new(None)),
         }
     }
     
@@ -202,6 +221,100 @@ impl ToolSafetyValidator {
         Ok(())
     }
     
+    /// Check if an operation is allowed based on current permissions and safety settings
+    pub async fn is_operation_allowed(&self, operation: &OperationType) -> bool {
+        // Bypass all checks in brave mode
+        if self.brave_mode {
+            log_debug!("safety", "BRAVE MODE: Allowing operation: {:?}", operation);
+            return true;
+        }
+
+        match operation {
+            OperationType::ReadFile(path) => {
+                // Reading is generally safe, but validate path
+                self.validate_path(path).is_ok()
+            }
+            OperationType::WriteFile(path) | OperationType::EditFile(path) => {
+                // File operations require permission
+                if let Err(e) = self.validate_path(path) {
+                    log_warn!("safety", "Path validation failed: {}", e);
+                    return false;
+                }
+                
+                // Check workflow permissions
+                let operation_name = match operation {
+                    OperationType::WriteFile(_) => "write_file",
+                    OperationType::EditFile(_) => "edit_file",
+                    _ => unreachable!(),
+                };
+                
+                self.has_workflow_permission(operation_name)
+            }
+            OperationType::DeleteFile(path) => {
+                // Deletion is dangerous, always require explicit permission
+                if let Err(e) = self.validate_path(path) {
+                    log_warn!("safety", "Path validation failed: {}", e);
+                    return false;
+                }
+                false // Always require explicit approval for deletion
+            }
+            OperationType::CreateDirectory(path) => {
+                // Directory creation is generally safe if path is valid
+                self.validate_path(path).is_ok()
+            }
+            OperationType::ShellCommand(command) => {
+                // Shell commands require workflow permission
+                self.has_workflow_permission("shell_command") || 
+                self.is_safe_command(command)
+            }
+            OperationType::GitOperation(_) => {
+                // Git operations are generally safe if in workflow
+                self.has_workflow_permission("git_operation")
+            }
+            OperationType::NetworkRequest(_) => {
+                // Network requests require explicit permission
+                false
+            }
+        }
+    }
+
+    /// Check if a command is considered safe for automatic execution
+    fn is_safe_command(&self, command: &str) -> bool {
+        let safe_commands = [
+            "ls", "pwd", "echo", "cat", "head", "tail", "grep", "find", "wc",
+            "git status", "git log", "git diff", "git show",
+            "npm list", "cargo check", "cargo --version", "node --version"
+        ];
+        
+        let command_root = command.trim()
+            .split_whitespace()
+            .next()
+            .unwrap_or("");
+            
+        safe_commands.contains(&command_root) || 
+        safe_commands.iter().any(|safe_cmd| command.starts_with(safe_cmd))
+    }
+
+    /// Check if current workflow has permission for an operation
+    fn has_workflow_permission(&self, operation: &str) -> bool {
+        if let Ok(workflow_permissions) = self.workflow_permissions.lock() {
+            if let Some((permission_level, expiry)) = workflow_permissions.get(operation) {
+                if Instant::now() < *expiry {
+                    match permission_level {
+                        PermissionLevel::AllowOnce | PermissionLevel::AllowSession | PermissionLevel::AlwaysAllow => true,
+                        _ => false,
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
     /// Check if a tool execution should be allowed based on safety level and permissions
     pub async fn check_tool_permission(&self, tool_name: &str, args: &Value) -> Result<(), SafetyError> {
         // Bypass all permission checks in brave mode
@@ -241,7 +354,7 @@ impl ToolSafetyValidator {
             },
             
             ToolSafetyLevel::RequiresApproval => {
-                self.check_approval_permission(tool_name, "moderate risk").await
+                self.check_approval_permission_enhanced(tool_name, "moderate risk").await
             },
             
             ToolSafetyLevel::Dangerous => {
@@ -291,7 +404,7 @@ impl ToolSafetyValidator {
         
         // Interactive permission prompt
         if self.interactive_mode {
-            self.prompt_user_permission(tool_name, risk_level).await
+            self.prompt_user_permission_enhanced(tool_name, risk_level).await
         } else {
             log_warn!("safety", "Tool '{}' requires approval but running in non-interactive mode", tool_name);
             Err(SafetyError::PermissionDenied { 
@@ -472,6 +585,177 @@ impl ToolSafetyValidator {
             session_permissions: session_perms_count,
             global_permissions: global_perms_count,
         }
+    }
+
+    /// Set the current workflow context for intelligent permission batching
+    pub fn set_workflow_context(&self, workflow_id: String) {
+        let mut current_workflow = self.current_workflow.lock().unwrap();
+        *current_workflow = Some(workflow_id.clone());
+        log_info!("safety", "🔄 Set workflow context: {}", workflow_id);
+    }
+
+    /// Clear the current workflow context
+    pub fn clear_workflow_context(&self) {
+        let mut current_workflow = self.current_workflow.lock().unwrap();
+        *current_workflow = None;
+        log_info!("safety", "🗑️ Cleared workflow context");
+    }
+
+    /// Grant workflow-specific permissions for multi-stage operations
+    pub fn grant_workflow_permissions(&self, tools: &[&str], duration: Duration) {
+        let mut workflow_perms = self.workflow_permissions.lock().unwrap();
+        let expiry = Instant::now() + duration;
+        
+        for tool in tools {
+            workflow_perms.insert(tool.to_string(), (PermissionLevel::AllowSession, expiry));
+            log_info!("safety", "✅ Granted workflow permission for '{}' (expires in {:?})", tool, duration);
+        }
+    }
+
+    /// Check if a tool has valid workflow permissions
+    fn check_workflow_permission(&self, tool_name: &str) -> Option<PermissionLevel> {
+        let mut workflow_perms = self.workflow_permissions.lock().unwrap();
+        
+        if let Some((perm_level, expiry)) = workflow_perms.get(tool_name) {
+            if Instant::now() < *expiry {
+                log_debug!("safety", "Tool '{}' has valid workflow permission", tool_name);
+                return Some(perm_level.clone());
+            } else {
+                // Permission expired, remove it
+                workflow_perms.remove(tool_name);
+                log_debug!("safety", "Workflow permission for '{}' expired and removed", tool_name);
+            }
+        }
+        
+        None
+    }
+
+    /// Batch approve common development tools for the current workflow
+    pub fn approve_development_workflow(&self, duration_minutes: u64) {
+        let development_tools = [
+            "create_directory",
+            "write_file", 
+            "edit_file",
+            "read_file",
+            "list_directory",
+            "copy_file",
+            "move_file"
+        ];
+        
+        let duration = Duration::from_secs(duration_minutes * 60);
+        self.grant_workflow_permissions(&development_tools, duration);
+        
+        log_info!("safety", "🚀 Approved development workflow tools for {} minutes", duration_minutes);
+    }
+
+    /// Enhanced permission checking that includes workflow-aware logic
+    async fn check_approval_permission_enhanced(&self, tool_name: &str, risk_level: &str) -> Result<(), SafetyError> {
+        // Check workflow permissions first (time-limited auto-approval)
+        if let Some(perm_level) = self.check_workflow_permission(tool_name) {
+            match perm_level {
+                PermissionLevel::Denied => {
+                    return Err(SafetyError::PermissionDenied { 
+                        tool: tool_name.to_string() 
+                    });
+                },
+                PermissionLevel::AllowOnce | PermissionLevel::AllowSession | PermissionLevel::AlwaysAllow => {
+                    log_debug!("safety", "Tool '{}' allowed by workflow permission", tool_name);
+                    return Ok(());
+                },
+            }
+        }
+
+        // Fall back to regular permission checking
+        self.check_approval_permission(tool_name, risk_level).await
+    }
+
+    /// Enhanced permission prompt with workflow batching options
+    async fn prompt_user_permission_enhanced(&self, tool_name: &str, risk_level: &str) -> Result<(), SafetyError> {
+        println!("\n{} {} {}", "🔐".yellow(), "Permission Required".bold(), "🔐".yellow());
+        println!("Tool: {} ({})", tool_name.cyan().bold(), risk_level.yellow());
+        println!("This tool requires your permission to execute.");
+        
+        // Check if we're in a workflow context
+        let workflow_context = {
+            let current_workflow = self.current_workflow.lock().unwrap();
+            current_workflow.clone()
+        };
+        
+        if workflow_context.is_some() {
+            println!();
+            println!("🔄 You're in a multi-stage workflow. Consider batch approval:");
+            println!("  {} - Approve development tools for 30 minutes", "w".purple().bold());
+        }
+        
+        println!();
+        println!("Options:");
+        println!("  {} - Allow this execution only", "o".green().bold());
+        println!("  {} - Allow for this session", "s".blue().bold());
+        println!("  {} - Always allow (remember choice)", "a".purple().bold());
+        if workflow_context.is_some() {
+            println!("  {} - Approve workflow tools (30 min)", "w".purple().bold());
+        }
+        println!("  {} - Deny this execution", "d".red().bold());
+        println!();
+        
+        if workflow_context.is_some() {
+            print!("Your choice (o/s/a/w/d): ");
+        } else {
+            print!("Your choice (o/s/a/d): ");
+        }
+        
+        use std::io::{self, Write};
+        io::stdout().flush().unwrap();
+        
+        let mut input = String::new();
+        if io::stdin().read_line(&mut input).is_err() {
+            return Err(SafetyError::PermissionDenied { 
+                tool: tool_name.to_string() 
+            });
+        }
+        
+        let choice = input.trim().to_lowercase();
+        match choice.as_str() {
+            "o" => {
+                println!("{} Permission granted", "✅".green());
+                Ok(())
+            },
+            "s" => {
+                println!("{} Permission granted and remembered", "✅".green());
+                self.set_session_permission(tool_name, PermissionLevel::AllowSession);
+                Ok(())
+            },
+            "a" => {
+                println!("{} Permission granted and remembered", "✅".green());
+                self.set_global_permission(tool_name, PermissionLevel::AlwaysAllow);
+                Ok(())
+            },
+            "w" if workflow_context.is_some() => {
+                println!("{} Workflow tools approved for 30 minutes", "🚀".green());
+                self.approve_development_workflow(30);
+                Ok(())
+            },
+            "d" | _ => {
+                println!("{} Permission denied", "❌".red());
+                Err(SafetyError::PermissionDenied { 
+                    tool: tool_name.to_string() 
+                })
+            }
+        }
+    }
+
+    /// Set session permission for a tool
+    fn set_session_permission(&self, tool_name: &str, permission: PermissionLevel) {
+        let mut session_perms = self.session_permissions.lock().unwrap();
+        log_debug!("safety", "Set session permission for '{}': {:?}", tool_name, permission);
+        session_perms.insert(tool_name.to_string(), permission);
+    }
+
+    /// Set global permission for a tool
+    fn set_global_permission(&self, tool_name: &str, permission: PermissionLevel) {
+        let mut global_perms = self.global_permissions.lock().unwrap();
+        log_debug!("safety", "Set global permission for '{}': {:?}", tool_name, permission);
+        global_perms.insert(tool_name.to_string(), permission);
     }
 }
 

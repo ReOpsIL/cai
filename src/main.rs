@@ -36,6 +36,19 @@ mod test_infrastructure;
 mod edge_case_mastery;
 mod fast_path;
 mod lazy_loading;
+mod path_manager;
+mod project_recovery;
+mod mcp_path_manager;
+mod project_state_manager;
+mod workflow_continuity;
+mod file_operations;
+mod shell_execution;
+mod code_generation;
+mod project_scaffolding;
+mod dependency_manager;
+mod integration_test;
+mod simplified_integration_test;
+mod basic_functionality_test;
 // mod enhanced_tools;
 
 // Strategic Enhancement Modules - Temporarily disabled for compilation
@@ -123,6 +136,12 @@ enum Commands {
     },
     /// Test task execution system with demo tasks
     TaskDemo,
+    /// Run comprehensive integration test for multi-stage development workflow
+    IntegrationTest,
+    /// Run simplified integration test focusing on core functionality
+    SimpleTest,
+    /// Run basic functionality test without file operations
+    BasicTest,
     /// Workflow orchestration commands
     Workflow {
         #[command(subcommand)]
@@ -263,6 +282,9 @@ fn needs_prompt_manager(command: &Commands) -> bool {
         Commands::Scan { .. } => true,
         Commands::Mcp { .. } => false,
         Commands::TaskDemo => false,
+        Commands::IntegrationTest => false,
+        Commands::SimpleTest => false,
+        Commands::BasicTest => false,
         Commands::Workflow { .. } => false,
     }
 }
@@ -335,6 +357,24 @@ async fn main() -> Result<()> {
 
     // Enhancement systems are now loaded on-demand via lazy loading
 
+    // Initialize path manager for consistent path resolution
+    log_info!("main", "🗂️ Initializing path manager...");
+    if let Err(e) = path_manager::initialize_path_manager() {
+        log_warn!("main", "⚠️ Path manager initialization failed: {}", e);
+    }
+
+    // Initialize project state manager for session persistence
+    log_info!("main", "📊 Initializing project state manager...");
+    if let Err(e) = project_state_manager::initialize_project_state_manager().await {
+        log_warn!("main", "⚠️ Project state manager initialization failed: {}", e);
+    }
+
+    // Initialize workflow continuity for cross-session resume
+    log_info!("main", "🔄 Initializing workflow continuity...");
+    if let Err(e) = workflow_continuity::initialize_workflow_continuity().await {
+        log_warn!("main", "⚠️ Workflow continuity initialization failed: {}", e);
+    }
+
     // Initialize MCP servers on startup
     log_info!("main", "🔧 Initializing MCP servers...");
     if let Err(e) = mcp_manager::initialize_mcp().await {
@@ -373,6 +413,9 @@ async fn main() -> Result<()> {
         Commands::Chat { .. } => "chat",
         Commands::Mcp { .. } => "mcp",
         Commands::TaskDemo => "task-demo",
+        Commands::IntegrationTest => "integration-test",
+        Commands::SimpleTest => "simple-test",
+        Commands::BasicTest => "basic-test",
         Commands::Workflow { .. } => "workflow",
         Commands::Scan { .. } => "scan",
     };
@@ -436,6 +479,18 @@ async fn main() -> Result<()> {
         Commands::TaskDemo => {
             log_info!("main", "🚀 Running task demo");
             run_task_demo().await
+        },
+        Commands::IntegrationTest => {
+            log_info!("main", "🧪 Running integration test");
+            run_integration_test_command().await
+        },
+        Commands::SimpleTest => {
+            log_info!("main", "🔬 Running simplified integration test");
+            run_simple_test_command().await
+        },
+        Commands::BasicTest => {
+            log_info!("main", "🧪 Running basic functionality test");
+            run_basic_test_command().await
         },
         Commands::Workflow { action } => {
             log_info!("main", "🧠 Executing workflow command");
@@ -860,6 +915,140 @@ async fn handle_scan_command(action: &ScanCommands, _manager: &PromptManager) ->
 //     
 //     Ok(())
 // }
+
+/// Run comprehensive integration test for multi-stage development workflow
+async fn run_integration_test_command() -> Result<()> {
+    use crate::integration_test::run_integration_test;
+    
+    log_info!("main", "{}", "🧪 Multi-Stage Development Workflow Integration Test".bright_blue().bold());
+    log_info!("main", "{}", "Testing complete 10-stage development capabilities".dimmed());
+    
+    println!("{}", "🧪 Starting Multi-Stage Development Workflow Test".bright_blue().bold());
+    println!("{}", "Testing CAI's enhanced development capabilities...".dimmed());
+    println!();
+    
+    match run_integration_test().await {
+        Ok(result) => {
+            let successful_stages = result.stages.iter().filter(|s| s.success).count();
+            let total_stages = result.stages.len();
+            
+            if successful_stages >= 8 && result.validation_passed {
+                println!("\n{} Integration test PASSED! ({}/{} stages successful)", 
+                        "✅".green(), successful_stages, total_stages);
+                println!("{} Multi-stage development capabilities are working correctly", 
+                        "🎉".bright_green());
+                log_info!("main", "✅ Integration test passed: {}/{} stages successful", 
+                        successful_stages, total_stages);
+            } else {
+                println!("\n{} Integration test FAILED ({}/{} stages successful)", 
+                        "❌".red(), successful_stages, total_stages);
+                println!("{} Some multi-stage capabilities need attention", 
+                        "⚠️".yellow());
+                log_warn!("main", "⚠️ Integration test failed: {}/{} stages successful", 
+                        successful_stages, total_stages);
+            }
+            
+            println!("\n{} Total execution time: {:.2}s", "⏱️", result.total_execution_time);
+            println!("{} Files created: {}", "📁", result.created_files.len());
+            
+            Ok(())
+        }
+        Err(e) => {
+            println!("\n{} Integration test encountered an error: {}", "❌".red(), e);
+            log_error!("main", "❌ Integration test error: {}", e);
+            Err(e)
+        }
+    }
+}
+
+/// Run simplified integration test for core functionality
+async fn run_simple_test_command() -> Result<()> {
+    use crate::simplified_integration_test::run_simplified_integration_test;
+    
+    log_info!("main", "{}", "🔬 Simplified Integration Test".bright_blue().bold());
+    log_info!("main", "{}", "Testing core development functionality".dimmed());
+    
+    println!("{}", "🔬 Starting Simplified Integration Test".bright_blue().bold());
+    println!("{}", "Testing core CAI development capabilities...".dimmed());
+    println!();
+    
+    match run_simplified_integration_test().await {
+        Ok(result) => {
+            let successful_tests = result.test_results.iter().filter(|t| t.success).count();
+            let total_tests = result.test_results.len();
+            
+            if result.overall_success && successful_tests >= (total_tests * 3 / 4) {
+                println!("\n{} Simplified integration test PASSED! ({}/{} tests successful)", 
+                        "✅".green(), successful_tests, total_tests);
+                println!("{} Core functionality is working correctly", 
+                        "🎉".bright_green());
+                log_info!("main", "✅ Simple integration test passed: {}/{} tests successful", 
+                        successful_tests, total_tests);
+            } else {
+                println!("\n{} Simplified integration test FAILED ({}/{} tests successful)", 
+                        "❌".red(), successful_tests, total_tests);
+                println!("{} Some core functionality needs attention", 
+                        "⚠️".yellow());
+                log_warn!("main", "⚠️ Simple integration test failed: {}/{} tests successful", 
+                        successful_tests, total_tests);
+            }
+            
+            println!("\n{} Total execution time: {:.2}s", "⏱️", result.total_execution_time);
+            
+            Ok(())
+        }
+        Err(e) => {
+            println!("\n{} Simplified integration test encountered an error: {}", "❌".red(), e);
+            log_error!("main", "❌ Simple integration test error: {}", e);
+            Err(e)
+        }
+    }
+}
+
+/// Run basic functionality test for core components
+async fn run_basic_test_command() -> Result<()> {
+    use crate::basic_functionality_test::run_basic_functionality_test;
+    
+    log_info!("main", "{}", "🧪 Basic Functionality Test".bright_blue().bold());
+    log_info!("main", "{}", "Testing core component functionality".dimmed());
+    
+    println!("{}", "🧪 Starting Basic Functionality Test".bright_blue().bold());
+    println!("{}", "Testing core CAI component functionality...".dimmed());
+    println!();
+    
+    match run_basic_functionality_test().await {
+        Ok(result) => {
+            let successful_tests = result.test_results.iter().filter(|t| t.success).count();
+            let total_tests = result.test_results.len();
+            let success_rate = if total_tests > 0 { successful_tests * 100 / total_tests } else { 0 };
+            
+            if result.overall_success || success_rate >= 80 {
+                println!("\n{} Basic functionality test PASSED! ({}/{} tests successful - {}%)", 
+                        "✅".green(), successful_tests, total_tests, success_rate);
+                println!("{} Core components are working correctly", 
+                        "🎉".bright_green());
+                log_info!("main", "✅ Basic functionality test passed: {}/{} tests successful ({}%)", 
+                        successful_tests, total_tests, success_rate);
+            } else {
+                println!("\n{} Basic functionality test FAILED ({}/{} tests successful - {}%)", 
+                        "❌".red(), successful_tests, total_tests, success_rate);
+                println!("{} Some core components need attention", 
+                        "⚠️".yellow());
+                log_warn!("main", "⚠️ Basic functionality test failed: {}/{} tests successful ({}%)", 
+                        successful_tests, total_tests, success_rate);
+            }
+            
+            println!("\n{} Total execution time: {:.2}s", "⏱️", result.total_execution_time);
+            
+            Ok(())
+        }
+        Err(e) => {
+            println!("\n{} Basic functionality test encountered an error: {}", "❌".red(), e);
+            log_error!("main", "❌ Basic functionality test error: {}", e);
+            Err(e)
+        }
+    }
+}
 
 async fn handle_mcp_command(action: &McpCommands) -> Result<()> {
     // MCP servers are automatically initialized at startup

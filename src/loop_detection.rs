@@ -8,7 +8,7 @@ use tokio::sync::Mutex;
 use crate::logger::{log_debug, log_error, log_info, log_warn};
 use crate::openrouter_client::{ChatMessage, OpenRouterClient};
 
-/// Loop Detection Service inspired by gemini-cli
+/// Loop Detection Service
 /// Detects when AI gets stuck in unproductive repetitive patterns
 #[derive(Debug)]
 pub struct LoopDetectionService {

@@ -11,11 +11,11 @@ use uuid::Uuid;
 /// File safety manager implementing read-before-edit validation and atomic operations
 #[derive(Debug)]
 pub struct FileSafetyManager {
-    /// Track file modification times (from crush pattern)
+    /// Track file modification times
     file_states: HashMap<PathBuf, FileState>,
     /// Lock management for concurrent access
     file_locks: HashMap<PathBuf, Arc<Mutex<()>>>,
-    /// Read-before-edit validation (from Claude Code pattern)
+    /// Read-before-edit validation
     read_history: HashMap<PathBuf, ReadRecord>,
     /// Temporary directory for atomic operations
     temp_dir: PathBuf,
