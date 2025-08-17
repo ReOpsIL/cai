@@ -102,7 +102,7 @@ macro_rules! log_info {
 #[macro_export]
 macro_rules! log_warn {
     ($module:expr, $($arg:tt)*) => {
-        $crate::logger::log_internal($crate::logger::LogLevel::Warn, $module, &format!($($arg)*));
+        $crate::logger::log_internal($crate::logger::LogLevel::Warn, $module, &format!($($arg)*))
     };
 }
 

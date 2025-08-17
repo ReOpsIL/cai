@@ -1,0 +1,161 @@
+# CAI Strategic Enhancement Configuration Template
+# This file demonstrates the hierarchical configuration structure for all strategic modules
+# Copy sections to your configuration files as needed:
+# - Global: ~/.config/cai/config.toml
+# - User Data: ~/.local/share/cai/config.toml  
+# - Project: ./cai.toml
+# - Local: ./.cai.toml
+
+[strategic]
+# Enable the strategic enhancement system
+enabled = true
+
+[strategic.modules]
+# Individual module enable/disable flags
+permissions = true
+file_safety = true
+atomic_operations = true
+error_recovery = true
+natural_language = true
+progress_tracking = true
+git_integration = true
+hooks = true
+context_management = true
+error_prevention = true
+
+[strategic.settings]
+# Integration-specific settings
+max_concurrent = 8
+timeout = 30
+cross_module_events = true
+init_order = [
+    "config",
+    "permissions", 
+    "file_safety",
+    "hooks",
+    "error_recovery",
+    "progress_tracking",
+    "natural_language",
+    "context_management",
+    "error_prevention",
+    "atomic_operations",
+    "git_integration"
+]
+
+# Core application settings
+[core]
+session_timeout = 3600  # 1 hour in seconds
+max_concurrent_operations = 4
+prompts_directory = "./prompts"
+auto_save_session = true
+# session_state_directory = "~/.local/state/cai"
+
+# LLM provider configuration
+[llm]
+default_provider = "openrouter"
+request_timeout = 120
+max_retries = 3
+
+[llm.providers.openrouter]
+base_url = "https://openrouter.ai/api/v1"
+api_key_env = "OPENROUTER_API_KEY"
+
+[llm.context_management]
+max_tokens = 100000
+compression_threshold = 0.8
+preservation_strategy = "sliding_window"
+
+# MCP server configuration
+[mcp]
+global_timeout = 30
+auto_start = ["filesystem"]
+
+[mcp.servers.filesystem]
+command = "docker"
+args = ["run", "-i", "--rm", "-v", "/:/project", "mcp/filesystem", "/project"]
+auto_start = true
+timeout = 60
+
+[mcp.retry_config]
+max_attempts = 3
+base_delay = 1000
+max_delay = 10000
+backoff_multiplier = 2.0
+
+# Logging configuration  
+[logging]
+level = "info"
+format = "compact"
+# file = "./cai.log"
+rotate = false
+max_size = 100  # MB
+max_files = 5
+
+# UI/UX configuration
+[ui]
+color_scheme = "auto"  # auto, light, dark
+show_progress = true
+animations = true
+
+[ui.status_line]
+show_task = true
+show_session = true
+show_resources = false
+update_interval = 1000
+
+[ui.prompts]
+max_length = 500
+show_metadata = true
+syntax_highlighting = true
+
+# Workflow configuration
+[workflow]
+default_timeout = 3600
+max_depth = 10
+auto_save = true
+# templates_directory = "./workflow_templates"
+
+[workflow.parallel_execution]
+enabled = true
+max_parallel_tasks = 4
+scheduling_strategy = "priority"
+
+# Security configuration
+[security]
+
+[security.permissions]
+default_mode = "moderate"  # strict, moderate, permissive
+auto_approve_trusted = true
+session_timeout = 1800
+trusted_paths = ["./", "./src/", "./docs/"]
+
+[security.file_access]
+allowed_directories = ["./", "./src/", "./docs/", "./tests/"]
+blocked_directories = ["/etc/", "/var/", "/sys/"]
+max_file_size = 100  # MB
+require_read_before_edit = true
+
+[security.network_access]
+enabled = true
+allowed_domains = ["github.com", "openrouter.ai", "anthropic.com"]
+# blocked_domains = []
+
+# Performance configuration
+[performance]
+thread_pool_size = 8
+
+[performance.memory_limits]
+max_heap_size = 2048  # MB
+warning_threshold = 1536  # MB
+
+[performance.cache]
+enabled = true
+# directory = "./cache"
+max_size = 512  # MB
+ttl = 3600  # seconds
+cleanup_interval = 1800  # seconds
+
+[performance.optimization]
+enabled = true
+enable_list = ["context_compression", "parallel_execution", "caching"]
+# disable_list = []

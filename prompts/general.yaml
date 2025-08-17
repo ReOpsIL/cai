@@ -1,0 +1,32 @@
+name: "General"
+description: "General purpose prompts for planning, documentation, and testing"
+subjects:
+  - name: "planning"
+    prompts:
+      - title: "Project Planning"
+        content: "Create a comprehensive project plan including timeline, milestones, and resource requirements."
+        tags: ["planning", "project"]
+        
+      - title: "Task Breakdown"
+        content: "Break down a complex task into smaller, manageable subtasks with clear dependencies."
+        tags: ["planning", "tasks"]
+
+  - name: "documentation"
+    prompts:
+      - title: "Technical Documentation"
+        content: "Create clear and comprehensive technical documentation for the given system or feature."
+        tags: ["documentation", "technical"]
+        
+      - title: "API Documentation"
+        content: "Generate detailed API documentation including endpoints, parameters, and examples."
+        tags: ["documentation", "api"]
+
+  - name: "testing"
+    prompts:
+      - title: "Test Case Generation"
+        content: "Generate comprehensive test cases covering edge cases, error conditions, and normal flow."
+        tags: ["testing", "quality"]
+        
+      - title: "Test Strategy"
+        content: "Develop a testing strategy including unit, integration, and end-to-end testing approaches."
+        tags: ["testing", "strategy"]

@@ -5,21 +5,27 @@ use crate::prompt_loader::{Prompt, PromptManager};
 use crate::session_manager::SessionManager;
 use crate::task_executor::TaskExecutor;
 use crate::workflow_orchestrator::WorkflowOrchestrator;
+use crate::continuous_executor::ContinuousExecutor;
 use anyhow::{Context, Result};
 use colored::*;
+use std::sync::Arc;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::time::Instant;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum OperationMode { Suggest, AutoEdit, FullAuto }
+enum OperationMode { 
+    /// Ask for user confirmation before executing tasks
+    Suggest, 
+    /// Automatically execute tasks without confirmation
+    Auto 
+}
 
 impl OperationMode {
     fn from_env() -> Self {
-        match std::env::var("CAI_MODE").unwrap_or_else(|_| "auto-edit".to_string()).to_lowercase().as_str() {
+        match std::env::var("CAI_MODE").unwrap_or_else(|_| "auto".to_string()).to_lowercase().as_str() {
             "suggest" => OperationMode::Suggest,
-            "full-auto" | "full" => OperationMode::FullAuto,
-            _ => OperationMode::AutoEdit,
+            _ => OperationMode::Auto, // "auto", "auto-edit", "full-auto", "full" all map to Auto
         }
     }
 }
@@ -34,6 +40,7 @@ pub struct ChatInterface {
     current_workflow_id: Option<String>,
     editor: Editor<(), rustyline::history::DefaultHistory>,
     operation_mode: OperationMode,
+    continuous_executor: Option<ContinuousExecutor>,
 }
 
 impl ChatInterface {
@@ -137,6 +144,7 @@ impl ChatInterface {
             current_workflow_id,
             editor,
             operation_mode: OperationMode::from_env(),
+            continuous_executor: None, // Will be initialized when continuous mode is requested
         })
     }
 
@@ -306,7 +314,7 @@ impl ChatInterface {
             // Also support legacy commands without @ for backwards compatibility
             match input_lower.as_str() {
                 "status" | "queue" | "execute" | "run" | "clear" | "clean" | "plan" | 
-                "improve" | "feedback" | "workflow" | "help" => &input_lower,
+                "improve" | "feedback" | "workflow" | "help" | "continuous" | "start" | "stop" => &input_lower,
                 _ => return Ok(false) // Not a special command
             }
         };
@@ -350,6 +358,14 @@ impl ChatInterface {
                 self.handle_workflow_command().await?;
                 Ok(true)
             }
+            "continuous" | "start" => {
+                self.start_continuous_mode().await?;
+                Ok(true)
+            }
+            "stop" => {
+                self.stop_continuous_mode().await?;
+                Ok(true)
+            }
             "help" => {
                 self.show_help();
                 Ok(true)
@@ -367,6 +383,8 @@ impl ChatInterface {
         println!("  {} - Iteratively improve a solution", "@improve".cyan());
         println!("  {} - Show feedback loop statistics", "@feedback".cyan());
         println!("  {} - Workflow orchestration menu", "@workflow".cyan());
+        println!("  {} - Start continuous execution mode", "@continuous".cyan());
+        println!("  {} - Stop continuous execution", "@stop".cyan());
         println!("  {} - Show this help message", "@help".cyan());
         println!("  {} - Exit chat mode", "quit".cyan());
         
@@ -384,8 +402,8 @@ impl ChatInterface {
         println!();
     }
 
-    pub async fn process_user_input(&mut self, user_input: &str, manager: &mut PromptManager) -> Result<()> {
-        let process_start = Instant::now();
+    pub async fn process_user_input(&mut self, user_input: &str, _manager: &mut PromptManager) -> Result<()> {
+        let _process_start = Instant::now();
         log_debug!("chat", "🔄 Starting task planning for user input");
         println!("{} Planning tasks...", "🔄".yellow());
 
@@ -397,7 +415,12 @@ impl ChatInterface {
 
         // Get task plan from LLM with enhanced context
         let planning_start = Instant::now();
-        let tasks = match self.openrouter_client.plan_tasks(user_input).await {
+        let context_for_planning = if historical_context.trim().is_empty() {
+            None
+        } else {
+            Some(historical_context.as_str())
+        };
+        let tasks = match self.openrouter_client.plan_tasks(user_input, context_for_planning).await {
             Ok(tasks) => {
                 log_info!("chat", "🧠 LLM generated {} tasks", tasks.len());
                 tasks
@@ -454,7 +477,7 @@ impl ChatInterface {
                     false
                 }
             }
-            OperationMode::AutoEdit | OperationMode::FullAuto => {
+            OperationMode::Auto => {
                 println!("{} Executing tasks...", "⚡".yellow());
                 self.execute_tasks_and_report().await
             }
@@ -470,55 +493,55 @@ impl ChatInterface {
             Some(quality_score),
         ).await;
 
-        // Process tasks for prompt management (existing functionality)
-        let mut new_prompts_added = 0;
-        let mut prompts_updated = 0;
-        let mut prompts_scored = 0;
-
-        log_debug!("chat", "🔄 Processing {} tasks for prompt management", tasks.len());
-        for (i, task) in tasks.iter().enumerate() {
-            log_debug!("chat", "⚙️ Processing task {}/{} for prompts: {}", i + 1, tasks.len(), task);
-            let task_start = Instant::now();
-            
-            match self.process_task(&task, manager).await? {
-                TaskProcessingResult::NewPromptAdded => {
-                    new_prompts_added += 1;
-                    ops::chat_operation("ADD_PROMPT", task);
-                }
-                TaskProcessingResult::PromptUpdated => {
-                    prompts_updated += 1;
-                    ops::chat_operation("UPDATE_PROMPT", task);
-                }
-                TaskProcessingResult::PromptScored => {
-                    prompts_scored += 1;
-                    ops::chat_operation("SCORE_PROMPT", task);
-                }
-            }
-            
-            let task_duration = task_start.elapsed().as_millis() as u64;
-            ops::performance("TASK_PROCESSING", task_duration);
-        }
-
-        // Summary
-        let total_duration = process_start.elapsed().as_millis() as u64;
-        ops::performance("USER_INPUT_PROCESSING", total_duration);
-        
-        log_info!("chat", "✅ Task processing complete: {} added, {} updated, {} scored", 
-            new_prompts_added, prompts_updated, prompts_scored);
-        
-        if new_prompts_added > 0 || prompts_updated > 0 || prompts_scored > 0 {
-            println!("{} Prompt management complete:", "✅".green());
-            if new_prompts_added > 0 {
-                println!("  📝 {} new prompt(s) added", new_prompts_added);
-            }
-            if prompts_updated > 0 {
-                println!("  🔄 {} prompt(s) updated", prompts_updated);
-            }
-            if prompts_scored > 0 {
-                println!("  ⭐ {} prompt(s) scored", prompts_scored);
-            }
-            println!();
-        }
+        // // Process tasks for prompt management (existing functionality)
+        // let mut new_prompts_added = 0;
+        // let mut prompts_updated = 0;
+        // let mut prompts_scored = 0;
+        //
+        // log_debug!("chat", "🔄 Processing {} tasks for prompt management", tasks.len());
+        // for (i, task) in tasks.iter().enumerate() {
+        //     log_debug!("chat", "⚙️ Processing task {}/{} for prompts: {}", i + 1, tasks.len(), task);
+        //     let task_start = Instant::now();
+        //
+        //     match self.process_task(&task, manager).await? {
+        //         TaskProcessingResult::NewPromptAdded => {
+        //             new_prompts_added += 1;
+        //             ops::chat_operation("ADD_PROMPT", task);
+        //         }
+        //         TaskProcessingResult::PromptUpdated => {
+        //             prompts_updated += 1;
+        //             ops::chat_operation("UPDATE_PROMPT", task);
+        //         }
+        //         TaskProcessingResult::PromptScored => {
+        //             prompts_scored += 1;
+        //             ops::chat_operation("SCORE_PROMPT", task);
+        //         }
+        //     }
+        //
+        //     let task_duration = task_start.elapsed().as_millis() as u64;
+        //     ops::performance("TASK_PROCESSING", task_duration);
+        // }
+        //
+        // // Summary
+        // let total_duration = process_start.elapsed().as_millis() as u64;
+        // ops::performance("USER_INPUT_PROCESSING", total_duration);
+        //
+        // log_info!("chat", "✅ Task processing complete: {} added, {} updated, {} scored",
+        //     new_prompts_added, prompts_updated, prompts_scored);
+        //
+        // if new_prompts_added > 0 || prompts_updated > 0 || prompts_scored > 0 {
+        //     println!("{} Prompt management complete:", "✅".green());
+        //     if new_prompts_added > 0 {
+        //         println!("  📝 {} new prompt(s) added", new_prompts_added);
+        //     }
+        //     if prompts_updated > 0 {
+        //         println!("  🔄 {} prompt(s) updated", prompts_updated);
+        //     }
+        //     if prompts_scored > 0 {
+        //         println!("  ⭐ {} prompt(s) scored", prompts_scored);
+        //     }
+        //     println!();
+        // }
 
         Ok(())
     }
@@ -537,64 +560,64 @@ impl ChatInterface {
         }
     }
 
-    async fn process_task(&self, task: &str, manager: &mut PromptManager) -> Result<TaskProcessingResult> {
-        log_debug!("chat", "🔍 Finding similar prompts for task: {}", task);
-        
-        // Find similar prompts (threshold: 0.5 for similarity detection)
-        let similarity_start = Instant::now();
-        let similar_prompts = manager.find_similar_prompts(task, 0.5).await;
-        let similarity_duration = similarity_start.elapsed().as_millis() as u64;
-        ops::performance("SIMILARITY_SEARCH", similarity_duration);
-        
-        log_debug!("chat", "📊 Found {} similar prompt(s)", similar_prompts.len());
-
-        if similar_prompts.is_empty() {
-            log_debug!("chat", "➕ No similar prompts found, adding new prompt");
-            // No similar prompts found - add as new prompt
-            self.add_new_prompt(task, manager).await?;
-            Ok(TaskProcessingResult::NewPromptAdded)
-        } else {
-            let best_match = &similar_prompts[0];
-            log_debug!("chat", "🎯 Best match: '{}' with similarity {:.3}", 
-                best_match.prompt.title, best_match.similarity_score);
-            
-            if best_match.similarity_score >= 0.8 {
-                log_debug!("chat", "⭐ High similarity (>= 0.8), scoring existing prompt");
-                // Very similar prompt exists - increment score
-                manager.increment_prompt_score(
-                    &best_match.file_name,
-                    &best_match.subject_name,
-                    &best_match.prompt.id,
-                )?;
-                println!("  ⭐ Scored existing prompt: '{}'", best_match.prompt.title.cyan());
-                Ok(TaskProcessingResult::PromptScored)
-            } else if best_match.similarity_score >= 0.6 {
-                log_debug!("chat", "🔄 Medium similarity (>= 0.6), updating existing prompt");
-                // Similar but could be improved - update existing prompt
-                let improve_start = Instant::now();
-                let improved_content = self.openrouter_client.improve_prompt(
-                    &best_match.prompt.get_resolved_content().await.unwrap_or(best_match.prompt.content.clone()),
-                    task,
-                ).await?;
-                let improve_duration = improve_start.elapsed().as_millis() as u64;
-                ops::performance("PROMPT_IMPROVEMENT", improve_duration);
-                
-                manager.update_prompt(
-                    &best_match.file_name,
-                    &best_match.subject_name,
-                    &best_match.prompt.id,
-                    improved_content,
-                )?;
-                println!("  🔄 Updated existing prompt: '{}'", best_match.prompt.title.cyan());
-                Ok(TaskProcessingResult::PromptUpdated)
-            } else {
-                log_debug!("chat", "➕ Low similarity (< 0.6), adding new prompt");
-                // Different enough to be a new prompt
-                self.add_new_prompt(task, manager).await?;
-                Ok(TaskProcessingResult::NewPromptAdded)
-            }
-        }
-    }
+    // async fn process_task(&self, task: &str, _manager: &mut PromptManager) -> Result<TaskProcessingResult> {
+    //     log_debug!("chat", "🔍 Finding similar prompts for task: {}", task);
+    //
+    //     // Find similar prompts (threshold: 0.5 for similarity detection)
+    //     let similarity_start = Instant::now();
+    //     let similar_prompts = manager.find_similar_prompts(task, 0.5).await;
+    //     let similarity_duration = similarity_start.elapsed().as_millis() as u64;
+    //     ops::performance("SIMILARITY_SEARCH", similarity_duration);
+    //
+    //     log_debug!("chat", "📊 Found {} similar prompt(s)", similar_prompts.len());
+    //
+    //     if similar_prompts.is_empty() {
+    //         log_debug!("chat", "➕ No similar prompts found, adding new prompt");
+    //         // No similar prompts found - add as new prompt
+    //         self.add_new_prompt(task, manager).await?;
+    //         Ok(TaskProcessingResult::NewPromptAdded)
+    //     } else {
+    //         let best_match = &similar_prompts[0];
+    //         log_debug!("chat", "🎯 Best match: '{}' with similarity {:.3}",
+    //             best_match.prompt.title, best_match.similarity_score);
+    //
+    //         if best_match.similarity_score >= 0.8 {
+    //             log_debug!("chat", "⭐ High similarity (>= 0.8), scoring existing prompt");
+    //             // Very similar prompt exists - increment score
+    //             manager.increment_prompt_score(
+    //                 &best_match.file_name,
+    //                 &best_match.subject_name,
+    //                 &best_match.prompt.id,
+    //             )?;
+    //             println!("  ⭐ Scored existing prompt: '{}'", best_match.prompt.title.cyan());
+    //             Ok(TaskProcessingResult::PromptScored)
+    //         } else if best_match.similarity_score >= 0.6 {
+    //             log_debug!("chat", "🔄 Medium similarity (>= 0.6), updating existing prompt");
+    //             // Similar but could be improved - update existing prompt
+    //             let improve_start = Instant::now();
+    //             let improved_content = self.openrouter_client.improve_prompt(
+    //                 &best_match.prompt.get_resolved_content().await.unwrap_or(best_match.prompt.content.clone()),
+    //                 task,
+    //             ).await?;
+    //             let improve_duration = improve_start.elapsed().as_millis() as u64;
+    //             ops::performance("PROMPT_IMPROVEMENT", improve_duration);
+    //
+    //             manager.update_prompt(
+    //                 &best_match.file_name,
+    //                 &best_match.subject_name,
+    //                 &best_match.prompt.id,
+    //                 improved_content,
+    //             )?;
+    //             println!("  🔄 Updated existing prompt: '{}'", best_match.prompt.title.cyan());
+    //             Ok(TaskProcessingResult::PromptUpdated)
+    //         } else {
+    //             log_debug!("chat", "➕ Low similarity (< 0.6), adding new prompt");
+    //             // Different enough to be a new prompt
+    //             self.add_new_prompt(task, manager).await?;
+    //             Ok(TaskProcessingResult::NewPromptAdded)
+    //         }
+    //     }
+    // }
 
     async fn add_new_prompt(&self, task: &str, manager: &mut PromptManager) -> Result<()> {
         log_debug!("chat", "➕ Adding new prompt for task: {}", task);
@@ -948,6 +971,94 @@ impl ChatInterface {
             }
         }
         
+        Ok(())
+    }
+
+    /// Start continuous execution mode
+    async fn start_continuous_mode(&mut self) -> Result<()> {
+        println!("{} Initializing continuous execution mode...", "🚀".cyan().bold());
+        
+        // Check if already running
+        if let Some(ref executor) = self.continuous_executor {
+            if executor.is_running().await {
+                println!("{} Continuous execution is already running!", "⚠️".yellow());
+                println!("Use {} to stop the current execution first.", "@stop".cyan());
+                return Ok(());
+            }
+        }
+
+        // Get or create workflow ID
+        let workflow_id = match &self.current_workflow_id {
+            Some(id) => id.clone(),
+            None => {
+                // Create a new workflow
+                if let Some(ref orchestrator) = self.workflow_orchestrator {
+                    let new_id = orchestrator.start_workflow("Continuous execution workflow").await?;
+                    self.current_workflow_id = Some(new_id.clone());
+                    self.session_manager.set_last_workflow_id(new_id.clone())?;
+                    println!("{} Created new workflow: {}", "📋".green(), new_id);
+                    new_id
+                } else {
+                    return Err(anyhow::anyhow!("Workflow orchestrator not available"));
+                }
+            }
+        };
+
+        // Initialize continuous executor if not already done
+        if self.continuous_executor.is_none() {
+            // Create new instances for continuous executor (simplified approach)
+            let task_executor = TaskExecutor::with_llm_analysis().await?;
+            let feedback_manager = FeedbackLoopManager::with_llm_client().await?;
+            let workflow_orchestrator = WorkflowOrchestrator::new().await?;
+            
+            let executor = ContinuousExecutor::new(
+                Arc::new(workflow_orchestrator),
+                Arc::new(task_executor),
+                Arc::new(feedback_manager),
+            ).await?;
+            
+            self.continuous_executor = Some(executor);
+            println!("{} Continuous executor initialized", "✅".green());
+        }
+
+        // Start continuous execution in background
+        if let Some(ref executor) = self.continuous_executor {
+            println!("{} Starting continuous execution for workflow: {}", "🔄".blue(), workflow_id);
+            println!("{} The system will now autonomously execute tasks until completion", "💡".yellow());
+            println!("{} Use {} to stop execution at any time", "ℹ️".cyan(), "@stop".bright_cyan());
+            
+            // In a real implementation, this would run in a background task
+            // For now, we'll just indicate that it would start
+            match executor.run_continuous(&workflow_id).await {
+                Ok(_) => {
+                    println!("{} Continuous execution completed", "🎉".green());
+                }
+                Err(e) => {
+                    println!("{} Continuous execution error: {}", "❌".red(), e);
+                    return Err(e);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Stop continuous execution mode
+    async fn stop_continuous_mode(&mut self) -> Result<()> {
+        if let Some(ref executor) = self.continuous_executor {
+            if executor.is_running().await {
+                executor.stop().await?;
+                println!("{} Continuous execution stopped", "🛑".yellow());
+                println!("{} You can use regular chat commands or restart with {}", "💡".cyan(), "@continuous".bright_cyan());
+            } else {
+                println!("{} Continuous execution is not currently running", "ℹ️".blue());
+                println!("Use {} to start continuous mode", "@continuous".cyan());
+            }
+        } else {
+            println!("{} Continuous execution has not been initialized", "ℹ️".blue());
+            println!("Use {} to start continuous mode", "@continuous".cyan());
+        }
+
         Ok(())
     }
 }

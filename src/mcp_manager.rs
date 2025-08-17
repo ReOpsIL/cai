@@ -2,9 +2,10 @@ use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use crate::logger::log_info;
+use crate::logger::{log_info, log_warn};
 use crate::mcp_client::McpClientManager;
 use crate::mcp_config::McpConfig;
+use crate::docker_detection::{DockerDetector, initialize_docker_optimization};
 
 /// Global MCP manager for application lifecycle management  
 static GLOBAL_MCP_MANAGER: std::sync::LazyLock<Arc<Mutex<Option<McpClientManager>>>> = 
@@ -12,16 +13,26 @@ static GLOBAL_MCP_MANAGER: std::sync::LazyLock<Arc<Mutex<Option<McpClientManager
 
 /// Initialize the global MCP manager and start configured servers if a config exists
 pub async fn initialize_mcp() -> Result<()> {
+    log_info!("mcp", "🚀 Initializing MCP with Docker optimization...");
+    
+    // First, optimize Docker configuration before loading MCP config
+    if let Err(e) = initialize_docker_optimization().await {
+        log_warn!("mcp", "⚠️ Docker optimization failed (continuing with existing config): {}", e);
+    }
+    
     // Load MCP configuration if present; otherwise, do nothing
     let Some(config) = McpConfig::load_default()? else {
+        log_info!("mcp", "ℹ️ No MCP config found, initialization complete");
         return Ok(());
     };
 
+    log_info!("mcp", "⏳ Starting MCP servers (this may take a few seconds for Docker initialization)...");
     let manager = McpClientManager::new(config);
     manager.start_all_servers().await?;
 
     let mut guard = GLOBAL_MCP_MANAGER.lock().await;
     *guard = Some(manager);
+    log_info!("mcp", "✅ MCP initialization completed successfully");
     Ok(())
 }
 
@@ -46,6 +57,23 @@ pub fn init_default_config_file() -> Result<std::path::PathBuf> {
     let default_config = McpConfig::default();
     let config_json = serde_json::to_string_pretty(&default_config)?;
     std::fs::write(&path, config_json)?;
+    Ok(path)
+}
+
+/// Create an optimized MCP config file using Docker detection
+pub async fn init_optimized_config_file() -> Result<std::path::PathBuf> {
+    let path = std::path::PathBuf::from("mcp-config.json");
+    
+    log_info!("mcp", "🔧 Creating optimized MCP configuration...");
+    
+    // Use Docker detection to create optimal config
+    let mut detector = DockerDetector::new()?;
+    let _environment = detector.detect_environment().await?;
+    
+    // Apply the optimized configuration
+    detector.apply_to_mcp_config(&path).await?;
+    
+    log_info!("mcp", "✅ Optimized MCP configuration created");
     Ok(path)
 }
 

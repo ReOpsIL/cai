@@ -15,6 +15,7 @@ use crate::logger::{log_debug, log_error, log_info};
 use crate::openrouter_client::{ChatMessage, OpenRouterClient};
 use crate::project_scanner;
 use crate::task_executor::TaskExecutor;
+use crate::workflow_timeouts::execute_with_adaptive_timeout;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowGoal {
@@ -423,18 +424,28 @@ impl WorkflowOrchestrator {
             (goal.description.clone(), goal.context.clone(), workflow.shared_context.clone())
         };
 
-        // Use LLM to plan tasks for this goal
-        let task_plan = self.llm_plan_tasks_for_goal(
+        // Use LLM to plan tasks for this goal with adaptive timeout
+        let task_plan = execute_with_adaptive_timeout(
+            "goal_decomposition",
             &goal_description,
-            &goal_context,
-            &shared_context
+            self.llm_plan_tasks_for_goal(
+                &goal_description,
+                &goal_context,
+                &shared_context
+            )
         ).await?;
 
         log_debug!("workflow", "📋 Generated {} tasks for goal", task_plan.len());
 
-        // Execute tasks using existing TaskExecutor
-        self.task_executor.add_tasks(task_plan).await?;
-        self.task_executor.execute_all().await?;
+        // Execute tasks using existing TaskExecutor with adaptive timeout
+        execute_with_adaptive_timeout(
+            "workflow_execution",
+            &goal_description,
+            async {
+                self.task_executor.add_tasks(task_plan).await?;
+                self.task_executor.execute_all().await
+            }
+        ).await?;
 
         // Update goal status based on execution results
         let success = self.task_executor.all_tasks_completed().await;

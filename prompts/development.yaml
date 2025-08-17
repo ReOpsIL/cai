@@ -1,0 +1,28 @@
+name: "Development"
+description: "Prompts for software development tasks including debugging, code review, and refactoring"
+subjects:
+  - name: "debugging"
+    prompts:
+      - title: "Bug Analysis"
+        content: "Analyze the given bug report and provide a systematic approach to identify the root cause and potential solutions."
+        tags: ["debugging", "analysis"]
+        
+      - title: "Error Investigation"
+        content: "Investigate the error by examining logs, stack traces, and code context to determine the underlying issue."
+        tags: ["debugging", "errors"]
+
+  - name: "code_review"
+    prompts:
+      - title: "Code Quality Review"
+        content: "Review the provided code for quality, maintainability, security issues, and best practices."
+        tags: ["review", "quality"]
+        
+      - title: "Performance Analysis"
+        content: "Analyze the code for performance bottlenecks and suggest optimizations."
+        tags: ["review", "performance"]
+
+  - name: "refactoring"
+    prompts:
+      - title: "Code Refactoring"
+        content: "Refactor the given code to improve readability, maintainability, and performance while preserving functionality."
+        tags: ["refactoring", "cleanup"]

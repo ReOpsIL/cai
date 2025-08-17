@@ -4,8 +4,8 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use crate::logger::{log_debug, log_info, log_warn};
-use crate::multi_agent::{AgentCapability, TaskType};
+use crate::logger::{log_debug, log_info};
+use crate::multi_agent::AgentCapability;
 
 /// OpenAPI 3.0 style tool schema definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,7 +37,7 @@ pub enum ToolCategory {
 pub struct ParameterSchema {
     pub properties: HashMap<String, PropertyDefinition>,
     pub required: Vec<String>,
-    pub additionalProperties: bool,
+    pub additional_properties: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -313,7 +313,7 @@ impl DeclarativeToolRegistry {
         for (param_name, param_value) in params_obj {
             if let Some(prop_def) = tool.parameters.properties.get(param_name) {
                 self.validate_property_value(param_name, param_value, prop_def)?;
-            } else if !tool.parameters.additionalProperties {
+            } else if !tool.parameters.additional_properties {
                 return Err(anyhow!("Additional parameter '{}' not allowed", param_name));
             }
         }
@@ -355,7 +355,7 @@ impl DeclarativeToolRegistry {
             "type": "object",
             "properties": {},
             "required": schema.required,
-            "additionalProperties": schema.additionalProperties
+            "additionalProperties": schema.additional_properties
         });
         
         for (prop_name, prop_def) in &schema.properties {
@@ -517,7 +517,7 @@ pub mod builders {
             parameters: ParameterSchema {
                 properties,
                 required: required_params.iter().map(|s| s.to_string()).collect(),
-                additionalProperties: true,
+                additional_properties: true,
             },
             returns: ReturnSchema {
                 return_type: PropertyType::Object,
@@ -557,7 +557,7 @@ pub mod builders {
             parameters: ParameterSchema {
                 properties,
                 required: vec!["url".to_string()],
-                additionalProperties: true,
+                additional_properties: true,
             },
             returns: ReturnSchema {
                 return_type: PropertyType::Object,

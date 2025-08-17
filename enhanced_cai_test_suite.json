@@ -1,0 +1,4886 @@
+{
+  "metadata": {
+    "total_tests": 100,
+    "categories": {
+      "full_stack_development": 3,
+      "system_design": 3,
+      "performance_optimization": 2,
+      "security_implementation": 2,
+      "data_processing": 2,
+      "api_development": 2,
+      "database_design": 1,
+      "devops_automation": 1,
+      "testing_frameworks": 1,
+      "microservices": 83
+    },
+    "difficulty_distribution": {
+      "advanced": 47,
+      "expert": 11,
+      "intermediate": 42
+    },
+    "languages_covered": [
+      "go",
+      "java",
+      "python",
+      "javascript",
+      "rust",
+      "typescript"
+    ],
+    "language_distribution": {
+      "go": 18,
+      "java": 19,
+      "python": 16,
+      "javascript": 14,
+      "rust": 18,
+      "typescript": 15
+    },
+    "complexity_features": [
+      "multi_step_requirements",
+      "production_quality_expectations",
+      "real_world_scenarios",
+      "performance_considerations",
+      "security_requirements",
+      "scalability_challenges",
+      "integration_complexity"
+    ],
+    "average_timeout": 140.8,
+    "generation_timestamp": "2025-08-15T13:30:00Z",
+    "generator_version": "2.0_enhanced"
+  },
+  "tests": [
+    {
+      "test_id": "d92c191d-12e8-46bf-9c8b-bab222eb531c",
+      "category": "full_stack_development",
+      "difficulty": "advanced",
+      "prompt": "Build a complete REST API for a task management system with the following requirements:\n1. User authentication with JWT tokens\n2. CRUD operations for tasks with categories and priorities\n3. Task assignment to multiple users\n4. Real-time notifications using WebSockets\n5. Database schema with proper relationships\n6. Input validation and error handling\n7. API documentation with examples\n8. Unit and integration tests\nInclude proper project structure, configuration files, and deployment instructions.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "go",
+        "full_stack_development",
+        "advanced",
+        "authentication",
+        "real-time",
+        "database_design",
+        "testing",
+        "documentation"
+      ],
+      "description": "Complex full_stack_development scenario requiring advanced implementation",
+      "complexity_factors": [
+        "authentication",
+        "real-time",
+        "database_design",
+        "testing",
+        "documentation"
+      ]
+    },
+    {
+      "test_id": "7421eefb-a0b3-4b2a-84e5-dc4845f5b59c",
+      "category": "full_stack_development",
+      "difficulty": "expert",
+      "prompt": "Create a microservices-based e-commerce platform with:\n1. User service (registration, authentication, profiles)\n2. Product catalog service with search and filtering\n3. Shopping cart service with session management\n4. Order processing service with payment integration\n5. Inventory management with stock tracking\n6. API Gateway for routing and rate limiting\n7. Service discovery and load balancing\n8. Distributed logging and monitoring\n9. Docker containers and orchestration\n10. CI/CD pipeline configuration\nInclude inter-service communication, data consistency, and fault tolerance.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "expert",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 180,
+      "tags": [
+        "java",
+        "full_stack_development",
+        "expert",
+        "microservices",
+        "distributed_systems",
+        "payment_processing",
+        "containerization",
+        "monitoring"
+      ],
+      "description": "Complex full_stack_development scenario requiring expert implementation",
+      "complexity_factors": [
+        "microservices",
+        "distributed_systems",
+        "payment_processing",
+        "containerization",
+        "monitoring"
+      ]
+    },
+    {
+      "test_id": "de84976d-76a8-4285-a847-c058865724da",
+      "category": "full_stack_development",
+      "difficulty": "advanced",
+      "prompt": "Develop a real-time collaborative code editor similar to VS Code Live Share:\n1. WebSocket-based real-time synchronization\n2. Operational transformation for conflict resolution\n3. User presence and cursor tracking\n4. Syntax highlighting for multiple languages\n5. File explorer with project structure\n6. Live chat and voice call integration\n7. Code execution environment (sandbox)\n8. Version control integration\n9. Plugin architecture\n10. Performance optimization for large files\nInclude proper state management, security considerations, and scalability design.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "python",
+        "full_stack_development",
+        "advanced",
+        "real-time_collaboration",
+        "operational_transformation",
+        "security",
+        "performance",
+        "plugin_architecture"
+      ],
+      "description": "Complex full_stack_development scenario requiring advanced implementation",
+      "complexity_factors": [
+        "real-time_collaboration",
+        "operational_transformation",
+        "security",
+        "performance",
+        "plugin_architecture"
+      ]
+    },
+    {
+      "test_id": "dd04f327-7666-45da-8da4-e18898a51c7e",
+      "category": "system_design",
+      "difficulty": "expert",
+      "prompt": "Design and implement a distributed caching system similar to Redis Cluster:\n1. Consistent hashing for data distribution\n2. Replication for high availability\n3. Automatic failover and recovery\n4. Memory management with LRU/LFU eviction\n5. Pub/Sub messaging system\n6. Transaction support with ACID properties\n7. Cluster monitoring and health checks\n8. Data persistence with snapshots\n9. Client libraries for multiple languages\n10. Performance benchmarking suite\nInclude protocol design, network communication, and fault tolerance mechanisms.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "expert",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 180,
+      "tags": [
+        "go",
+        "system_design",
+        "expert",
+        "distributed_systems",
+        "consistent_hashing",
+        "replication",
+        "memory_management",
+        "networking"
+      ],
+      "description": "Complex system_design scenario requiring expert implementation",
+      "complexity_factors": [
+        "distributed_systems",
+        "consistent_hashing",
+        "replication",
+        "memory_management",
+        "networking"
+      ]
+    },
+    {
+      "test_id": "a6861e15-e5de-4bf7-9ed0-d18bb3e7ae9c",
+      "category": "system_design",
+      "difficulty": "expert",
+      "prompt": "Build a scalable message queue system like Apache Kafka:\n1. Topic partitioning and replication\n2. Producer and consumer APIs\n3. Offset management and tracking\n4. Dead letter queues for failed messages\n5. Schema registry for message validation\n6. Stream processing capabilities\n7. Cluster coordination with consensus\n8. Performance monitoring and metrics\n9. Security with authentication/authorization\n10. Multi-datacenter replication\nInclude durability guarantees, ordering semantics, and backpressure handling.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "expert",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 180,
+      "tags": [
+        "python",
+        "system_design",
+        "expert",
+        "message_queuing",
+        "stream_processing",
+        "consensus_algorithms",
+        "multi_datacenter",
+        "performance_tuning"
+      ],
+      "description": "Complex system_design scenario requiring expert implementation",
+      "complexity_factors": [
+        "message_queuing",
+        "stream_processing",
+        "consensus_algorithms",
+        "multi_datacenter",
+        "performance_tuning"
+      ]
+    },
+    {
+      "test_id": "92c9fd73-cd6e-4ba4-ad81-c880ec9ae4e1",
+      "category": "system_design",
+      "difficulty": "expert",
+      "prompt": "Create a container orchestration platform similar to Kubernetes:\n1. Pod scheduling and resource allocation\n2. Service discovery and load balancing\n3. Auto-scaling based on metrics\n4. Rolling deployments and rollbacks\n5. Persistent volume management\n6. Network policies and security\n7. Configuration and secret management\n8. Monitoring and logging aggregation\n9. Multi-cluster federation\n10. Operator framework for custom resources\nInclude controller patterns, API design, and cluster state management.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "expert",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 200,
+      "tags": [
+        "java",
+        "system_design",
+        "expert",
+        "container_orchestration",
+        "resource_scheduling",
+        "auto_scaling",
+        "network_policies",
+        "operator_patterns"
+      ],
+      "description": "Complex system_design scenario requiring expert implementation",
+      "complexity_factors": [
+        "container_orchestration",
+        "resource_scheduling",
+        "auto_scaling",
+        "network_policies",
+        "operator_patterns"
+      ]
+    },
+    {
+      "test_id": "23bd640b-9b39-48be-8737-c748a0e0ab2f",
+      "category": "performance_optimization",
+      "difficulty": "advanced",
+      "prompt": "Optimize a high-frequency trading system for ultra-low latency:\n1. Memory pool allocation to avoid GC pauses\n2. Lock-free data structures for concurrent access\n3. CPU cache optimization and data locality\n4. Network optimization with kernel bypass\n5. Real-time profiling and metrics collection\n6. JIT compilation optimization techniques\n7. NUMA-aware memory allocation\n8. Hardware-specific optimizations (SIMD, etc.)\n9. Latency measurement and statistical analysis\n10. Stress testing under various market conditions\nInclude benchmarking results, profiling reports, and optimization trade-offs.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "python",
+        "performance_optimization",
+        "advanced",
+        "low_latency",
+        "lock_free_programming",
+        "memory_optimization",
+        "hardware_optimization",
+        "profiling"
+      ],
+      "description": "Complex performance_optimization scenario requiring advanced implementation",
+      "complexity_factors": [
+        "low_latency",
+        "lock_free_programming",
+        "memory_optimization",
+        "hardware_optimization",
+        "profiling"
+      ]
+    },
+    {
+      "test_id": "45be1419-400c-4964-b149-677240304faa",
+      "category": "performance_optimization",
+      "difficulty": "expert",
+      "prompt": "Build a high-performance analytics engine for processing terabytes of data:\n1. Columnar storage format with compression\n2. Vectorized query execution engine\n3. Parallel processing with work-stealing\n4. Memory-mapped file I/O optimization\n5. Query optimization and cost-based planning\n6. Adaptive indexing strategies\n7. Approximate query processing\n8. Resource management and memory budgeting\n9. Distributed execution coordination\n10. Real-time stream processing integration\nInclude performance benchmarks, memory usage analysis, and scalability tests.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "expert",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 180,
+      "tags": [
+        "python",
+        "performance_optimization",
+        "expert",
+        "big_data_processing",
+        "vectorized_execution",
+        "query_optimization",
+        "memory_mapping",
+        "distributed_computing"
+      ],
+      "description": "Complex performance_optimization scenario requiring expert implementation",
+      "complexity_factors": [
+        "big_data_processing",
+        "vectorized_execution",
+        "query_optimization",
+        "memory_mapping",
+        "distributed_computing"
+      ]
+    },
+    {
+      "test_id": "22d4c424-2900-4c06-854e-fcb36ec178a8",
+      "category": "security_implementation",
+      "difficulty": "expert",
+      "prompt": "Implement a zero-trust security framework for microservices:\n1. mTLS certificate management and rotation\n2. Service mesh with security policies\n3. JWT token validation and refresh\n4. Role-based access control (RBAC)\n5. API rate limiting and DDoS protection\n6. Secrets management with encryption\n7. Security scanning and vulnerability assessment\n8. Audit logging and compliance reporting\n9. Network segmentation and firewalls\n10. Incident response automation\nInclude threat modeling, penetration testing, and security best practices.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "expert",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "python",
+        "security_implementation",
+        "expert",
+        "zero_trust",
+        "mtls",
+        "rbac",
+        "secrets_management",
+        "threat_modeling"
+      ],
+      "description": "Complex security_implementation scenario requiring expert implementation",
+      "complexity_factors": [
+        "zero_trust",
+        "mtls",
+        "rbac",
+        "secrets_management",
+        "threat_modeling"
+      ]
+    },
+    {
+      "test_id": "fccc2d5c-4d9e-483f-a49d-0f61e62cd1f3",
+      "category": "security_implementation",
+      "difficulty": "expert",
+      "prompt": "Create a secure blockchain-based voting system:\n1. Cryptographic vote encryption and verification\n2. Zero-knowledge proofs for privacy\n3. Smart contracts for vote tallying\n4. Distributed consensus mechanism\n5. Voter identity verification\n6. Ballot auditing and transparency\n7. Protection against various attack vectors\n8. Scalability for millions of voters\n9. Accessibility compliance\n10. Legal and regulatory compliance\nInclude cryptographic protocols, security analysis, and formal verification.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "expert",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 200,
+      "tags": [
+        "go",
+        "security_implementation",
+        "expert",
+        "blockchain",
+        "cryptography",
+        "zero_knowledge_proofs",
+        "consensus_mechanisms",
+        "formal_verification"
+      ],
+      "description": "Complex security_implementation scenario requiring expert implementation",
+      "complexity_factors": [
+        "blockchain",
+        "cryptography",
+        "zero_knowledge_proofs",
+        "consensus_mechanisms",
+        "formal_verification"
+      ]
+    },
+    {
+      "test_id": "5d6c5a6e-7d56-4143-85ff-bfa2a806019f",
+      "category": "data_processing",
+      "difficulty": "advanced",
+      "prompt": "Build a real-time fraud detection system for financial transactions:\n1. Stream processing pipeline for live transactions\n2. Machine learning models for anomaly detection\n3. Feature engineering with sliding windows\n4. Model training and online learning\n5. A/B testing framework for model comparison\n6. Feedback loop for false positive reduction\n7. Explainable AI for regulatory compliance\n8. Data privacy and encryption\n9. High availability and disaster recovery\n10. Performance monitoring and alerting\nInclude data pipeline architecture, model evaluation metrics, and regulatory considerations.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 180,
+      "tags": [
+        "go",
+        "data_processing",
+        "advanced",
+        "stream_processing",
+        "machine_learning",
+        "anomaly_detection",
+        "explainable_ai",
+        "regulatory_compliance"
+      ],
+      "description": "Complex data_processing scenario requiring advanced implementation",
+      "complexity_factors": [
+        "stream_processing",
+        "machine_learning",
+        "anomaly_detection",
+        "explainable_ai",
+        "regulatory_compliance"
+      ]
+    },
+    {
+      "test_id": "ece496f2-05a8-4ece-88a6-5ba997da6a12",
+      "category": "data_processing",
+      "difficulty": "expert",
+      "prompt": "Create a distributed data lake platform for multi-petabyte analytics:\n1. Data ingestion from multiple sources (batch/stream)\n2. Schema evolution and data governance\n3. Partitioning strategies for performance\n4. Data quality monitoring and validation\n5. ETL/ELT pipeline orchestration\n6. Multi-tenant access control\n7. Cost optimization and lifecycle management\n8. Metadata catalog and lineage tracking\n9. SQL and NoSQL query engines\n10. Integration with ML/AI platforms\nInclude data architecture design, cost analysis, and governance policies.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "expert",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 180,
+      "tags": [
+        "java",
+        "data_processing",
+        "expert",
+        "data_lake",
+        "schema_evolution",
+        "data_governance",
+        "pipeline_orchestration",
+        "multi_tenant"
+      ],
+      "description": "Complex data_processing scenario requiring expert implementation",
+      "complexity_factors": [
+        "data_lake",
+        "schema_evolution",
+        "data_governance",
+        "pipeline_orchestration",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "fc34a05c-481f-4e3e-9fb1-fe7c68f8a6d4",
+      "category": "api_development",
+      "difficulty": "advanced",
+      "prompt": "Design and implement a GraphQL API for a social media platform:\n1. Schema design with unions and interfaces\n2. Efficient data fetching with DataLoader\n3. Real-time subscriptions for live updates\n4. Authentication and authorization middleware\n5. Rate limiting and query complexity analysis\n6. Caching strategies (Redis, CDN)\n7. Error handling and custom scalars\n8. API versioning and deprecation\n9. Performance monitoring and tracing\n10. Federation for microservices\nInclude schema documentation, performance benchmarks, and security considerations.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "api_development",
+        "advanced",
+        "graphql",
+        "real_time_subscriptions",
+        "dataloader_pattern",
+        "query_complexity",
+        "federation"
+      ],
+      "description": "Complex api_development scenario requiring advanced implementation",
+      "complexity_factors": [
+        "graphql",
+        "real_time_subscriptions",
+        "dataloader_pattern",
+        "query_complexity",
+        "federation"
+      ]
+    },
+    {
+      "test_id": "4aed91e1-a828-4736-916d-71d932e9a363",
+      "category": "api_development",
+      "difficulty": "expert",
+      "prompt": "Build a comprehensive API gateway with advanced features:\n1. Dynamic routing and load balancing\n2. Protocol translation (REST, GraphQL, gRPC)\n3. Request/response transformation\n4. Circuit breaker and retry policies\n5. Authentication aggregation\n6. API versioning and blue-green deployments\n7. Analytics and usage metrics\n8. Developer portal with documentation\n9. Webhook management and delivery\n10. Multi-cloud deployment support\nInclude configuration management, monitoring dashboards, and developer experience tools.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "expert",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 180,
+      "tags": [
+        "go",
+        "api_development",
+        "expert",
+        "api_gateway",
+        "protocol_translation",
+        "circuit_breaker",
+        "blue_green_deployment",
+        "developer_portal"
+      ],
+      "description": "Complex api_development scenario requiring expert implementation",
+      "complexity_factors": [
+        "api_gateway",
+        "protocol_translation",
+        "circuit_breaker",
+        "blue_green_deployment",
+        "developer_portal"
+      ]
+    },
+    {
+      "test_id": "4befbb0f-3c63-4084-a898-5a8d984fd331",
+      "category": "database_design",
+      "difficulty": "expert",
+      "prompt": "Design a time-series database optimized for IoT sensor data:\n1. Custom storage engine with columnar compression\n2. Time-based partitioning and retention policies\n3. Aggregation functions and downsampling\n4. High-throughput ingestion (millions of points/sec)\n5. Query optimization for time ranges\n6. Replication and clustering\n7. Schema flexibility for different sensor types\n8. Real-time alerting on anomalies\n9. Integration with visualization tools\n10. Backup and disaster recovery\nInclude performance benchmarks, storage efficiency analysis, and scalability testing.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "expert",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 180,
+      "tags": [
+        "javascript",
+        "database_design",
+        "expert",
+        "time_series",
+        "columnar_storage",
+        "high_throughput",
+        "query_optimization",
+        "clustering"
+      ],
+      "description": "Complex database_design scenario requiring expert implementation",
+      "complexity_factors": [
+        "time_series",
+        "columnar_storage",
+        "high_throughput",
+        "query_optimization",
+        "clustering"
+      ]
+    },
+    {
+      "test_id": "7ae32fa3-f6ee-49b9-a8ee-b6ed23f3118d",
+      "category": "devops_automation",
+      "difficulty": "expert",
+      "prompt": "Create an intelligent CI/CD platform with ML-powered optimizations:\n1. Pipeline optimization using historical data\n2. Predictive failure detection\n3. Dynamic resource allocation\n4. Automatic dependency resolution\n5. Security scanning integration\n6. Multi-cloud deployment strategies\n7. Rollback automation with health checks\n8. Cost optimization recommendations\n9. Developer productivity analytics\n10. Infrastructure as code management\nInclude ML models for optimization, monitoring dashboards, and cost analysis.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "expert",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 180,
+      "tags": [
+        "go",
+        "devops_automation",
+        "expert",
+        "ml_optimization",
+        "predictive_analytics",
+        "multi_cloud",
+        "infrastructure_as_code",
+        "cost_optimization"
+      ],
+      "description": "Complex devops_automation scenario requiring expert implementation",
+      "complexity_factors": [
+        "ml_optimization",
+        "predictive_analytics",
+        "multi_cloud",
+        "infrastructure_as_code",
+        "cost_optimization"
+      ]
+    },
+    {
+      "test_id": "71d712c9-16b1-4b37-a527-40089978819b",
+      "category": "testing_frameworks",
+      "difficulty": "advanced",
+      "prompt": "Build an AI-powered testing framework for web applications:\n1. Visual regression testing with ML\n2. Automatic test case generation\n3. Self-healing test scripts\n4. Cross-browser compatibility testing\n5. Performance testing with load generation\n6. Accessibility compliance validation\n7. API contract testing\n8. Test data management and privacy\n9. Parallel execution optimization\n10. Intelligent test result analysis\nInclude ML models for test generation, reporting dashboards, and integration examples.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "go",
+        "testing_frameworks",
+        "advanced",
+        "ai_testing",
+        "visual_regression",
+        "self_healing",
+        "cross_browser",
+        "test_generation"
+      ],
+      "description": "Complex testing_frameworks scenario requiring advanced implementation",
+      "complexity_factors": [
+        "ai_testing",
+        "visual_regression",
+        "self_healing",
+        "cross_browser",
+        "test_generation"
+      ]
+    },
+    {
+      "test_id": "8f4f6835-581e-422f-94dd-1f142ebeac90",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "java",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "50c9754c-afce-4653-91c0-e9ae772f07b0",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "javascript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "7f4845c2-e3f3-4c70-ba00-a279cf13ae27",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "rust",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "8400771d-cdc0-4a5d-95ea-d294d48eeb1d",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "rust",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "6bc67a08-91ea-45aa-b490-205092a12bf4",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "python",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "e019b190-28bd-4057-9228-8cf7169b6352",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "typescript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "9173e785-7985-4390-8efa-34216b346a6f",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "rust",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "04adba00-9fa5-4ab8-b502-ae1945d2b886",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "javascript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "485bc80c-39fa-46b3-9a06-bfedbf9b6f46",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "go",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "1e39616b-b133-461f-9ee3-fd4b327253a7",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "python",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "52fd0ddf-db25-4cf4-9f53-e11f0381654d",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "javascript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "00f8bb61-e0ab-4fdb-93b1-67213f2f1b1c",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "go",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "11da4b1f-21dc-4c89-93e0-df833a397da1",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "python",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "724bb167-6cb5-4ef5-a159-39f00e2c5c38",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "59047158-92be-476c-ab84-ee33255aa000",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "javascript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "acebfb78-2637-4f54-a0e1-8f7003b78c4d",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "go",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "2390aadf-22fd-478e-b2c0-a58f31dcfcb4",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "typescript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "9785e88a-6cac-418c-8e6b-fafd63da835c",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "typescript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "61e68a35-40d0-4afd-bcc5-ca82af86de93",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "javascript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "f1e73681-48b6-4245-9f14-bc0160ad916f",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "5b00ed9d-023e-4b89-97fc-c83995517b69",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "javascript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "a0e4f716-dd75-4e50-b4c8-7123378b3e58",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "typescript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "29561da4-9aa3-4f95-8caa-671a90eb912c",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "typescript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "d0d5be2d-18e4-40b7-90d3-867e3b6cbe08",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "rust",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "0138f132-8ada-45dd-ae09-2635dedaf282",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "rust",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "b3167094-e8fe-4c9a-847b-b3186a2a7efc",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "0e355f50-8166-4292-8e23-6b7a3deda422",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "typescript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "eb161646-d40b-45d4-b9bd-998efccbf58b",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "rust",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "c4a818c0-d868-4c56-8dca-a5bc61986576",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "typescript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "d989f5c1-f19a-41c1-af05-79c5f33d0794",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "rust",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "ae03cac4-f091-43ab-ab74-5d2a8b0e08b6",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "go",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "b27cb7d7-7d74-423d-9080-e1f8dc34573b",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "typescript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "d64aa519-61de-4441-a0c5-c7fac5f16494",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "python",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "f8c1f275-b794-43a5-825c-4e37903393d7",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "python",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "23e599f2-0cda-49b7-b7c4-42e07b7db914",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "rust",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "45122730-c417-4cd6-9c9f-bbb78edcb5e5",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "javascript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "0e0a555b-6325-4426-8a07-2fc9a9c0ace7",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "go",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "d82bdbbb-8263-4ef6-a3e3-350d2659129a",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "typescript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "c32f02da-4cc8-4210-ae9b-932c8a7b3452",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "typescript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "5725083d-065b-4895-9443-3bf1ea457d0c",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "2a6a68a3-fc9a-4887-9647-248c60473e87",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "typescript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "36206b82-7df3-4afc-b94f-102cc8a7538c",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "3e62bb88-e179-4c6b-a8b2-1feac2c556a4",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "go",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "4defe6ed-6774-4be8-a984-f3c3b57013c4",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "rust",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "50a0e70c-8dcf-4a1c-8e78-4086347615e6",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "java",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "0349cb77-36e8-4e18-a00c-9e26159f1a02",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "b59deb89-642f-48db-827e-6fc138e97820",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "go",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "d8b7473b-be4b-4b16-b844-f1d96b29e789",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "go",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "fd84ee6b-18e5-47e0-ad94-f3d3b1ec1da5",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "rust",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "6afad1f1-c86a-4b48-9be3-b3cf2ecda49f",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "python",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "0b1a46c3-84ca-4c20-8e25-82c3190881cc",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "typescript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "83fcd6d6-4098-4fd4-b014-d309ea2a04fb",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "rust",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "130e0c4e-1990-416d-a0ee-68eae908574e",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "python",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "432daa8a-376c-4dc3-bca1-507cdb8f5b43",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "rust",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "d8adf31c-27bf-40a3-8917-b8898a02fa31",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "rust",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "46264970-3f4e-434f-b62c-c1da64d6ca6f",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "8e8d3f28-a7fb-4ee1-a85b-2f7db3e6f818",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "go",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "bdb749fd-2367-40b6-9406-39eae37c4c4f",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "typescript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "1835f6a6-5721-446c-8860-f1463f825824",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "python",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "ee67bc28-60c0-4b37-bc57-6c482c4cb474",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "python",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "845d9406-ddf8-4005-bb37-df8b88718512",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "typescript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "063df4fd-8041-4efb-a800-b643a890dffa",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "1b6e42f9-d8ac-4281-9098-d12997fe10be",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "java",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "3708faac-e6d3-4a42-8a40-6558297341ca",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "python",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "4079c1ba-82c5-4c45-aa30-84aa65b1b3ea",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "javascript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "5aef5f8d-2299-471e-888e-3a89c677826e",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "ed4b4d68-69ad-466d-938a-fdbdd29c6973",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "java",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "3233b7ce-8fd6-4b61-bfd8-dbf5ebf247c0",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "javascript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "18be27aa-0ba4-4f39-a5e5-b485b7916f90",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.py",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "python",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "python",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "898881cb-3cac-4e4e-87e1-8322f2333656",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "bbc14981-6862-47e0-9d06-c5ffe5e58218",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "javascript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "71ab6aad-a81e-4b1b-b88c-9c61be2ef917",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "rust",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "97243d40-6d4c-470f-80b9-884d9fbb1b4f",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "rust",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "7c45c2b9-180f-4760-84d6-842b02f78fba",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "rust",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "03b51acc-3a31-4a95-bf0a-c0ae81e86b81",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "go",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "bd586714-e6b8-4cac-a9f1-c28ab3aa5143",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.go",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "go",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "go",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "e4ca1268-60fe-4ca0-ba8f-04d3bb745760",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "rust",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "c156f2fe-6192-4bd2-8538-b29b0af8822a",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.ts",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "typescript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "typescript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "a34035c0-c722-4796-8aab-f65db9ac0386",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "javascript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "6544d63b-4562-4c5d-b5c0-d1a7330c1bc9",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "javascript",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "cbf35e64-36db-4f4d-95a5-7ad086ba1c1a",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.rs",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "rust",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "rust",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    },
+    {
+      "test_id": "930334be-f416-49e1-8e80-f36fe22f4cf6",
+      "category": "microservices",
+      "difficulty": "advanced",
+      "prompt": "Create a service mesh control plane:\n1. Service discovery and registration\n2. Traffic routing and load balancing\n3. Circuit breaker implementation\n4. Metrics collection and monitoring\n5. Security policy enforcement\n6. Configuration management\n7. Health checking and failover\n8. Multi-cluster support\nInclude proxy configuration, control plane APIs, and observability features.",
+      "expected_outputs": {
+        "files_created": [
+          "main.java",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "java",
+        "complexity_level": "advanced",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 150,
+      "tags": [
+        "java",
+        "microservices",
+        "advanced",
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ],
+      "description": "Complex microservices scenario requiring advanced implementation",
+      "complexity_factors": [
+        "service_mesh",
+        "traffic_routing",
+        "circuit_breaker",
+        "security_policies"
+      ]
+    },
+    {
+      "test_id": "75504c60-1c73-4176-97f1-4b67c88c5d69",
+      "category": "microservices",
+      "difficulty": "intermediate",
+      "prompt": "Build a distributed logging system for microservices:\n1. Log aggregation from multiple services\n2. Structured logging with correlation IDs\n3. Real-time log streaming and search\n4. Log retention and archival policies\n5. Alerting on error patterns\n6. Performance impact monitoring\n7. Multi-tenant log isolation\n8. Integration with observability tools\nInclude log parsing, indexing strategies, and visualization components.",
+      "expected_outputs": {
+        "files_created": [
+          "main.js",
+          "README.md",
+          "tests/"
+        ],
+        "project_structure": true,
+        "documentation": true,
+        "tests": true,
+        "success_criteria": "functional_with_quality",
+        "evaluation_method": "comprehensive_review",
+        "quality_requirements": [
+          "proper_error_handling",
+          "performance_considerations",
+          "security_best_practices",
+          "comprehensive_documentation",
+          "production_ready_code"
+        ]
+      },
+      "setup_requirements": {
+        "language": "javascript",
+        "complexity_level": "intermediate",
+        "requires_multiple_files": true,
+        "requires_configuration": true
+      },
+      "timeout_seconds": 120,
+      "tags": [
+        "javascript",
+        "microservices",
+        "intermediate",
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ],
+      "description": "Complex microservices scenario requiring intermediate implementation",
+      "complexity_factors": [
+        "distributed_logging",
+        "log_aggregation",
+        "real_time_search",
+        "multi_tenant"
+      ]
+    }
+  ]
+}

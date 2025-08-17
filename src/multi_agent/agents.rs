@@ -89,18 +89,17 @@ impl FileSystemAgent {
             }
         }
         
-        // Fallback to heuristic analysis
-        self.heuristic_analyze_task(task)
+        Err(anyhow!("LLM client is required for filesystem agent task analysis"))
     }
     
     /// Use LLM to analyze task and select appropriate tool
-    async fn llm_analyze_task(&self, task: &AgentTask, llm_client: &OpenRouterClient) -> Result<(String, Value)> {
+    async fn llm_analyze_task(&self, task: &AgentTask, _llm_client: &OpenRouterClient) -> Result<(String, Value)> {
         let available_tools = vec![
             "list_directory", "read_file", "write_file", "edit_file", 
             "delete_path", "search_files", "glob_files", "multiedit_file"
         ];
         
-        let prompt = format!(
+        let _prompt = format!(
             "Task: {}\nParameters: {}\n\nAvailable filesystem tools: {:?}\n\nSelect the most appropriate tool and generate arguments. Respond with JSON: {{\"tool\": \"tool_name\", \"args\": {{...}}}}",
             task.description,
             task.parameters,
@@ -108,82 +107,10 @@ impl FileSystemAgent {
         );
         
         // This would use the LLM client to analyze the task
-        // For now, returning an error to fall back to heuristic analysis
+        // This would need actual LLM implementation
         Err(anyhow!("LLM analysis not yet implemented for filesystem agent"))
     }
     
-    /// Heuristic task analysis based on keywords and patterns
-    fn heuristic_analyze_task(&self, task: &AgentTask) -> Result<(String, Value)> {
-        let desc = task.description.to_lowercase();
-        
-        // Extract common patterns
-        if desc.contains("list") && (desc.contains("directory") || desc.contains("folder")) {
-            let path = self.extract_path(&task.parameters).unwrap_or_else(|| ".".to_string());
-            return Ok(("list_directory".to_string(), json!({"path": path})));
-        }
-        
-        if desc.contains("read") && desc.contains("file") {
-            let path = self.extract_path(&task.parameters)
-                .ok_or_else(|| anyhow!("File path required for read operation"))?;
-            return Ok(("read_file".to_string(), json!({"path": path})));
-        }
-        
-        if desc.contains("write") && desc.contains("file") {
-            let path = self.extract_path(&task.parameters)
-                .ok_or_else(|| anyhow!("File path required for write operation"))?;
-            let content = task.parameters.get("content")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            return Ok(("write_file".to_string(), json!({"path": path, "content": content})));
-        }
-        
-        if desc.contains("edit") && desc.contains("file") {
-            let path = self.extract_path(&task.parameters)
-                .ok_or_else(|| anyhow!("File path required for edit operation"))?;
-            let old_text = task.parameters.get("old_text")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| anyhow!("old_text required for edit operation"))?;
-            let new_text = task.parameters.get("new_text")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| anyhow!("new_text required for edit operation"))?;
-            return Ok(("edit_file".to_string(), json!({
-                "path": path,
-                "old_text": old_text,
-                "new_text": new_text
-            })));
-        }
-        
-        if desc.contains("search") {
-            let pattern = task.parameters.get("pattern")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| anyhow!("Search pattern required"))?;
-            let directory = self.extract_path(&task.parameters).unwrap_or_else(|| ".".to_string());
-            return Ok(("search_files".to_string(), json!({
-                "pattern": pattern,
-                "directory": directory
-            })));
-        }
-        
-        if desc.contains("delete") {
-            let path = self.extract_path(&task.parameters)
-                .ok_or_else(|| anyhow!("Path required for delete operation"))?;
-            return Ok(("delete_path".to_string(), json!({"path": path})));
-        }
-        
-        // Default to directory listing if no specific operation identified
-        let path = self.extract_path(&task.parameters).unwrap_or_else(|| ".".to_string());
-        Ok(("list_directory".to_string(), json!({"path": path})))
-    }
-    
-    /// Extract file path from task parameters
-    fn extract_path(&self, parameters: &Value) -> Option<String> {
-        parameters.get("path")
-            .or_else(|| parameters.get("file_path"))
-            .or_else(|| parameters.get("directory"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
-    }
 }
 
 /// Code processing agent - handles code analysis, generation, and modification
@@ -274,7 +201,7 @@ impl CodeAgent {
         self.generate_or_analyze_code(task, context).await
     }
     
-    async fn analyze_code_content(&self, content: &str, task: &AgentTask, _context: &AgentContext) -> Result<Value> {
+    async fn analyze_code_content(&self, content: &str, _task: &AgentTask, _context: &AgentContext) -> Result<Value> {
         // Basic code analysis without LLM
         let lines = content.lines().count();
         let chars = content.chars().count();

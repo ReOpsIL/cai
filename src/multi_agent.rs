@@ -35,13 +35,13 @@ pub trait Agent: Send + Sync {
     async fn execute_task(&self, task: &AgentTask, context: &mut AgentContext) -> Result<AgentResult>;
     
     /// Prepare the agent for task execution (setup, validation, etc.)
-    async fn prepare(&self, context: &AgentContext) -> Result<()> {
+    async fn prepare(&self, _context: &AgentContext) -> Result<()> {
         log_debug!("multi_agent", "Agent {} prepared for execution", self.agent_type());
         Ok(())
     }
     
     /// Cleanup after task execution
-    async fn cleanup(&self, context: &AgentContext) -> Result<()> {
+    async fn cleanup(&self, _context: &AgentContext) -> Result<()> {
         log_debug!("multi_agent", "Agent {} cleaned up after execution", self.agent_type());
         Ok(())
     }

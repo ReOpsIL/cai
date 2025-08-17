@@ -63,10 +63,11 @@ fn to_abs(path: &str) -> PathBuf {
     if p.is_absolute() {
         p.to_path_buf()
     } else {
-        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
-            .join(p)
-            .canonicalize()
-            .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
+        let full_path = std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join(p);
+        
+        // Try to canonicalize, but if it fails (e.g., file doesn't exist yet),
+        // return the joined path without canonicalization
+        full_path.canonicalize().unwrap_or(full_path)
     }
 }
 

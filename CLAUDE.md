@@ -55,9 +55,9 @@ cai workflow status                    # Show active workflows
 cai workflow show <workflow-id>        # Show detailed workflow status
 cai workflow continue <workflow-id>    # Continue workflow execution
 
-# MCP server management
+# MCP server management (servers auto-start on application launch)
 cai mcp list                          # List configured servers
-cai mcp start filesystem              # Start MCP server
+cai mcp status                        # Show server status
 cai mcp tools filesystem              # List available tools
 cai mcp call filesystem read_file --args '{"path":"/file.txt"}'
 
@@ -114,6 +114,7 @@ The application now provides persistent workflow sessions:
 
 ### MCP (Model Context Protocol) Integration
 
+- **Auto-startup**: All configured MCP servers automatically start when CAI launches
 - **Global Manager**: Singleton pattern for server lifecycle management
 - **Docker-based Servers**: Configured via `mcp-config.json`
 - **Tool Discovery**: Dynamic tool enumeration from active servers
@@ -143,7 +144,7 @@ The application now provides persistent workflow sessions:
 ## Critical Implementation Details
 
 ### Task Executor Architecture
-- **Dual Mode**: LLM-based analysis with heuristic fallback
+- **LLM-Only Mode**: Requires LLM for all task analysis - no fallbacks
 - **Tool Metadata**: Structured tool descriptions for LLM context
 - **Async Execution**: Concurrent MCP tool calls with timeout handling
 - **State Management**: Task queue with status tracking (Waiting, Running, Done, Failed)
@@ -162,7 +163,7 @@ The application now provides persistent workflow sessions:
 
 ### LLM Integration Patterns
 - **JSON Response Parsing**: Robust extraction from markdown-wrapped responses
-- **Fallback Mechanisms**: Graceful degradation when LLM unavailable
+- **LLM Requirement**: Application requires LLM for task analysis and fails gracefully with clear error messages when unavailable
 - **Context Management**: Efficient prompt engineering for tool selection
 - **Performance Optimization**: Caching and timeout management
 

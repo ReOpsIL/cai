@@ -1,0 +1,29 @@
+name: "Code Analysis"
+description: "Prompts for analyzing and understanding code"
+subjects:
+  - name: "Architecture Review"
+    prompts:
+      - title: "Design pattern identification"
+        content: "Identify design patterns used in this codebase and suggest improvements or alternative patterns where appropriate."
+      - title: "Dependency analysis"
+        content: "Analyze the dependencies in this project and identify potential issues like circular dependencies, unused packages, or version conflicts."
+      - title: "Modular design assessment"
+        content: "Evaluate the modular design of this codebase and suggest improvements for better separation of concerns."
+
+  - name: "Code Quality"
+    prompts:
+      - title: "Code smell detection"
+        content: "Identify code smells in this implementation and suggest refactoring strategies to improve maintainability."
+      - title: "Complexity analysis"
+        content: "Analyze the cyclomatic complexity of this code and suggest ways to reduce complexity while maintaining functionality."
+      - title: "Naming convention review"
+        content: "Review the naming conventions in this code and suggest improvements for better readability and consistency."
+
+  - name: "Security Analysis"
+    prompts:
+      - title: "Security vulnerability scan"
+        content: "Scan this code for common security vulnerabilities like SQL injection, XSS, CSRF, and suggest mitigation strategies."
+      - title: "Input validation review"
+        content: "Review input validation and sanitization in this code. Identify potential security risks and suggest improvements."
+      - title: "Authentication flow analysis"
+        content: "Analyze the authentication and authorization flow in this application and identify potential security weaknesses."

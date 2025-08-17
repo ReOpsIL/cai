@@ -116,8 +116,6 @@ impl TaskExecutor {
         let queue_size = {
             let mut queue = self.queue.lock().await;
             
-            log_info!("task_executor", "📝 Adding {} task(s) to execution queue", task_descriptions.len());
-            
             for description in task_descriptions {
                 let task = Task::new(description.clone());
                 log_debug!("task_executor", "➕ Added task: {}", description);
@@ -128,35 +126,27 @@ impl TaskExecutor {
         }; // Release the lock here
 
         println!("\n{} Added {} task(s) to execution queue", "📋".cyan(), queue_size);
-        log_debug!("task_executor", "📋 About to display queue status");
+        log_info!("task_executor", "📝 Added {} task(s) to execution queue", queue_size);
         self.display_queue_status().await;
-        log_debug!("task_executor", "📋 Queue status displayed");
         
         Ok(())
     }
 
     /// Display current queue status
     pub async fn display_queue_status(&self) {
-        log_debug!("task_executor", "🔍 Attempting to lock queue for status display");
         let queue = self.queue.lock().await;
-        log_debug!("task_executor", "🔓 Queue locked, checking if empty");
         
         if queue.is_empty() {
             println!("{} Task queue is empty", "📭".dimmed());
-            log_debug!("task_executor", "📭 Queue is empty, returning");
             return;
         }
 
-        log_debug!("task_executor", "📊 Queue has {} tasks, displaying status", queue.len());
         println!("\n{} Task Queue Status:", "📊".bright_blue().bold());
         
         let waiting_count = queue.iter().filter(|t| t.status == TaskStatus::Waiting).count();
         let running_count = queue.iter().filter(|t| t.status == TaskStatus::Running).count();
         let done_count = queue.iter().filter(|t| t.status == TaskStatus::Done).count();
         let failed_count = queue.iter().filter(|t| t.status == TaskStatus::Failed).count();
-
-        log_debug!("task_executor", "📈 Counts: waiting={}, running={}, done={}, failed={}", 
-                  waiting_count, running_count, done_count, failed_count);
 
         println!("  {} {} waiting • {} {} running • {} {} done • {} {} failed",
                  TaskStatus::Waiting.icon(), waiting_count,
@@ -165,13 +155,10 @@ impl TaskExecutor {
                  TaskStatus::Failed.icon(), failed_count);
 
         println!();
-        log_debug!("task_executor", "📝 About to display individual tasks");
         for (index, task) in queue.iter().enumerate() {
-            log_debug!("task_executor", "📝 Displaying task {}: {}", index + 1, task.description);
             println!("  {}. {}", index + 1, task.display_summary());
         }
         println!();
-        log_debug!("task_executor", "✅ Queue status display completed");
     }
 
     /// Execute all tasks in the queue
@@ -184,7 +171,6 @@ impl TaskExecutor {
             *is_running = true;
         }
 
-        log_info!("task_executor", "🚀 Starting task execution");
         println!("{} Starting task execution...", "🚀".green().bold());
 
         let result = self.execute_tasks_internal().await;
@@ -323,39 +309,32 @@ impl TaskExecutor {
     async fn analyze_task_for_tools(&self, task_description: &str) -> Result<Vec<McpToolCall>> {
         log_debug!("task_executor", "🔍 Analyzing task for tools: '{}'", task_description);
 
-        // If LLM client is available, use intelligent analysis
-        if let Some(ref client) = self.openrouter_client {
-            log_debug!("task_executor", "🧠 Using LLM-based tool analysis");
-            
-            // Try LLM analysis with timeout and fallback
-            match tokio::time::timeout(
-                std::time::Duration::from_secs(15),
-                self.llm_analyze_task_for_tools(client, task_description)
-            ).await {
-                Ok(Ok(result)) => {
-                    log_info!("task_executor", "✅ LLM analysis successful with {} tools", result.len());
-                    return Ok(result);
-                }
-                Ok(Err(e)) => {
-                    log_warn!("task_executor", "⚠️ LLM analysis failed: {}", e);
-                    println!("    {} LLM analysis failed: {}", "⚠️".yellow(), e);
-                    println!("    {} Falling back to heuristic analysis", "💡".yellow());
-                }
-                Err(_) => {
-                    log_warn!("task_executor", "⏰ LLM analysis timed out");
-                    println!("    {} LLM analysis timed out", "⏰".yellow());
-                    println!("    {} Falling back to heuristic analysis", "💡".yellow());
-                }
-            }
-        } else {
-            log_info!("task_executor", "💡 LLM client not available, using heuristic analysis");
-            println!("    {} LLM not available, using heuristic analysis", "💡".yellow());
-            println!("    {} Set OPENROUTER_API_KEY for intelligent tool selection", "💡".cyan());
-        }
+        // LLM client is required - no fallbacks
+        let client = self.openrouter_client.as_ref()
+            .ok_or_else(|| anyhow::anyhow!(
+                "LLM client is required for task analysis. Please set OPENROUTER_API_KEY environment variable."
+            ))?;
 
-        // Use heuristic fallback
-        log_debug!("task_executor", "🧮 Using heuristic-based tool analysis");
-        self.heuristic_analyze_task_for_tools(task_description).await
+        log_debug!("task_executor", "🧠 Using LLM-based tool analysis");
+        
+        // Try LLM analysis with timeout (fail if not working)
+        match tokio::time::timeout(
+            std::time::Duration::from_secs(15),
+            self.llm_analyze_task_for_tools(client, task_description)
+        ).await {
+            Ok(Ok(result)) => {
+                log_info!("task_executor", "✅ LLM analysis successful with {} tools", result.len());
+                Ok(result)
+            }
+            Ok(Err(e)) => {
+                log_error!("task_executor", "❌ LLM analysis failed: {}", e);
+                Err(anyhow::anyhow!("LLM task analysis failed: {}. Please check your OpenRouter API key and connection.", e))
+            }
+            Err(_) => {
+                log_error!("task_executor", "⏰ LLM analysis timed out");
+                Err(anyhow::anyhow!("LLM task analysis timed out. Please check your network connection and try again."))
+            }
+        }
     }
 
     async fn llm_analyze_task_for_tools(&self, client: &OpenRouterClient, task_description: &str) -> Result<Vec<McpToolCall>> {
@@ -561,127 +540,6 @@ impl TaskExecutor {
         }
     }
 
-    /// Heuristic-based task analysis as fallback when LLM is unavailable
-    async fn heuristic_analyze_task_for_tools(&self, task_description: &str) -> Result<Vec<McpToolCall>> {
-        let mut suggestions = Vec::new();
-        let task_lower = task_description.to_lowercase();
-
-        // Get available MCP servers and their tools with timeout
-        let global_manager = mcp_manager::get_mcp_manager();
-        
-        // Add timeout to prevent hanging
-        let analysis_result = tokio::time::timeout(
-            std::time::Duration::from_secs(5),
-            async {
-                let guard = global_manager.lock().await;
-                let Some(manager) = guard.as_ref() else {
-                    println!("    {} MCP manager is not initialized", "⚠️".yellow());
-                    println!("    {} Check if MCP servers are properly configured in mcp-config.json", "💡".yellow());
-                    return Ok::<Vec<McpToolCall>, anyhow::Error>(Vec::new());
-                };
-
-                let active_servers = manager.list_active_servers().await;
-                log_debug!("task_executor", "📡 Found {} active servers", active_servers.len());
-                
-                if active_servers.is_empty() {
-                    println!("    {} No active MCP servers found", "⚠️".yellow());
-                    println!("    {} MCP servers may not be started or configured properly", "💡".yellow());
-                    println!("    {} Try running: cargo run -- mcp list", "💡".yellow());
-                    return Ok(Vec::new());
-                }
-
-                for server_name in active_servers {
-                    // Get tools for this server with individual timeout
-                    let tools_result = tokio::time::timeout(
-                        std::time::Duration::from_secs(2),
-                        manager.list_tools(&server_name)
-                    ).await;
-
-                    match tools_result {
-                        Ok(Ok(tools)) => {
-                            log_debug!("task_executor", "🔧 Server '{}' has {} tools", server_name, tools.len());
-                            for tool_name in tools {
-                                // Simple heuristic-based tool matching
-                                let should_use_tool = match tool_name.as_str() {
-                                    "list_directory" if task_lower.contains("list") || 
-                                                       task_lower.contains("directory") ||
-                                                       task_lower.contains("structure") ||
-                                                       task_lower.contains("files") => true,
-                                    "read_file" if (task_lower.contains("read") || 
-                                                   task_lower.contains("show") ||
-                                                   task_lower.contains("content")) &&
-                                                   (task_lower.contains("file") || 
-                                                    task_lower.contains("readme") ||
-                                                    task_lower.contains(".md") ||
-                                                    task_lower.contains(".txt")) => true,
-                                    "write_file" if task_lower.contains("write") || 
-                                                   task_lower.contains("create") || 
-                                                   task_lower.contains("save") => true,
-                                    _ => false,
-                                };
-
-                                if should_use_tool {
-                                    let arguments = self.generate_tool_arguments(&tool_name, task_description);
-                                    log_debug!("task_executor", "✅ Matched tool '{}' for task", tool_name);
-                                    suggestions.push(McpToolCall {
-                                        server_name: server_name.clone(),
-                                        tool_name: tool_name.clone(),
-                                        arguments,
-                                        result: None,
-                                    });
-                                }
-                            }
-                        }
-                        Ok(Err(e)) => {
-                            log_debug!("task_executor", "⚠️ Could not get tools for server {}: {}", server_name, e);
-                        }
-                        Err(_) => {
-                            log_debug!("task_executor", "⏰ Timeout getting tools for server {}", server_name);
-                        }
-                    }
-                }
-
-                Ok::<Vec<McpToolCall>, anyhow::Error>(suggestions)
-            }
-        ).await;
-
-        match analysis_result {
-            Ok(result) => {
-                let final_suggestions = result?;
-                log_debug!("task_executor", "🎯 Found {} tool suggestions for task", final_suggestions.len());
-                Ok(final_suggestions)
-            }
-            Err(_) => {
-                log_warn!("task_executor", "⏰ Task analysis timed out, proceeding without MCP tools");
-                Ok(Vec::new())
-            }
-        }
-    }
-
-    /// Generate default tool arguments when LLM analysis is unavailable
-    fn generate_tool_arguments(&self, tool_name: &str, task_description: &str) -> Value {
-        // Generate reasonable default arguments based on tool type and task description
-        match tool_name {
-            "list_directory" => {
-                serde_json::json!({
-                    "path": "/project"
-                })
-            }
-            "read_file" => {
-                // Try to extract file path from task description
-                serde_json::json!({
-                    "path": "/project/README.md"  // Default, could be improved with NLP
-                })
-            }
-            "write_file" => {
-                serde_json::json!({
-                    "path": "/project/output.txt",
-                    "content": format!("Task execution result: {}", task_description)
-                })
-            }
-            _ => serde_json::Value::Object(serde_json::Map::new())
-        }
-    }
 
     async fn execute_mcp_tool_call(&self, tool_call: &McpToolCall) -> Result<Value> {
         log_debug!("task_executor", "🔧 Calling tool: {} on server {} with args: {}", 

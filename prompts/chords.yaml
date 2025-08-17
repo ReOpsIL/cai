@@ -1,0 +1,22 @@
+name: "Chords"
+description: "Prompts for piano chord learning applications and music theory"
+subjects:
+  - name: "applications"
+    prompts:
+      - title: "Piano Chord Learning Web Application"
+        content: "create a piano chord learning web application"
+        tags: ["music", "piano", "chords", "web", "learning"]
+        
+      - title: "Interactive Chord Trainer"
+        content: "Build an interactive piano chord trainer with visual feedback and progress tracking"
+        tags: ["music", "interactive", "training", "progress"]
+
+  - name: "theory"
+    prompts:
+      - title: "Chord Theory Explanation"
+        content: "Explain piano chord theory including major, minor, diminished, and augmented chords with examples"
+        tags: ["theory", "explanation", "chords"]
+        
+      - title: "Chord Progression Generator"
+        content: "Create a tool that generates common chord progressions for different musical styles"
+        tags: ["progression", "generator", "styles"]

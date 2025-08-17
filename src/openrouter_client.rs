@@ -215,7 +215,7 @@ impl OpenRouterClient {
         result
     }
 
-    pub async fn plan_tasks(&self, user_request: &str) -> Result<Vec<String>> {
+    pub async fn plan_tasks(&self, user_request: &str, historical_context: Option<&str>) -> Result<Vec<String>> {
         let planning_start = Instant::now();
         log_info!("openrouter", "📋 Planning tasks for user request (MCP-aware)");
         log_debug!("openrouter", "📥 User request: {}", user_request);
@@ -268,15 +268,29 @@ impl OpenRouterClient {
             depends_on: Option<Vec<String>>,
         }
 
+        // Include historical context if available
+        let context_section = if let Some(context) = historical_context {
+            if !context.trim().is_empty() {
+                format!("- Previous work and context: {}\n", context)
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        };
+
         // The system prompt forces a JSON array of PlannedTask objects
         let system_prompt = format!(
             r#"You are a coding CLI planner. Produce an execution-ready, deeply granular plan as a JSON array of task objects only. Each task must be atomic, action-oriented, and explicitly call a single MCP tool from the discovered set.
+
+IMPORTANT: Consider the previous work and context when planning. Build upon existing projects rather than creating separate ones. Reference existing files, directories, and functionality from previous tasks.
 
 Requirements:
 - Use the discovered tools exactly as named.
 - Include sufficient technical detail in 'description' and concrete 'params' for the tool call.
 - Ensure logical ordering and explicit dependencies via 'depends_on' (list of task ids).
 - IDs must be short, unique strings (e.g., t1, t2...).
+- When building upon existing work, reference specific paths and integrate with existing code
 - Output ONLY raw JSON array with the following schema for each task:
   {{
     "id": "t1",
@@ -289,7 +303,7 @@ Requirements:
 
 Context:
 - {tools_section}
-- User request: {user_request}
+{context_section}- User request: {user_request}
 "#
         );
 
@@ -420,78 +434,78 @@ Context:
         Ok(final_tasks)
     }
 
-    pub async fn improve_prompt(&self, original_prompt: &str, new_task: &str) -> Result<String> {
-        let improve_start = Instant::now();
-        log_info!("openrouter", "🔄 Improving prompt with new task input");
-        log_debug!(
-            "openrouter",
-            "📝 Original prompt: {}",
-            if original_prompt.len() > 100 {
-                format!("{}...", &original_prompt[..100])
-            } else {
-                original_prompt.to_string()
-            }
-        );
-        log_debug!("openrouter", "✨ New task: {}", new_task);
-
-        let prompt = format!(
-            r#"You have an existing prompt and a new task that are similar. Your job is to create an improved version that combines the best aspects of both.
-
-Guidelines:
-1. Merge the intent and scope of both prompts
-2. Make the result more comprehensive and actionable
-3. Ensure clarity and specificity
-4. Remove redundancy
-5. Keep the tone consistent
-
-Existing prompt: {}
-
-New task: {}
-
-Improved prompt:"#,
-            original_prompt, new_task
-        );
-
-        let messages = vec![ChatMessage {
-            role: "user".to_string(),
-            content: prompt,
-        }];
-
-        log_debug!(
-            "openrouter",
-            "🚀 Sending prompt improvement request to OpenRouter"
-        );
-        let result = self.chat_completion(messages).await;
-
-        let improve_duration = improve_start.elapsed().as_millis() as u64;
-        ops::performance("PROMPT_IMPROVEMENT", improve_duration);
-
-        match &result {
-            Ok(improved) => {
-                log_info!(
-                    "openrouter",
-                    "✅ Prompt improvement completed ({} chars, {}ms)",
-                    improved.len(),
-                    improve_duration
-                );
-                log_debug!(
-                    "openrouter",
-                    "🎆 Improved prompt: {}",
-                    if improved.len() > 200 {
-                        format!("{}...", &improved[..200])
-                    } else {
-                        improved.clone()
-                    }
-                );
-            }
-            Err(e) => {
-                ops::error_with_context("PROMPT_IMPROVEMENT", &e.to_string(), None);
-                log_error!("openrouter", "❌ Prompt improvement failed: {}", e);
-            }
-        }
-
-        result
-    }
+//     pub async fn improve_prompt(&self, original_prompt: &str, new_task: &str) -> Result<String> {
+//         let improve_start = Instant::now();
+//         log_info!("openrouter", "🔄 Improving prompt with new task input");
+//         log_debug!(
+//             "openrouter",
+//             "📝 Original prompt: {}",
+//             if original_prompt.len() > 100 {
+//                 format!("{}...", &original_prompt[..100])
+//             } else {
+//                 original_prompt.to_string()
+//             }
+//         );
+//         log_debug!("openrouter", "✨ New task: {}", new_task);
+//
+//         let prompt = format!(
+//             r#"You have an existing prompt and a new task that are similar. Your job is to create an improved version that combines the best aspects of both.
+//
+// Guidelines:
+// 1. Merge the intent and scope of both prompts
+// 2. Make the result more comprehensive and actionable
+// 3. Ensure clarity and specificity
+// 4. Remove redundancy
+// 5. Keep the tone consistent
+//
+// Existing prompt: {}
+//
+// New task: {}
+//
+// Improved prompt:"#,
+//             original_prompt, new_task
+//         );
+//
+//         let messages = vec![ChatMessage {
+//             role: "user".to_string(),
+//             content: prompt,
+//         }];
+//
+//         log_debug!(
+//             "openrouter",
+//             "🚀 Sending prompt improvement request to OpenRouter"
+//         );
+//         let result = self.chat_completion(messages).await;
+//
+//         let improve_duration = improve_start.elapsed().as_millis() as u64;
+//         ops::performance("PROMPT_IMPROVEMENT", improve_duration);
+//
+//         match &result {
+//             Ok(improved) => {
+//                 log_info!(
+//                     "openrouter",
+//                     "✅ Prompt improvement completed ({} chars, {}ms)",
+//                     improved.len(),
+//                     improve_duration
+//                 );
+//                 log_debug!(
+//                     "openrouter",
+//                     "🎆 Improved prompt: {}",
+//                     if improved.len() > 200 {
+//                         format!("{}...", &improved[..200])
+//                     } else {
+//                         improved.clone()
+//                     }
+//                 );
+//             }
+//             Err(e) => {
+//                 ops::error_with_context("PROMPT_IMPROVEMENT", &e.to_string(), None);
+//                 log_error!("openrouter", "❌ Prompt improvement failed: {}", e);
+//             }
+//         }
+//
+//         result
+//     }
 
     /// Analyze a task and determine which MCP tools should be used
     pub async fn analyze_task_for_tools(&self, task_description: &str, available_tools: &[ToolMetadata]) -> Result<Vec<ToolSelection>> {

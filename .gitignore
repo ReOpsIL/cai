@@ -55,7 +55,7 @@ mcp-config.json
 # Test results and coverage
 coverage/
 *.lcov
-TEST_RESULTS.md
+docs/TEST_RESULTS.md
 
 # Documentation build
 /docs/_build/

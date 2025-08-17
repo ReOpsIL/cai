@@ -1,0 +1,636 @@
+name: "CAI Comprehensive Test Suite"
+description: "100 diverse prompts to test all aspects of CAI functionality"
+version: "1.0"
+
+test_categories:
+  - basic_functionality
+  - prompt_management
+  - search_operations
+  - chat_interactions
+  - mcp_integration
+  - workflow_orchestration
+  - file_operations
+  - error_handling
+  - edge_cases
+  - performance_tests
+
+tests:
+  # Basic Functionality (1-10)
+  - id: "basic_001"
+    category: "basic_functionality"
+    prompt: "List all available prompts"
+    command: "cai list"
+    expected_behavior: "Should display all prompt files with descriptions"
+    
+  - id: "basic_002"
+    category: "basic_functionality"
+    prompt: "Show help information"
+    command: "cai --help"
+    expected_behavior: "Should display command help"
+    
+  - id: "basic_003"
+    category: "basic_functionality"
+    prompt: "Check version information"
+    command: "cai --version"
+    expected_behavior: "Should display version"
+    
+  - id: "basic_004"
+    category: "basic_functionality"
+    prompt: "Test with invalid command"
+    command: "cai invalid_command"
+    expected_behavior: "Should show error message and suggest alternatives"
+    
+  - id: "basic_005"
+    category: "basic_functionality"
+    prompt: "Test empty directory"
+    command: "cai list --directory /tmp/empty_test_dir"
+    expected_behavior: "Should handle empty directory gracefully"
+    
+  - id: "basic_006"
+    category: "basic_functionality"
+    prompt: "Test non-existent directory"
+    command: "cai list --directory /non/existent/path"
+    expected_behavior: "Should show appropriate error message"
+    
+  - id: "basic_007"
+    category: "basic_functionality"
+    prompt: "Test with custom directory"
+    command: "cai list --directory ./prompts"
+    expected_behavior: "Should list prompts from custom directory"
+    
+  - id: "basic_008"
+    category: "basic_functionality"
+    prompt: "Test colored output disabled"
+    command: "NO_COLOR=1 cai list"
+    expected_behavior: "Should display output without colors"
+    
+  - id: "basic_009"
+    category: "basic_functionality"
+    prompt: "Test logging level debug"
+    command: "CAI_LOG_LEVEL=debug cai list"
+    expected_behavior: "Should show debug logs"
+    
+  - id: "basic_010"
+    category: "basic_functionality"
+    prompt: "Test configuration loading"
+    command: "cai list --mode suggest"
+    expected_behavior: "Should use suggest mode"
+
+  # Prompt Management (11-20)
+  - id: "prompt_011"
+    category: "prompt_management"
+    prompt: "Show specific prompt file"
+    command: "cai show bug_fixing"
+    expected_behavior: "Should display bug_fixing prompt file contents"
+    
+  - id: "prompt_012"
+    category: "prompt_management"
+    prompt: "Query specific prompt"
+    command: "cai query bug_fixing debugging \"trace error\""
+    expected_behavior: "Should return specific prompt content"
+    
+  - id: "prompt_013"
+    category: "prompt_management"
+    prompt: "Show non-existent prompt file"
+    command: "cai show non_existent_file"
+    expected_behavior: "Should show file not found error"
+    
+  - id: "prompt_014"
+    category: "prompt_management"
+    prompt: "Query with invalid parameters"
+    command: "cai query invalid_file invalid_subject invalid_prompt"
+    expected_behavior: "Should show appropriate error messages"
+    
+  - id: "prompt_015"
+    category: "prompt_management"
+    prompt: "Test prompt file with URL references"
+    command: "cai show url_references"
+    expected_behavior: "Should resolve and display URL content"
+    
+  - id: "prompt_016"
+    category: "prompt_management"
+    prompt: "Test malformed YAML prompt file"
+    command: "cai show malformed_yaml"
+    expected_behavior: "Should handle YAML parsing errors gracefully"
+    
+  - id: "prompt_017"
+    category: "prompt_management"
+    prompt: "Test empty prompt file"
+    command: "cai show empty_file"
+    expected_behavior: "Should handle empty files appropriately"
+    
+  - id: "prompt_018"
+    category: "prompt_management"
+    prompt: "Test prompt with special characters"
+    command: "cai show special_chars"
+    expected_behavior: "Should handle Unicode and special characters"
+    
+  - id: "prompt_019"
+    category: "prompt_management"
+    prompt: "Test very large prompt file"
+    command: "cai show large_file"
+    expected_behavior: "Should handle large files efficiently"
+    
+  - id: "prompt_020"
+    category: "prompt_management"
+    prompt: "Test nested prompt directory structure"
+    command: "cai list --directory ./nested_prompts"
+    expected_behavior: "Should discover prompts in subdirectories"
+
+  # Search Operations (21-30)
+  - id: "search_021"
+    category: "search_operations"
+    prompt: "Basic keyword search"
+    command: "cai search performance"
+    expected_behavior: "Should find prompts containing 'performance'"
+    
+  - id: "search_022"
+    category: "search_operations"
+    prompt: "Multi-word search"
+    command: "cai search \"bug fixing\""
+    expected_behavior: "Should find prompts with exact phrase"
+    
+  - id: "search_023"
+    category: "search_operations"
+    prompt: "Case insensitive search"
+    command: "cai search DEBUG"
+    expected_behavior: "Should find prompts regardless of case"
+    
+  - id: "search_024"
+    category: "search_operations"
+    prompt: "Search with special characters"
+    command: "cai search \"error*handling\""
+    expected_behavior: "Should handle special characters in search"
+    
+  - id: "search_025"
+    category: "search_operations"
+    prompt: "Empty search query"
+    command: "cai search \"\""
+    expected_behavior: "Should handle empty search gracefully"
+    
+  - id: "search_026"
+    category: "search_operations"
+    prompt: "Search with URL resolution"
+    command: "cai search javascript --resolve-urls"
+    expected_behavior: "Should search including resolved URL content"
+    
+  - id: "search_027"
+    category: "search_operations"
+    prompt: "Very long search query"
+    command: "cai search \"this is a very long search query that tests the system's ability to handle extensive search terms\""
+    expected_behavior: "Should handle long queries appropriately"
+    
+  - id: "search_028"
+    category: "search_operations"
+    prompt: "Search with no results"
+    command: "cai search xyznonexistentterm123"
+    expected_behavior: "Should show no results found message"
+    
+  - id: "search_029"
+    category: "search_operations"
+    prompt: "Search with regex-like patterns"
+    command: "cai search \"test.*function\""
+    expected_behavior: "Should handle regex-like patterns"
+    
+  - id: "search_030"
+    category: "search_operations"
+    prompt: "Fuzzy search capabilities"
+    command: "cai search debuging"
+    expected_behavior: "Should find 'debugging' with typo tolerance"
+
+  # Chat Interactions (31-40)
+  - id: "chat_031"
+    category: "chat_interactions"
+    prompt: "Start basic chat session"
+    command: "echo 'hello' | cai chat"
+    expected_behavior: "Should start chat and respond to greeting"
+    
+  - id: "chat_032"
+    category: "chat_interactions"
+    prompt: "Chat with specific workflow ID"
+    command: "echo 'hello' | cai chat --workflow-id test123"
+    expected_behavior: "Should start/resume specific workflow"
+    
+  - id: "chat_033"
+    category: "chat_interactions"
+    prompt: "Chat session without API key"
+    command: "unset OPENROUTER_API_KEY && echo 'hello' | cai chat"
+    expected_behavior: "Should show API key requirement message"
+    
+  - id: "chat_034"
+    category: "chat_interactions"
+    prompt: "Chat with task planning request"
+    command: "echo 'plan a simple web app' | cai chat"
+    expected_behavior: "Should create task plan"
+    
+  - id: "chat_035"
+    category: "chat_interactions"
+    prompt: "Chat with file operation request"
+    command: "echo 'create a hello world python script' | cai chat"
+    expected_behavior: "Should plan file creation task"
+    
+  - id: "chat_036"
+    category: "chat_interactions"
+    prompt: "Chat with prompt management request"
+    command: "echo 'find prompts about testing' | cai chat"
+    expected_behavior: "Should search and suggest prompts"
+    
+  - id: "chat_037"
+    category: "chat_interactions"
+    prompt: "Chat session persistence"
+    command: "echo '@status' | cai chat"
+    expected_behavior: "Should show current session status"
+    
+  - id: "chat_038"
+    category: "chat_interactions"
+    prompt: "Chat with special commands"
+    command: "echo '@help' | cai chat"
+    expected_behavior: "Should show chat help commands"
+    
+  - id: "chat_039"
+    category: "chat_interactions"
+    prompt: "Chat error recovery"
+    command: "echo 'invalid request that should cause error' | cai chat"
+    expected_behavior: "Should handle errors gracefully"
+    
+  - id: "chat_040"
+    category: "chat_interactions"
+    prompt: "Chat session cleanup"
+    command: "echo 'quit' | cai chat"
+    expected_behavior: "Should exit cleanly"
+
+  # MCP Integration (41-50)
+  - id: "mcp_041"
+    category: "mcp_integration"
+    prompt: "Initialize MCP configuration"
+    command: "cai mcp init"
+    expected_behavior: "Should create mcp-config.json"
+    
+  - id: "mcp_042"
+    category: "mcp_integration"
+    prompt: "List MCP servers"
+    command: "cai mcp list"
+    expected_behavior: "Should show configured servers"
+    
+  - id: "mcp_043"
+    category: "mcp_integration"
+    prompt: "Start MCP server"
+    command: "cai mcp start filesystem"
+    expected_behavior: "Should start filesystem server"
+    
+  - id: "mcp_044"
+    category: "mcp_integration"
+    prompt: "Stop MCP server"
+    command: "cai mcp stop filesystem"
+    expected_behavior: "Should stop filesystem server"
+    
+  - id: "mcp_045"
+    category: "mcp_integration"
+    prompt: "List tools from server"
+    command: "cai mcp tools filesystem"
+    expected_behavior: "Should list available tools"
+    
+  - id: "mcp_046"
+    category: "mcp_integration"
+    prompt: "Call MCP tool"
+    command: "cai mcp call filesystem read_file --args '{\"path\":\"/tmp/test.txt\"}'"
+    expected_behavior: "Should execute tool and return result"
+    
+  - id: "mcp_047"
+    category: "mcp_integration"
+    prompt: "List MCP resources"
+    command: "cai mcp resources filesystem"
+    expected_behavior: "Should list available resources"
+    
+  - id: "mcp_048"
+    category: "mcp_integration"
+    prompt: "Check MCP status"
+    command: "cai mcp status"
+    expected_behavior: "Should show server status"
+    
+  - id: "mcp_049"
+    category: "mcp_integration"
+    prompt: "MCP with invalid server"
+    command: "cai mcp start nonexistent"
+    expected_behavior: "Should show server not found error"
+    
+  - id: "mcp_050"
+    category: "mcp_integration"
+    prompt: "MCP tool with invalid args"
+    command: "cai mcp call filesystem read_file --args 'invalid json'"
+    expected_behavior: "Should show JSON parsing error"
+
+  # Workflow Orchestration (51-60)
+  - id: "workflow_051"
+    category: "workflow_orchestration"
+    prompt: "Start simple workflow"
+    command: "cai workflow start \"Create a hello world app\""
+    expected_behavior: "Should create workflow with goals"
+    
+  - id: "workflow_052"
+    category: "workflow_orchestration"
+    prompt: "Show workflow status"
+    command: "cai workflow status"
+    expected_behavior: "Should list active workflows"
+    
+  - id: "workflow_053"
+    category: "workflow_orchestration"
+    prompt: "Show specific workflow"
+    command: "cai workflow show test-workflow-id"
+    expected_behavior: "Should show detailed workflow info"
+    
+  - id: "workflow_054"
+    category: "workflow_orchestration"
+    prompt: "Continue workflow execution"
+    command: "cai workflow continue test-workflow-id"
+    expected_behavior: "Should execute next workflow steps"
+    
+  - id: "workflow_055"
+    category: "workflow_orchestration"
+    prompt: "Complex workflow planning"
+    command: "cai workflow start \"Build a REST API with authentication and database\""
+    expected_behavior: "Should create complex multi-step workflow"
+    
+  - id: "workflow_056"
+    category: "workflow_orchestration"
+    prompt: "Workflow cleanup"
+    command: "cai workflow cleanup"
+    expected_behavior: "Should clean completed workflows"
+    
+  - id: "workflow_057"
+    category: "workflow_orchestration"
+    prompt: "Workflow with dependencies"
+    command: "cai workflow start \"Setup development environment with Docker\""
+    expected_behavior: "Should plan workflow with dependencies"
+    
+  - id: "workflow_058"
+    category: "workflow_orchestration"
+    prompt: "Workflow error handling"
+    command: "cai workflow start \"Invalid workflow description that should fail\""
+    expected_behavior: "Should handle workflow creation errors"
+    
+  - id: "workflow_059"
+    category: "workflow_orchestration"
+    prompt: "Workflow persistence"
+    command: "cai workflow start \"Test persistence\" && cai workflow status"
+    expected_behavior: "Should persist workflow across commands"
+    
+  - id: "workflow_060"
+    category: "workflow_orchestration"
+    prompt: "Concurrent workflows"
+    command: "cai workflow start \"Task 1\" && cai workflow start \"Task 2\""
+    expected_behavior: "Should handle multiple active workflows"
+
+  # File Operations (61-70)
+  - id: "file_061"
+    category: "file_operations"
+    prompt: "Test task demo"
+    command: "cai task-demo"
+    expected_behavior: "Should demonstrate MCP tool integration"
+    
+  - id: "file_062"
+    category: "file_operations"
+    prompt: "File operations via chat"
+    command: "echo 'list files in current directory' | cai chat"
+    expected_behavior: "Should execute file listing"
+    
+  - id: "file_063"
+    category: "file_operations"
+    prompt: "Read file content"
+    command: "echo 'read the README.md file' | cai chat"
+    expected_behavior: "Should read and display file content"
+    
+  - id: "file_064"
+    category: "file_operations"
+    prompt: "Create new file"
+    command: "echo 'create a simple Python script' | cai chat"
+    expected_behavior: "Should create file with appropriate content"
+    
+  - id: "file_065"
+    category: "file_operations"
+    prompt: "Edit existing file"
+    command: "echo 'add comments to existing code' | cai chat"
+    expected_behavior: "Should modify file with comments"
+    
+  - id: "file_066"
+    category: "file_operations"
+    prompt: "File permissions check"
+    command: "echo 'check file permissions for /etc/passwd' | cai chat"
+    expected_behavior: "Should respect file permissions"
+    
+  - id: "file_067"
+    category: "file_operations"
+    prompt: "Large file handling"
+    command: "echo 'analyze this large log file' | cai chat"
+    expected_behavior: "Should handle large files efficiently"
+    
+  - id: "file_068"
+    category: "file_operations"
+    prompt: "Binary file detection"
+    command: "echo 'process this binary file' | cai chat"
+    expected_behavior: "Should detect and handle binary files"
+    
+  - id: "file_069"
+    category: "file_operations"
+    prompt: "File backup creation"
+    command: "echo 'modify this file but create backup first' | cai chat"
+    expected_behavior: "Should create backup before modification"
+    
+  - id: "file_070"
+    category: "file_operations"
+    prompt: "Atomic file operations"
+    command: "echo 'update multiple related files atomically' | cai chat"
+    expected_behavior: "Should perform atomic multi-file operations"
+
+  # Error Handling (71-80)
+  - id: "error_071"
+    category: "error_handling"
+    prompt: "Network timeout simulation"
+    command: "timeout 5s cai chat"
+    expected_behavior: "Should handle timeout gracefully"
+    
+  - id: "error_072"
+    category: "error_handling"
+    prompt: "Invalid API key"
+    command: "OPENROUTER_API_KEY=invalid cai chat"
+    expected_behavior: "Should show authentication error"
+    
+  - id: "error_073"
+    category: "error_handling"
+    prompt: "Memory exhaustion test"
+    command: "echo 'create very large data structure' | cai chat"
+    expected_behavior: "Should handle memory limits gracefully"
+    
+  - id: "error_074"
+    category: "error_handling"
+    prompt: "Disk space exhaustion"
+    command: "echo 'create file larger than available space' | cai chat"
+    expected_behavior: "Should handle disk space errors"
+    
+  - id: "error_075"
+    category: "error_handling"
+    prompt: "Concurrent access conflicts"
+    command: "cai chat & cai chat & wait"
+    expected_behavior: "Should handle concurrent access properly"
+    
+  - id: "error_076"
+    category: "error_handling"
+    prompt: "Corrupted configuration"
+    command: "echo 'invalid json' > mcp-config.json && cai mcp list"
+    expected_behavior: "Should handle corrupted config files"
+    
+  - id: "error_077"
+    category: "error_handling"
+    prompt: "Signal interruption"
+    command: "cai chat & kill -INT $!"
+    expected_behavior: "Should handle interruption signals cleanly"
+    
+  - id: "error_078"
+    category: "error_handling"
+    prompt: "Resource cleanup on failure"
+    command: "echo 'start operation then fail' | cai chat"
+    expected_behavior: "Should clean up resources on failure"
+    
+  - id: "error_079"
+    category: "error_handling"
+    prompt: "Recovery from partial failures"
+    command: "echo 'partially complete this complex task' | cai chat"
+    expected_behavior: "Should recover from partial failures"
+    
+  - id: "error_080"
+    category: "error_handling"
+    prompt: "Error logging and debugging"
+    command: "CAI_LOG_LEVEL=debug cai invalid_command"
+    expected_behavior: "Should log errors appropriately"
+
+  # Edge Cases (81-90)
+  - id: "edge_081"
+    category: "edge_cases"
+    prompt: "Unicode filename handling"
+    command: "cai show 测试文件"
+    expected_behavior: "Should handle Unicode filenames"
+    
+  - id: "edge_082"
+    category: "edge_cases"
+    prompt: "Very long command line"
+    command: "cai search 'a very long search query that exceeds normal command line limits and tests the system ability to handle extensive input'"
+    expected_behavior: "Should handle long command lines"
+    
+  - id: "edge_083"
+    category: "edge_cases"
+    prompt: "Special shell characters"
+    command: "cai search 'test & echo malicious || rm -rf /'"
+    expected_behavior: "Should sanitize shell characters"
+    
+  - id: "edge_084"
+    category: "edge_cases"
+    prompt: "Path traversal attempts"
+    command: "cai show ../../../etc/passwd"
+    expected_behavior: "Should prevent path traversal"
+    
+  - id: "edge_085"
+    category: "edge_cases"
+    prompt: "Symlink handling"
+    command: "ln -s /etc/passwd test_link && cai show test_link"
+    expected_behavior: "Should handle symlinks safely"
+    
+  - id: "edge_086"
+    category: "edge_cases"
+    prompt: "Circular directory references"
+    command: "mkdir -p test/sub && ln -s ../.. test/sub/loop && cai list --directory test"
+    expected_behavior: "Should detect and handle loops"
+    
+  - id: "edge_087"
+    category: "edge_cases"
+    prompt: "Race condition testing"
+    command: "for i in {1..10}; do cai list & done; wait"
+    expected_behavior: "Should handle concurrent operations"
+    
+  - id: "edge_088"
+    category: "edge_cases"
+    prompt: "Empty environment"
+    command: "env -i cai list"
+    expected_behavior: "Should work with minimal environment"
+    
+  - id: "edge_089"
+    category: "edge_cases"
+    prompt: "File system case sensitivity"
+    command: "cai show FILE.yaml && cai show file.yaml"
+    expected_behavior: "Should handle case sensitivity correctly"
+    
+  - id: "edge_090"
+    category: "edge_cases"
+    prompt: "Locale and encoding issues"
+    command: "LC_ALL=C cai search 'test'"
+    expected_behavior: "Should handle different locales"
+
+  # Performance Tests (91-100)
+  - id: "perf_091"
+    category: "performance_tests"
+    prompt: "Large directory scanning"
+    command: "time cai list --directory /usr"
+    expected_behavior: "Should scan large directories efficiently"
+    
+  - id: "perf_092"
+    category: "performance_tests"
+    prompt: "Many concurrent searches"
+    command: "for i in {1..20}; do cai search test$i & done; wait"
+    expected_behavior: "Should handle concurrent searches"
+    
+  - id: "perf_093"
+    category: "performance_tests"
+    prompt: "Memory usage monitoring"
+    command: "/usr/bin/time -v cai chat"
+    expected_behavior: "Should use memory efficiently"
+    
+  - id: "perf_094"
+    category: "performance_tests"
+    prompt: "Startup time measurement"
+    command: "time cai --help"
+    expected_behavior: "Should start quickly"
+    
+  - id: "perf_095"
+    category: "performance_tests"
+    prompt: "Large prompt file processing"
+    command: "time cai show very_large_prompt_file"
+    expected_behavior: "Should process large files efficiently"
+    
+  - id: "perf_096"
+    category: "performance_tests"
+    prompt: "Search performance with large corpus"
+    command: "time cai search common_term"
+    expected_behavior: "Should search quickly even with many files"
+    
+  - id: "perf_097"
+    category: "performance_tests"
+    prompt: "MCP tool call latency"
+    command: "time cai mcp call filesystem list_directory --args '{\"path\":\".\"}'"
+    expected_behavior: "Should execute MCP calls with low latency"
+    
+  - id: "perf_098"
+    category: "performance_tests"
+    prompt: "Workflow planning performance"
+    command: "time cai workflow start 'Complex software development project'"
+    expected_behavior: "Should plan workflows quickly"
+    
+  - id: "perf_099"
+    category: "performance_tests"
+    prompt: "Chat response latency"
+    command: "echo 'simple question' | time cai chat"
+    expected_behavior: "Should respond to chat quickly"
+    
+  - id: "perf_100"
+    category: "performance_tests"
+    prompt: "Resource cleanup efficiency"
+    command: "time cai workflow cleanup"
+    expected_behavior: "Should cleanup resources efficiently"
+
+metadata:
+  total_tests: 100
+  categories: 10
+  expected_duration: "30-60 minutes"
+  requirements:
+    - "OPENROUTER_API_KEY environment variable for some tests"
+    - "Docker for MCP server tests"
+    - "Write permissions in current directory"
+    - "Network access for URL resolution tests"
